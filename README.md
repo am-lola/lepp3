@@ -2,6 +2,7 @@
 
 LOLA Environment Perception Package v3: understanding the environment sensed by
 a Kinect-like sensor.
+Previous version: [lepp2](https://github.com/am-lola/lepp2)
 
 # Goals
 
