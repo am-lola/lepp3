@@ -1,0 +1,5 @@
+add_executable(live_stream_example examples/live_stream_example.cc)
+target_link_libraries(live_stream_example ${PCL_LIBRARIES})
+
+add_executable(file_stream_example examples/file_stream_example.cc)
+target_link_libraries(file_stream_example ${PCL_LIBRARIES})
