@@ -16,6 +16,7 @@
 
 #include "lepp3/visualization/EchoObserver.hpp"
 #include "lepp3/visualization/ObstacleVisualizer.hpp"
+#include "lepp3/visualization/StairVisualizer.hpp"
 
 #include "lepp3/filter/TruncateFilter.hpp"
 #include "lepp3/filter/SensorCalibrationFilter.hpp"
@@ -134,20 +135,20 @@ int main(int argc, char* argv[]) {
       new BaseObstacleDetector<PointT>(approx));
   // Attaching the detector to the source: process the point clouds obtained
   // by the source.
-  source->attachObserver(detector);
+  //source->attachObserver(detector);
 
   // Prepare the result visualizer...
-  boost::shared_ptr<ObstacleVisualizer<PointT> > visualizer(
-      new ObstacleVisualizer<PointT>());
+  boost::shared_ptr<StairVisualizer<PointT> > visualizer(
+      new StairVisualizer<PointT>());
   // Attaching the visualizer to the source: allow it to display the original
   // point cloud.
   source->attachObserver(visualizer);
   // The visualizer is additionally decorated by the "smoothener" to smooth out
   // the output...
-  boost::shared_ptr<SmoothObstacleAggregator> smooth_decorator(
-      new SmoothObstacleAggregator);
-  detector->attachObstacleAggregator(smooth_decorator);
-  smooth_decorator->attachObstacleAggregator(visualizer);
+  // boost::shared_ptr<SmoothObstacleAggregator> smooth_decorator(
+  //     new SmoothObstacleAggregator);
+  // detector->attachObstacleAggregator(smooth_decorator);
+  // smooth_decorator->attachObstacleAggregator(visualizer);
 
   // Starts capturing new frames and forwarding them to attached observers.
   source->open();
