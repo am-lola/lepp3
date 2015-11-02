@@ -4,22 +4,24 @@
 #include <boost/asio.hpp>
 #include <boost/array.hpp>
 
+#include "lola/TransformObserver.hpp"
+
 #include "lepp3/models/Coordinate.h"
 using boost::asio::ip::udp;
 
-/**
- * A struct wrapping the parameters LOLA-provided kinematics parameters that are
- * used to construct the transformation matrices between the camera frame and
- * the world coordinate system as LOLA knows it.
- */
-struct LolaKinematicsParams {
-  double t_wr_cl[3];
-  double R_wr_cl[3][3];
-  double t_stance_odo[3];
-  double phi_z_odo;
-  double stance;
-  int stamp;
-};
+// /**
+//  * A struct wrapping the parameters LOLA-provided kinematics parameters that are
+//  * used to construct the transformation matrices between the camera frame and
+//  * the world coordinate system as LOLA knows it.
+//  */
+// struct LolaKinematicsParams {
+//   double t_wr_cl[3];
+//   double R_wr_cl[3][3];
+//   double t_stance_odo[3];
+//   double phi_z_odo;
+//   double stance;
+//   int stamp;
+// };
 
 /*!
   Robot pose data
@@ -183,6 +185,12 @@ public:
    * transformations, extracted from the currently known robot pose.
    */
   LolaKinematicsParams getParams() const;
+  /**
+   * Attaches a new TFObserver to the pose service.
+   * Each observer will get notified once the PoseService has received a new
+   * pose and converted it to LolaKinematicsParams.
+   */
+  void attachObserver(boost::shared_ptr<TFObserver> observer);
 private:
   /**
    * Internal helper method. The callback that is passed to the async receive.
@@ -205,6 +213,11 @@ private:
    * new one needs to be queued if we wish to keep running the pose service.
    */
   void queue_recv();
+  /**
+   * Private helper method.  Notifies all known observers that a new pose
+   * has been received.
+   */
+  void notifyObservers(int idx, LolaKinematicsParams& params);
 
   /**
    * The local host on which the service will listen.
@@ -233,7 +246,10 @@ private:
    * Updated by the service on every newly received packet.
    */
   boost::shared_ptr<HR_Pose> pose_;
-
+  /**
+   * Keeps track of all TF observers
+   */
+  std::vector<boost::shared_ptr<TFObserver> > observers_;
 };
 
 #endif

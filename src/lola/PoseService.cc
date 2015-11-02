@@ -71,6 +71,13 @@ void PoseService::queue_recv() {
       boost::bind(&PoseService::read_handler, this, _1, _2));
 }
 
+void PoseService::notifyObservers(int idx, LolaKinematicsParams& params) {
+  size_t const sz = observers_.size();
+  for (size_t i = 0; i < sz; ++i) {
+    observers_[i]->notifyNewTF(idx, params);
+  }
+}
+
 void PoseService::bind() {
   boost::system::error_code error;
   socket_.open(boost::asio::ip::udp::v4(), error);
