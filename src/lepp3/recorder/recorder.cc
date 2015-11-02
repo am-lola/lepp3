@@ -104,6 +104,7 @@ bool parseCommand(int argc, char* argv[], record_options& op) {
         }
         break;
       default:
+        PrintUsage(argv[0]);
         return false;
     }
   }
