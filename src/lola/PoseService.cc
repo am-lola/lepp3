@@ -155,3 +155,7 @@ LolaKinematicsParams PoseService::getParams() const {
 
   return params;
 }
+
+void PoseService::attachObserver(boost::shared_ptr<TFObserver> observer) {
+    observers_.push_back(observer);
+}
