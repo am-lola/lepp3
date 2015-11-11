@@ -162,7 +162,8 @@ public:
   PoseService(std::string const& host, int port)
       : host_(host),
         port_(port),
-        socket_(io_service_) {}
+        socket_(io_service_),
+        pose_counter_(0) {}
   /**
    * Starts the `PoseService`.
    *
@@ -191,6 +192,12 @@ public:
    * pose and converted it to LolaKinematicsParams.
    */
   void attachObserver(boost::shared_ptr<TFObserver> observer);
+  /**
+    * public helper method.  Notifies all known observers that a new pose
+    * has been received.
+    */
+  void notifyObservers(int idx, LolaKinematicsParams& params);
+
 private:
   /**
    * Internal helper method. The callback that is passed to the async receive.
@@ -213,12 +220,6 @@ private:
    * new one needs to be queued if we wish to keep running the pose service.
    */
   void queue_recv();
-  /**
-   * Private helper method.  Notifies all known observers that a new pose
-   * has been received.
-   */
-  void notifyObservers(int idx, LolaKinematicsParams& params);
-
   /**
    * The local host on which the service will listen.
    */
@@ -250,6 +251,7 @@ private:
    * Keeps track of all TF observers
    */
   std::vector<boost::shared_ptr<TFObserver> > observers_;
+  int pose_counter_;
 };
 
 #endif

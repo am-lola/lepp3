@@ -63,6 +63,7 @@ class VideoRecorder : public VideoObserver<PointT>, public TFObserver {
 public:
   VideoRecorder()
     : p_( get_dir_name() ),
+      tf_file_name_("tf.txt"),
       cloud_lk_(false),
       tf_lk_(false) {
       if(boost::filesystem::exists(p_)) {
@@ -74,6 +75,13 @@ public:
         boost::filesystem::create_directory(p_);
         //change current path to the new directory
         boost::filesystem::current_path(p_);
+
+        // write header to tf_file
+        std::ofstream tf_fout(tf_file_name_.c_str());
+        if(tf_fout.is_open()) {
+          tf_fout << "#" << std::endl;
+          tf_fout.close();
+        }
       }
     }
   /**
@@ -89,6 +97,7 @@ public:
 private:
 
   boost::filesystem::path p_;
+  std::string tf_file_name_;
   int cloud_idx_;
   int tf_idx_;
   bool cloud_lk_, tf_lk_;
@@ -114,20 +123,31 @@ void VideoRecorder<PointT>::notifyNewFrame(
 }
 
 template<class PointT>
-void VideoRecorder<PointT>::notifyNewTF(int idx, const LolaKinematicsParams& tf) {
+void VideoRecorder<PointT>::notifyNewTF(int idx, const LolaKinematicsParams& params) {
   tf_idx_ = idx;
   std::cout << "Recorder::tf_idx_ : " << idx << std::endl;
 
   Timer t;
   t.start();
-  std::stringstream tf_ss;
-  tf_ss << "tf_" << tf_idx_ << ".txt";
-  const std::string& tmp = tf_ss.str();
-  const char* name = tmp.c_str();
-  std::ofstream tf_file;
-  tf_file.open(name);
-  tf_file << tf;
-  tf_file.close();
+  // open the file
+  std::ofstream tf_fout_;
+  tf_fout_.open(tf_file_name_.c_str());
+  // write the parameters to the file
+  std::stringstream ss;
+  for (size_t i = 0; i < 3; ++i) { ss << params.t_wr_cl[i]; }
+  for (size_t i = 0; i < 3; ++i) {
+    for (size_t j = 0; j < 3; ++j) {
+      ss << params.R_wr_cl[i][j];
+    }
+  }
+  for (size_t i = 0; i < 3; ++i) { ss << params.t_stance_odo[i]; }
+  ss << params.phi_z_odo;
+  ss << params.stance;
+  ss << params.frame_num;
+  ss << params.stamp;
+  tf_fout_ << ss.str() << std::endl;
+  // and close the file...
+  tf_fout_.close();
   t.stop();
   std::cout << "SAVING POSE TOOK: " << t.duration() << " ms" << std::endl;
 }

@@ -13,6 +13,7 @@ struct LolaKinematicsParams {
   double t_stance_odo[3];
   double phi_z_odo;
   double stance;
+  int frame_num;
   int stamp;
 };
 } // namespace

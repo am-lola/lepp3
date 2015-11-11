@@ -57,6 +57,9 @@ void PoseService::read_handler(
   // thread-safe operation.
   pose_ = new_pose;
   LINFO << "Pose Service: Updated current pose";
+  // notify any TFObserver of the new pose
+  LolaKinematicsParams params = getParams();
+  notifyObservers(++pose_counter_, params);
   queue_recv();
 }
 

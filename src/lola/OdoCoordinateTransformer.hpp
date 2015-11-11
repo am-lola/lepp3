@@ -253,7 +253,83 @@ LolaKinematicsParams RobotOdoTransformer<PointT>::getNextParams() {
   }
   params.phi_z_odo = pose.phi_z_odo;
   params.stance = pose.stance;
+  params.frame_num = this->current_frame_;
   params.stamp = pose.stamp;
+
+  return params;
+}
+
+/**
+ * A concrete implementation of the transformer, which obtains its kinematics
+ * information by reading from a log file. The path to the log file is provided
+ * at construction time.
+ */
+template<class PointT>
+class FileOdoTransformer : public OdoCoordinateTransformer<PointT> {
+public:
+    FileOdoTransformer(std::string const& file_name);
+protected:
+    LolaKinematicsParams getNextParams();
+private:
+    LolaKinematicsParams readNextParams();
+
+    /**
+     * The name of the file from which the kinematics data is to be read.
+     */
+    std::string const file_name_;
+    /**
+     * A handle to the file from which kinematics is being read.
+     */
+    std::ifstream fin_;
+
+    LolaKinematicsParams current_;
+    LolaKinematicsParams next_;
+};
+
+template<class PointT>
+FileOdoTransformer<PointT>::FileOdoTransformer(
+        std::string const& file_name)
+        : file_name_(file_name), fin_(file_name.c_str()) {
+  // Initialize the current and next values
+  current_ = this->readNextParams();
+  next_ = this->readNextParams();
+}
+
+template<class PointT>
+LolaKinematicsParams FileOdoTransformer<PointT>::getNextParams() {
+  LolaKinematicsParams use = current_;
+  if (this->current_frame_ + 1 == next_.frame_num) {
+    current_ = next_;
+    next_ = this->readNextParams();
+  }
+
+  return use;
+}
+
+template<class PointT>
+LolaKinematicsParams
+FileOdoTransformer<PointT>::readNextParams() {
+  std::string line;
+  // Ignore the comments in the log file
+  do {
+    std::getline(fin_, line);
+  } while (line[0] == '#');
+
+  // Parse next frame's transformation parameters from the read line...
+  LolaKinematicsParams params;
+
+  std::stringstream ss(line);
+  for (size_t i = 0; i < 3; ++i) { ss >> params.t_wr_cl[i]; }
+  for (size_t i = 0; i < 3; ++i) {
+    for (size_t j = 0; j < 3; ++j) {
+      ss >> params.R_wr_cl[i][j];
+    }
+  }
+  for (size_t i = 0; i < 3; ++i) { ss >> params.t_stance_odo[i]; }
+  ss >> params.phi_z_odo;
+  ss >> params.stance;
+  ss >> params.frame_num;
+  ss >> params.stamp;
 
   return params;
 }
