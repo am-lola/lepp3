@@ -61,6 +61,18 @@ void PoseService::read_handler(
   LolaKinematicsParams params = getParams();
   notifyObservers(++pose_counter_, params);
   queue_recv();
+  // Print parameters received
+  // LTRACE << "Received pose"
+  //        << "  Phi_Z_ODO = " << pose_->phi_z_odo
+  //        << "  Stamp = " << pose_->stamp
+  //        << "  T_Stance_ODO.X = " << pose_->t_stance_odo[0]
+  //        << "  T_Stance_ODO.Y = " << pose_->t_stance_odo[1]
+  //        << "  T_Stance_ODO.Z = " << pose_->t_stance_odo[2]
+  //        << "  Version Nr. = " << pose_->version
+  //        << "  TIC counter = " << pose_->tick_counter
+  //        << "  Stance = " << pose_->stance
+  //        << "  Size of HR_Pose = " << sizeof(HR_Pose_Red)
+  //        << "  Size of Message = " << bytes_transferred;
 }
 
 void PoseService::service_thread() {
