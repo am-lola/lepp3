@@ -240,7 +240,7 @@ private:
 
 template<class PointT>
 LolaKinematicsParams RobotOdoTransformer<PointT>::getNextParams() {
-  HR_Pose pose = service_->getCurrentPose();
+  HR_Pose_Red pose = service_->getCurrentPose();
   // Now convert the current raw pose to parameters that are of relevance to the
   // transformation.
   LolaKinematicsParams params;
