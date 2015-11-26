@@ -15,16 +15,16 @@
  * robot.
  */
 struct VisionMessage {
-  int32_t id;
+  uint32_t id;
   uint32_t len;
   float params[15];
-  
+
   VisionMessage() : len(sizeof params) {}
 
   // IDs for particular vision operations.
-  static int32_t const SET_SSV =  __MSG_ID_DEF_GLOBAL(0x4, 0x203);
-  static int32_t const MODIFY_SSV =  __MSG_ID_DEF_GLOBAL(0x4, 0x206);
-  static int32_t const REMOVE_SSV =  __MSG_ID_DEF_GLOBAL(0x4, 0x207);
+  static uint32_t const SET_SSV =  __MSG_ID_DEF_GLOBAL(0x4, 0x203);
+  static uint32_t const MODIFY_SSV =  __MSG_ID_DEF_GLOBAL(0x4, 0x206);
+  static uint32_t const REMOVE_SSV =  __MSG_ID_DEF_GLOBAL(0x4, 0x207);
 
   // Flags (passed in parameter at the index 4 in delete messages) indicating
   // whether the entire object model should be removed or only a part.
