@@ -58,7 +58,8 @@ VisionMessage VisionMessage::DeleteMessage(int model_id) {
 }
 
 VisionMessage VisionMessage::DeletePartMessage(int model_id, int part_id) {
-  LTRACE << "Constructing delete part message with (model_id, part_id) = (" << model_id << ", " << part_id << ")";
+  LTRACE << "Constructing delete part message with (model_id, part_id) = (" 
+	 << model_id << ", " << part_id << ")";
   VisionMessage msg;
   msg.id = REMOVE_SSV;
   memset(msg.params, 0, sizeof msg.params);
@@ -71,9 +72,13 @@ VisionMessage VisionMessage::DeletePartMessage(int model_id, int part_id) {
   return msg;
 }
 
-VisionMessage VisionMessage::SetMessage(
-    int type_id, int model_id, int part_id, double radius, std::vector<double> const& coefs) {
-  LTRACE << "Constructing set message with (model_id, part_id) = (" << model_id << ", " << part_id << ")";
+VisionMessage VisionMessage::SetMessage(int type_id, 
+					int model_id, 
+					int part_id, 
+					double radius, 
+					std::vector<double> const& coefs) {
+  LTRACE << "Constructing set message with (model_id, part_id) = (" 
+	 << model_id << ", " << part_id << ")";
   VisionMessage msg;
   msg.id = SET_SSV;
   memset(msg.params, 0, sizeof msg.params);
@@ -83,14 +88,16 @@ VisionMessage VisionMessage::SetMessage(
   msg.params[3] = radius;
   // 4 - unused
   // 5 - unused
-  for (size_t i = 0; i < coefs.size(); ++i) msg.params[6 + i] = coefs[i];
+  for (size_t i = 0; i < coefs.size(); ++i) 
+    msg.params[6 + i] = coefs[i];
 
   return msg;
 }
 
 VisionMessage VisionMessage::ModifyMessage(
     int type_id, int model_id, int part_id, double radius, std::vector<double> const& coefs) {
-  LTRACE << "Constructing set message with (model_id, part_id) = (" << model_id << ", " << part_id << ")";
+  LTRACE << "Constructing set message with (model_id, part_id) = (" 
+	 << model_id << ", " << part_id << ")";
   VisionMessage msg;
   msg.id = MODIFY_SSV;
   memset(msg.params, 0, sizeof msg.params);
@@ -100,7 +107,8 @@ VisionMessage VisionMessage::ModifyMessage(
   msg.params[3] = radius;
   // 4 - unused
   // 5 - unused
-  for (size_t i = 0; i < coefs.size(); ++i) msg.params[6 + i] = coefs[i];
+  for (size_t i = 0; i < coefs.size(); ++i) 
+    msg.params[6 + i] = coefs[i];
 
   return msg;
 }
@@ -130,7 +138,7 @@ void AsyncRobotService::inner_send(VisionMessage const& next_message) {
   // Synchronously send the message, i.e. block until the send is complete.
   try {
     socket_.send(
-        boost::asio::buffer(buf, sizeof(VisionMessage)));
+		 boost::asio::buffer(buf, sizeof(VisionMessage)));
   } catch (...) {
     LERROR << "AsyncRobotService: Error sending message.";
   }
