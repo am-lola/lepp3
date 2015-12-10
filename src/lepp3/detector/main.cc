@@ -8,6 +8,7 @@
 #include <pcl/io/pcd_grabber.h>
 
 #include "lepp3/BaseObstacleDetector.hpp"
+#include "lepp3/SurfaceDetector.hpp"
 #include "lepp3/GrabberVideoSource.hpp"
 #include "lepp3/BaseVideoSource.hpp"
 #include "lepp3/VideoObserver.hpp"
@@ -16,14 +17,14 @@
 
 #include "lepp3/visualization/EchoObserver.hpp"
 #include "lepp3/visualization/ObstacleVisualizer.hpp"
+#include "lepp3/visualization/SurfaceVisualizer.hpp"
 
 #include "lepp3/filter/TruncateFilter.hpp"
 #include "lepp3/filter/SensorCalibrationFilter.hpp"
 
 #include "lepp3/models/ObjectModel.h"
 #include "deps/easylogging++.h"
-_INITIALIZE_EASYLOGGINGPP
-
+ _INITIALIZE_EASYLOGGINGPP
 
 using namespace lepp;
 
@@ -62,7 +63,7 @@ buildFilteredSource(boost::shared_ptr<VideoSource<PointT> > raw) {
   }
   {
     boost::shared_ptr<PointFilter<PointT> > filter(
-        new TruncateFilter<PointT>(2));
+        new TruncateFilter<PointT>(2)); // STEP SIZE --> 1 CM
     source->addFilter(filter);
   }
 
@@ -104,6 +105,7 @@ boost::shared_ptr<VideoSource<PointT> > GetVideoSource(int argc, char* argv[]) {
   return boost::shared_ptr<VideoSource<PointT> >();
 }
 
+
 int main(int argc, char* argv[]) {
   // Obtain a video source based on the command line arguments received
   boost::shared_ptr<VideoSource<PointT> > raw_source(GetVideoSource(argc, argv));
@@ -115,40 +117,68 @@ int main(int argc, char* argv[]) {
   boost::shared_ptr<FilteredVideoSource<PointT> > source(
       buildFilteredSource(raw_source));
 
-  // Prepare the approximator that the detector is to use.
+  boost::shared_ptr<ObjectApproximator<PointT> > surface_simple_approx(
+      boost::shared_ptr<ObjectApproximator<PointT> >(
+        new MomentOfInertiaObjectApproximator<PointT>));  
+
+  boost::shared_ptr<CompositeSplitStrategy<PointT> > surfaceSplitter(
+      new CompositeSplitStrategy<PointT>);
+  surfaceSplitter->addSplitCondition(boost::shared_ptr<SplitCondition<PointT> >(
+      new DepthLimitSplitCondition<PointT>(1)));
+
+  // Prepare the detector
+  boost::shared_ptr<ObjectApproximator<PointT> > surfaceApprox(
+      new SplitObjectApproximator<PointT>(surface_simple_approx, surfaceSplitter));
+
+  boost::shared_ptr<SurfaceDetector<PointT> > surfaceDetector(
+      new SurfaceDetector<PointT>(surfaceApprox));
+  source->attachObserver(surfaceDetector);
+  
+  // Prepare the result visualizer...
+  boost::shared_ptr<SurfaceVisualizer<PointT> > surfaceVisualizer(
+        new SurfaceVisualizer<PointT>());
+  // Attaching the visualizer to the source: allow it to display the original
+  // point cloud.
+  source->attachObserver(surfaceVisualizer);
+  surfaceDetector->attachSurfaceAggregator(surfaceVisualizer);
+
+   /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+   /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+   /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+
+// Prepare the approximator that the detector is to use.
   // First, the simple approximator...
-  boost::shared_ptr<ObjectApproximator<PointT> > simple_approx(
+  /*
+  boost::shared_ptr<ObjectApproximator<PointT> > obstacle_simple_approx(
       boost::shared_ptr<ObjectApproximator<PointT> >(
         new MomentOfInertiaObjectApproximator<PointT>));
   // ...then the split strategy
-  boost::shared_ptr<CompositeSplitStrategy<PointT> > splitter(
+  boost::shared_ptr<CompositeSplitStrategy<PointT> > obstacleSplitter(
       new CompositeSplitStrategy<PointT>);
-  splitter->addSplitCondition(boost::shared_ptr<SplitCondition<PointT> >(
+  obstacleSplitter->addSplitCondition(boost::shared_ptr<SplitCondition<PointT> >(
       new DepthLimitSplitCondition<PointT>(1)));
   // ...finally, wrap those into a `SplitObjectApproximator` that is given
   // to the detector.
-  boost::shared_ptr<ObjectApproximator<PointT> > approx(
-      new SplitObjectApproximator<PointT>(simple_approx, splitter));
+  boost::shared_ptr<ObjectApproximator<PointT> > obstacleApprox(
+      new SplitObjectApproximator<PointT>(obstacle_simple_approx, obstacleSplitter));
   // Prepare the detector
-  boost::shared_ptr<BaseObstacleDetector<PointT> > detector(
-      new BaseObstacleDetector<PointT>(approx));
+  boost::shared_ptr<BaseObstacleDetector<PointT> > obstacleDetector(
+      new BaseObstacleDetector<PointT>(obstacleApprox));
   // Attaching the detector to the source: process the point clouds obtained
   // by the source.
-  source->attachObserver(detector);
+  source->attachObserver(obstacleDetector);
 
-  // Prepare the result visualizer...
-  boost::shared_ptr<ObstacleVisualizer<PointT> > visualizer(
-      new ObstacleVisualizer<PointT>());
-  // Attaching the visualizer to the source: allow it to display the original
-  // point cloud.
-  source->attachObserver(visualizer);
+  boost::shared_ptr<ObstacleVisualizer<PointT> > obstacleVisualizer(
+    new ObstacleVisualizer<PointT>());
+
   // The visualizer is additionally decorated by the "smoothener" to smooth out
   // the output...
   boost::shared_ptr<SmoothObstacleAggregator> smooth_decorator(
       new SmoothObstacleAggregator);
-  detector->attachObstacleAggregator(smooth_decorator);
-  smooth_decorator->attachObstacleAggregator(visualizer);
-
+  obstacleDetector->attachObstacleAggregator(smooth_decorator);
+  smooth_decorator->attachObstacleAggregator(obstacleVisualizer);
+  source->attachObserver(obstacleVisualizer);
+  */
   // Starts capturing new frames and forwarding them to attached observers.
   source->open();
 
@@ -159,3 +189,4 @@ int main(int argc, char* argv[]) {
 
   return 0;
 }
+
