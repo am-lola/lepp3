@@ -6,4 +6,4 @@ dir="build"
 echo "Building the project..."
 echo "Destination directory $dir"
 
-mkdir $dir && cd $dir && cmake ../src && make -j4
+rm -r $dir && mkdir $dir && cd $dir && cmake ../src && make -j4
