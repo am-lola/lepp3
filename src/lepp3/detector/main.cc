@@ -16,8 +16,7 @@
 #include "lepp3/SmoothObstacleAggregator.hpp"
 
 #include "lepp3/visualization/EchoObserver.hpp"
-#include "lepp3/visualization/ObstacleVisualizer.hpp"
-#include "lepp3/visualization/SurfaceVisualizer.hpp"
+#include "lepp3/visualization/SurfObstVisualizer.hpp"
 
 #include "lepp3/filter/TruncateFilter.hpp"
 #include "lepp3/filter/SensorCalibrationFilter.hpp"
@@ -36,11 +35,11 @@ namespace {
  * Prints out the expected CLI usage of the program.
  */
 void PrintUsage() {
-  std::cout << "usage: detector [--pcd file | --oni file | --stream]"
+  std::cerr << "usage: detector [--pcd file | --oni file | --stream]"
       << std::endl;
-  std::cout << "--pcd    : " << "read the input from a .pcd file" << std::endl;
-  std::cout << "--oni    : " << "read the input from an .oni file" << std::endl;
-  std::cout << "--stream : " << "read the input from a live stream based on a"
+  std::cerr << "--pcd    : " << "read the input from a .pcd file" << std::endl;
+  std::cerr << "--oni    : " << "read the input from an .oni file" << std::endl;
+  std::cerr << "--stream : " << "read the input from a live stream based on a"
       << " sensor attached to the computer" << std::endl;
 }
 
@@ -106,6 +105,8 @@ boost::shared_ptr<VideoSource<PointT> > GetVideoSource(int argc, char* argv[]) {
 }
 
 
+
+
 int main(int argc, char* argv[]) {
   // Obtain a video source based on the command line arguments received
   boost::shared_ptr<VideoSource<PointT> > raw_source(GetVideoSource(argc, argv));
@@ -113,6 +114,8 @@ int main(int argc, char* argv[]) {
     PrintUsage();
     return 1;
   }
+
+  //~~~~~~~~~~~~~~~~~~~~~~~Surfaces~~~~~~~~~~~~~~~~~~~~~~~~
   // Wrap the raw source in a filter
   boost::shared_ptr<FilteredVideoSource<PointT> > source(
       buildFilteredSource(raw_source));
@@ -133,22 +136,11 @@ int main(int argc, char* argv[]) {
   boost::shared_ptr<SurfaceDetector<PointT> > surfaceDetector(
       new SurfaceDetector<PointT>(surfaceApprox));
   source->attachObserver(surfaceDetector);
-  
-  // Prepare the result visualizer...
-  boost::shared_ptr<SurfaceVisualizer<PointT> > surfaceVisualizer(
-        new SurfaceVisualizer<PointT>());
-  // Attaching the visualizer to the source: allow it to display the original
-  // point cloud.
-  source->attachObserver(surfaceVisualizer);
-  surfaceDetector->attachSurfaceAggregator(surfaceVisualizer);
 
-   /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-   /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-   /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
+//~~~~~~~~~~~~~~~~~~~~~~~Obstacles~~~~~~~~~~~~~~~~~~~~~~~~
 // Prepare the approximator that the detector is to use.
   // First, the simple approximator...
-  /*
   boost::shared_ptr<ObjectApproximator<PointT> > obstacle_simple_approx(
       boost::shared_ptr<ObjectApproximator<PointT> >(
         new MomentOfInertiaObjectApproximator<PointT>));
@@ -168,25 +160,28 @@ int main(int argc, char* argv[]) {
   // by the source.
   source->attachObserver(obstacleDetector);
 
-  boost::shared_ptr<ObstacleVisualizer<PointT> > obstacleVisualizer(
-    new ObstacleVisualizer<PointT>());
-
   // The visualizer is additionally decorated by the "smoothener" to smooth out
   // the output...
   boost::shared_ptr<SmoothObstacleAggregator> smooth_decorator(
       new SmoothObstacleAggregator);
   obstacleDetector->attachObstacleAggregator(smooth_decorator);
-  smooth_decorator->attachObstacleAggregator(obstacleVisualizer);
-  source->attachObserver(obstacleVisualizer);
-  */
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~Visualizer~~~~~~~~~~~~~~~~~~~~~~~~
+  // Prepare the result visualizer...
+  boost::shared_ptr<SurfObstVisualizer<PointT> > surfObstVisualizer(
+    new SurfObstVisualizer<PointT>());
+
+  // Attaching the visualizer to the source: allow it to display the original point cloud.
+  source->attachObserver(surfObstVisualizer);
+  surfaceDetector->attachSurfaceAggregator(surfObstVisualizer);
+  smooth_decorator->attachObstacleAggregator(surfObstVisualizer);
+  
   // Starts capturing new frames and forwarding them to attached observers.
   source->open();
 
-  std::cout << "Waiting forever..." << std::endl;
-  std::cout << "(^C to exit)" << std::endl;
   while (true)
     boost::this_thread::sleep(boost::posix_time::milliseconds(8000));
 
   return 0;
 }
-

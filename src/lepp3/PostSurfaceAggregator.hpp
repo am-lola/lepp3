@@ -222,9 +222,9 @@ SmoothObstacleAggregator::model_id_t SmoothObstacleAggregator::getMatchByDistanc
 		double const dist = (p.x - query_point.x) * (p.x - query_point.x)
 				+ (p.y - query_point.y) * (p.y - query_point.y)
 				+ (p.z - query_point.z) * (p.z - query_point.z);
-		std::cout << "Distance was " << dist << " ";
+		//std::cout << "Distance was " << dist << " ";
 		if (dist <= 0.05) {
-			std::cout << " accept";
+			//std::cout << " accept";
 			if (!found)
 				min_dist = dist;
 			found = true;
@@ -233,7 +233,7 @@ SmoothObstacleAggregator::model_id_t SmoothObstacleAggregator::getMatchByDistanc
 				match = it->first;
 			}
 		}
-		std::cout << std::endl;
+		//std::cout << std::endl;
 	}
 
 	if (found) {
@@ -261,10 +261,10 @@ std::map<SmoothObstacleAggregator::model_id_t, size_t> SmoothObstacleAggregator:
 	// being tracked or give it a brand new model ID, if we are unable to find a
 	// match.
 	for (size_t i = 0; i < new_obstacles.size(); ++i) {
-		std::cout << "Matching " << i << " (" << *new_obstacles[i] << ")"
-				<< std::endl;
+		//std::cout << "Matching " << i << " (" << *new_obstacles[i] << ")"
+		//		<< std::endl;
 		model_id_t const model_id = getMatchByDistance(new_obstacles[i]);
-		std::cout << "Matched " << i << " --> " << model_id << std::endl;
+		//std::cout << "Matched " << i << " --> " << model_id << std::endl;
 		correspondence[model_id] = i;
 		// If this one wasn't in the tracked models before, add it!
 		if (tracked_models_.find(model_id) == tracked_models_.end()) {
@@ -277,8 +277,8 @@ std::map<SmoothObstacleAggregator::model_id_t, size_t> SmoothObstacleAggregator:
 	for (size_t i = 0; i < new_in_frame.size(); ++i) {
 		model_id_t const& model_id = new_in_frame[i].first;
 		size_t const corresp = new_in_frame[i].second;
-		std::cout << "Inserting previously untracked model " << model_id
-				<< std::endl;
+		//std::cout << "Inserting previously untracked model " << model_id
+		//		<< std::endl;
 		tracked_models_[model_id] = new_obstacles[corresp];
 		frames_lost_[model_id] = 0;
 		frames_found_[model_id] = 0;
@@ -321,8 +321,8 @@ void SmoothObstacleAggregator::updateLostAndFound(
 		if (new_matches.find(model_id) != new_matches.end()) {
 			// Update the seen count only if the object isn't already materialized.
 			if (model_idx_in_list_.find(model_id) == model_idx_in_list_.end()) {
-				std::cout << "Incrementing the seen count for " << model_id
-						<< std::endl;
+				//std::cout << "Incrementing the seen count for " << model_id
+				//		<< std::endl;
 				++frames_found_[model_id];
 			}
 			// ...but always reset its lost counter, since we've now seen it.
@@ -343,8 +343,8 @@ void SmoothObstacleAggregator::dropLostObjects() {
 	int const LOST_LIMIT = 10;
 	while (it != frames_lost_.end()) {
 		if (it->second >= LOST_LIMIT) {
-			std::cout << "Object " << it->first
-					<< " not found 5 times in a row: DROPPING" << std::endl;
+			//std::cout << "Object " << it->first
+			//		<< " not found 5 times in a row: DROPPING" << std::endl;
 			// Stop tracking the model, since it's been gone for a while.
 			if (tracked_models_.find(it->first) != tracked_models_.end()) {
 				tracked_models_.erase(tracked_models_.find(it->first));
@@ -361,9 +361,9 @@ void SmoothObstacleAggregator::dropLostObjects() {
 			}
 			frames_lost_.erase(it++);
 		} else {
-			std::cout << "Object " << it->first
-					<< " not lost enough times to be dropped" << " ("
-					<< it->second << ")" << std::endl;
+			//std::cout << "Object " << it->first
+			//		<< " not lost enough times to be dropped" << " ("
+			//		<< it->second << ")" << std::endl;
 			++it;
 		}
 	}
@@ -377,8 +377,8 @@ void SmoothObstacleAggregator::materializeFoundObjects() {
 		model_id_t const model_id = it->first;
 		int const seen_count = it->second;
 		if (seen_count >= FOUND_LIMIT) {
-			std::cout << "Object found " << model_id
-					<< " 5 times in a row: INCLUDING!" << std::endl;
+			//std::cout << "Object found " << model_id
+			//		<< " 5 times in a row: INCLUDING!" << std::endl;
 			// Get the corresponding model
 			ObjectModelPtr const& model = tracked_models_.find(model_id)->second;
 			// Materialize it...
@@ -392,9 +392,9 @@ void SmoothObstacleAggregator::materializeFoundObjects() {
 			// up adding it more than once to the list of materialized objects.
 			frames_found_.erase(it++);
 		} else {
-			std::cout << "Object " << it->first
-					<< " not seen enough times to be included" << " ("
-					<< it->second << ")" << std::endl;
+			//std::cout << "Object " << it->first
+			//		<< " not seen enough times to be included" << " ("
+			//		<< it->second << ")" << std::endl;
 			++it;
 		}
 	}
@@ -418,7 +418,7 @@ void SmoothObstacleAggregator::notifyAggregators(
 void SmoothObstacleAggregator::updateObstacles(
 		std::vector<ObjectModelPtr> const& obstacles) {
 	++frame_cnt_;
-	std::cout << "#new = " << obstacles.size() << std::endl;
+	//std::cout << "#new = " << obstacles.size() << std::endl;
 
 	std::map<model_id_t, size_t> correspondence = matchToPrevious(obstacles);
 	updateLostAndFound(correspondence);
@@ -427,8 +427,8 @@ void SmoothObstacleAggregator::updateObstacles(
 	materializeFoundObjects();
 	std::vector<ObjectModelPtr> smooth_obstacles(copyMaterialized());
 
-	std::cout << "Real in this frame = " << smooth_obstacles.size()
-			<< std::endl;
+	//std::cout << "Real in this frame = " << smooth_obstacles.size()
+	//		<< std::endl;
 	notifyAggregators(smooth_obstacles);
 }
 
@@ -495,12 +495,12 @@ void PostSurfaceAggregator::getConcaveHull(
 		chull.setKeepInformation(true);
 		chull.reconstruct(*cloud_hull, polygons);
 
-		std::cerr << "Concave hull has: " << cloud_hull->points.size()
-				<< " data points." << std::endl;
-		std::cerr << "Polygons size: " << polygons.size()<< std::endl;
+		//std::cerr << "Concave hull has: " << cloud_hull->points.size()
+		//		<< " data points." << std::endl;
+		//std::cerr << "Polygons size: " << polygons.size()<< std::endl;
 
-		for (int m = 0; m < polygons.size(); m++)
-			cout << " " << m << ": " << polygons[m] << std::endl;
+		//for (int m = 0; m < polygons.size(); m++)
+		//	cout << " " << m << ": " << polygons[m] << std::endl;
 
 		//std::cerr << "Cloud " << i << "  has area: "<< PCL_Polygon_Area_Calculation(cloud_hull) / 1000000<< std::endl;
 

@@ -314,7 +314,7 @@ void SmoothObstacleAggregator::dropLostObjects() {
   int const LOST_LIMIT = 10;
   while (it != frames_lost_.end()) {
     if (it->second >= LOST_LIMIT) {
-      LTRACE << "Object " << it->first << " not found 5 times in a row: DROPPING";
+      //LTRACE << "Object " << it->first << " not found 5 times in a row: DROPPING";
       // Stop tracking the model, since it's been gone for a while.
       if (tracked_models_.find(it->first) != tracked_models_.end()) {
         tracked_models_.erase(tracked_models_.find(it->first));
@@ -343,7 +343,7 @@ void SmoothObstacleAggregator::materializeFoundObjects() {
     model_id_t const model_id = it->first;
     int const seen_count = it->second;
     if (seen_count >= FOUND_LIMIT) {
-      LTRACE << "Object found " << model_id << " 5 times in a row: INCLUDING!";
+      //LTRACE << "Object found " << model_id << " 5 times in a row: INCLUDING!";
       // Get the corresponding model
       ObjectModelPtr const& model = tracked_models_.find(model_id)->second;
       // Materialize it...
@@ -371,7 +371,7 @@ std::vector<ObjectModelPtr> SmoothObstacleAggregator::copyMaterialized() {
 void SmoothObstacleAggregator::updateObstacles(
     std::vector<ObjectModelPtr> const& obstacles) {
   ++frame_cnt_;
-  LINFO << "SmoothAggregator: Initial objects in frame #" << frame_cnt_ << " == " << obstacles.size();
+  //LINFO << "SmoothAggregator: Initial objects in frame #" << frame_cnt_ << " == " << obstacles.size();
 
   std::map<model_id_t, size_t> correspondence = matchToPrevious(obstacles);
   updateLostAndFound(correspondence);
@@ -380,7 +380,7 @@ void SmoothObstacleAggregator::updateObstacles(
   materializeFoundObjects();
   std::vector<ObjectModelPtr> smooth_obstacles(copyMaterialized());
 
-  LINFO << "SmoothAggregator: Real objects in frame #" << frame_cnt_ << " == " << smooth_obstacles.size();
+  //LINFO << "SmoothAggregator: Real objects in frame #" << frame_cnt_ << " == " << smooth_obstacles.size();
   notifyObstacles(smooth_obstacles);
 }
 

@@ -1,7 +1,8 @@
-#ifndef LEPP3_VISUALIZATION_OBSTACLE_VISUALIZER_H__
-#define LEPP3_VISUALIZATION_OBSTACLE_VISUALIZER_H__
+#ifndef LEPP3_VISUALIZATION_SURFOBST_VISUALIZER_H__
+#define LEPP3_VISUALIZATION_SURFOBST_VISUALIZER_H__
 
 #include <sstream>
+#include <vector>
 
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/visualization/pcl_visualizer.h>
@@ -9,6 +10,7 @@
 #include "lepp3/VideoObserver.hpp"
 #include "lepp3/ObstacleAggregator.hpp"
 #include "lepp3/models/ObjectModel.h"
+#include "lepp3/SurfaceAggregator.hpp"
 
 namespace lepp {
 
@@ -123,11 +125,9 @@ void ModelDrawer::visitCapsule(lepp::CapsuleModel& capsule) {
  * Implements the VideoObserver and ObstacleAggregator interfaces.
  */
 template<class PointT>
-class ObstacleVisualizer
-  : public VideoObserver<PointT>,
-    public ObstacleAggregator {
+class SurfObstVisualizer : public VideoObserver<PointT>, public ObstacleAggregator, public SurfaceAggregator<PointT> {
 public:
-  ObstacleVisualizer() : viewer_("ObstacleVisualizer") {}
+  SurfObstVisualizer() : viewer_("SurfObstVisualizer") {}
 
   /**
    * VideoObserver interface implementation: processes the current point cloud.
@@ -143,6 +143,13 @@ public:
    */
   virtual void updateObstacles(std::vector<ObjectModelPtr> const& obstacles);
 
+  /**
+   * SurfaceAggregator interface implementation: processes detected surfaces.
+  */
+  virtual void updateSurfaces(
+          std::vector<typename pcl::PointCloud<PointT>::ConstPtr> cloud_surfaces);
+
+  
 private:
   /**
    * Used for the visualization of the scene.
@@ -155,10 +162,15 @@ private:
    */
   void drawShapes(std::vector<ObjectModelPtr> obstacles,
                   pcl::visualization::PCLVisualizer& viewer);
+
+
+  void drawSurfaces(
+            std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces,
+      pcl::visualization::PCLVisualizer& viewer);
 };
 
 template<class PointT>
-void ObstacleVisualizer<PointT>::drawShapes(
+void SurfObstVisualizer<PointT>::drawShapes(
     std::vector<ObjectModelPtr> obstacles,
     pcl::visualization::PCLVisualizer& viewer) {
   // Remove all old shapes...
@@ -173,14 +185,80 @@ void ObstacleVisualizer<PointT>::drawShapes(
 }
 
 template<class PointT>
-void ObstacleVisualizer<PointT>::updateObstacles(
+void SurfObstVisualizer<PointT>::updateObstacles(
     std::vector<ObjectModelPtr> const& obstacles) {
   pcl::visualization::CloudViewer::VizCallable obstacle_visualization =
-      boost::bind(&ObstacleVisualizer::drawShapes,
+      boost::bind(&SurfObstVisualizer::drawShapes,
                   this, obstacles, _1);
   viewer_.runOnVisualizationThreadOnce(obstacle_visualization);
 }
 
-} // namespace lepp
 
+template<class PointT>
+void SurfObstVisualizer<PointT>::drawSurfaces(
+        std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces,
+    pcl::visualization::PCLVisualizer& pclViz) {
+
+     pclViz.removePointCloud("SUR1",0);
+     pclViz.removePointCloud("SUR2",0);
+     pclViz.removePointCloud("SUR3",0);
+     pclViz.removePointCloud("SUR4",0);
+
+    size_t const sz = surfaces.size();
+  for (size_t i = 0; i < sz; ++i) {
+
+     if (i ==0) {
+            if (!pclViz.updatePointCloud(surfaces[i], "SUR1"))
+                pclViz.addPointCloud(surfaces[i], "SUR1");                       //RED
+      pclViz.setPointCloudRenderingProperties(
+          pcl::visualization::PCL_VISUALIZER_COLOR, 1.0, 0, 0,
+                    "SUR1");
+    }
+    else if (i == 1) {
+            if (!pclViz.updatePointCloud(surfaces[i], "SUR2"))                  //GREEN
+                pclViz.addPointCloud(surfaces[i], "SUR2");
+      pclViz.setPointCloudRenderingProperties(
+          pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1.0, 0,
+                    "SUR2");
+    }
+    else if (i == 2) {
+            if (!pclViz.updatePointCloud(surfaces[i], "SUR3"))                  //BLUE
+                pclViz.addPointCloud(surfaces[i], "SUR3");
+      pclViz.setPointCloudRenderingProperties(
+          pcl::visualization::PCL_VISUALIZER_COLOR, 0, 0, 1.0,
+                    "SUR3");
+    }
+    else if (i == 3) {
+            if (!pclViz.updatePointCloud(surfaces[i], "SUR4"))
+                pclViz.addPointCloud(surfaces[i], "SUR4");                       //PURPLE
+      pclViz.setPointCloudRenderingProperties(
+          pcl::visualization::PCL_VISUALIZER_COLOR, 0.580392, 0,
+                    0.827451, "SUR4");
+    }
+//    else if (i == 5) {
+//      if (!pclViz.updatePointCloud(surfaces[i], "SUR5"))
+//        pclViz.addPointCloud(surfaces[i], "SUR5");                      //YELLOW
+//      pclViz.setPointCloudRenderingProperties(
+//          pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0.843137, 0,
+//          "SUR5");
+//    }
+  }
+
+  //std::cout << "exiting stair drawer..." << std::endl;
+  //std::cout << "=======================" << std::endl;
+}
+
+template<class PointT>
+void SurfObstVisualizer<PointT>::updateSurfaces(
+        std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces) {
+    //std::cout << "entered updateSurfaces" << std::endl;
+    pcl::visualization::CloudViewer::VizCallable surface_visualization =
+            boost::bind(&SurfObstVisualizer::drawSurfaces, this, surfaces, _1);
+  //std::cout << "call runOnVisualizationThreadOnce" << std::endl;
+    viewer_.runOnVisualizationThread(surface_visualization);
+    //std::cout << "exiting updateSurfaces..." << std::endl;
+}
+
+
+} // namespace lepp
 #endif

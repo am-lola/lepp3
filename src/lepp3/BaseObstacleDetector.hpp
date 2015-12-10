@@ -133,7 +133,7 @@ void BaseObstacleDetector<PointT>::update() {
     models.push_back(approximator_->approximate(segments[i]));
   }
   t.stop();
-  PINFO << "Obstacle detection took " << t.duration();
+  //PINFO << "Obstacle detection took " << t.duration();
 
   notifyObstacles(models);
 }

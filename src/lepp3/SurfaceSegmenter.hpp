@@ -189,7 +189,7 @@ void SurfaceSegmenter<PointT>::findSurfaces(PointCloudPtr const& cloud_filtered)
 		// We didn't get any plane in this run. Therefore, there are no more planes
 		// to be removed from the cloud.
 		if (current_plane_indices->indices.size() == 0) {
-			std::cout << "cannot find more planes > BREAK" << std::endl;
+			//std::cout << "cannot find more planes > BREAK" << std::endl;
 			break;
 		}
 
@@ -219,9 +219,9 @@ void SurfaceSegmenter<PointT>::findSurfaces(PointCloudPtr const& cloud_filtered)
         //vec_cloud_surfaces_.push_back(cloud_planar_surface);
 	}
 
-	std::cout << "The number of surface groups: " << vec_segments.size()
-			<< std::endl;
-	std::cout << "The number of coeffs: " << m_coefficients.size() << std::endl;
+	//std::cout << "The number of surface groups: " << vec_segments.size()
+	//		<< std::endl;
+	//std::cout << "The number of coeffs: " << m_coefficients.size() << std::endl;
 }
 
 template<class PointT>
@@ -255,7 +255,7 @@ template<class PointT> double SurfaceSegmenter<PointT>::getAngle(
 			+ (m_coefficients.at(index).values[1] * coeffs.values[1])
 			+ (m_coefficients.at(index).values[2] * coeffs.values[2]);
 	double angle = acos(scalar_product) * 180.0 / M_PI;
-	cout << "The angle from scalar product: " << angle << std::endl;
+	//cout << "The angle from scalar product: " << angle << std::endl;
 
 	return angle;
 }
@@ -272,7 +272,7 @@ void SurfaceSegmenter<PointT>::classify(PointCloudPtr const& cloud_planar_surfac
 		double angle = getAngle(coeffs, i);
 		if (angle < 3 || angle > 177) {
 
-			cout << "Expected addition to surface: " << i << std::endl;
+			//cout << "Expected addition to surface: " << i << std::endl;
 
 			coeff_exists = addPlane(i, cloud_planar_surface);
 			break;
@@ -281,11 +281,11 @@ void SurfaceSegmenter<PointT>::classify(PointCloudPtr const& cloud_planar_surfac
 
 	if (coeff_exists == false) {
 		coeff_exists = addCoefficient(cloud_planar_surface, coeffs);
-		cout << "coefficients added" << std::endl;
+		//cout << "coefficients added" << std::endl;
 	}
 
-	if (coeff_exists == false)
-		cout << "ERROR at classification" << std::endl;
+	//if (coeff_exists == false)
+		//cout << "ERROR at classification" << std::endl;
 }
 template<class PointT>
 bool SurfaceSegmenter<PointT>::addCoefficient(
@@ -295,7 +295,7 @@ bool SurfaceSegmenter<PointT>::addCoefficient(
 	vec_surface.push_back(cloud_planar_surface);
 	m_coefficients.push_back(coeffs);
 
-	cout << "New coefficient and plane added!" << std::endl;
+	//cout << "New coefficient and plane added!" << std::endl;
 
 	return true;
 }
@@ -305,7 +305,7 @@ bool SurfaceSegmenter<PointT>::addPlane(int const index,
 		const PointCloudPtr & cloud_planar_surface) {
 
 	*vec_surface.at(index) += *cloud_planar_surface;
-	cout << "Added to surface:" << index << std::endl;
+	//cout << "Added to surface:" << index << std::endl;
 	return true;
 
 }
@@ -316,7 +316,7 @@ template<class PointT> std::vector<typename pcl::PointCloud<PointT>::ConstPtr> S
 				vec_surface.at(i));
 		clustersToPointClouds(vec_surface.at(i), cluster_indices);
 	}
-    cout << "Cluster size:" << vec_cloud_surfaces_.size() << std::endl;
+    //cout << "Cluster size:" << vec_cloud_surfaces_.size() << std::endl;
 
 
 
@@ -343,7 +343,7 @@ void SurfaceSegmenter<PointT>::clustersToPointClouds(PointCloudPtr const& cloud_
         vec_cloud_surfaces_.push_back(current);
 	}
 
-    std::cout << "surfaces number:" << vec_cloud_surfaces_.size() << std::endl;
+    //std::cout << "surfaces number:" << vec_cloud_surfaces_.size() << std::endl;
 }
 
 template<class PointT>

@@ -21,7 +21,7 @@
 #include "lepp3/SplitApproximator.hpp"
 
 #include "lepp3/visualization/EchoObserver.hpp"
-#include "lepp3/visualization/ObstacleVisualizer.hpp"
+#include "lepp3/visualization/SurfObstVisualizer.hpp"
 
 #include "lepp3/filter/TruncateFilter.hpp"
 #include "lepp3/filter/SensorCalibrationFilter.hpp"
@@ -199,7 +199,7 @@ protected:
 
   boost::shared_ptr<IObstacleDetector> detector_;
 
-  boost::shared_ptr<ObstacleVisualizer<PointT> > visualizer_;
+  boost::shared_ptr<SurfObstVisualizer<PointT> > visualizer_;
 };
 
 /**
@@ -312,7 +312,7 @@ protected:
     // Factor out to a member ...
     bool visualization = true;
     if (visualization) {
-      this->visualizer_.reset(new ObstacleVisualizer<PointT>());
+      this->visualizer_.reset(new SurfObstVisualizer<PointT>());
       // Attach the visualizer to both the point cloud source...
       this->source()->attachObserver(this->visualizer_);
       // ...as well as to the obstacle detector
@@ -582,7 +582,8 @@ protected:
     std::string enabled = expectKey<std::string>("enabled");
     bool visualization = enabled == "true";
     if (visualization) {
-      this->visualizer_.reset(new ObstacleVisualizer<PointT>());
+      //this->visualizer_.reset(new ObstacleVisualizer<PointT>());
+      this->visualizer_.reset(new SurfObstVisualizer<PointT>());
       // Attach the visualizer to both the point cloud source...
       this->source()->attachObserver(this->visualizer_);
       // ...as well as to the obstacle detector

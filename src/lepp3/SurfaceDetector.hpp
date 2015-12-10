@@ -84,7 +84,7 @@ void SurfaceDetector<PointT>::notifyNewFrame(
   try {
     update();
   } catch (...) {
-    std::cerr << "SurfaceDetector: Surface detection failed ..." << std::endl;
+   // std::cerr << "SurfaceDetector: Surface detection failed ..." << std::endl;
   }
 }
 
@@ -95,7 +95,7 @@ void SurfaceDetector<PointT>::update() {
   t.start();
   std::vector<CloudConstPtr> surfaces(segmenter_->segment(cloud_));
   t.stop();
-  std::cerr << "Surface segmentation took " << t.duration() << std::endl;
+  //std::cerr << "Surface segmentation took " << t.duration() << std::endl;
 
   notifySurfaces(surfaces);
 

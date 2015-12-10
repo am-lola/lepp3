@@ -208,8 +208,8 @@ void FilteredVideoSource<PointT>::notifyNewFrame(
   // ...and we're done!
   t.stop();
 
-  LTRACE << "Total included points " << cloud_filtered->size();
-  PINFO << "Filtering took " << t.duration();
+  //LTRACE << "Total included points " << cloud_filtered->size();
+  //PINFO << "Filtering took " << t.duration();
   // Finally, the cloud that is emitted by this instance is the filtered cloud.
   this->setNextFrame(cloud_filtered);
 }
