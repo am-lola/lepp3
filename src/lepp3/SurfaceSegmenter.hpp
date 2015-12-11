@@ -18,8 +18,8 @@ class SurfaceSegmenter: public BaseSegmenter<PointT> {
 public:
     SurfaceSegmenter();
 
-	virtual std::vector<typename pcl::PointCloud<PointT>::ConstPtr> segment(
-			const typename pcl::PointCloud<PointT>::ConstPtr& cloud);
+	virtual void segment(const typename pcl::PointCloud<PointT>::ConstPtr& cloud,
+			std::vector<typename pcl::PointCloud<PointT>::ConstPtr> &surfaces);
 private:
 	// Helper typedefs to make the implementation code cleaner
 	typedef pcl::PointCloud<PointT> PointCloudT;
@@ -347,13 +347,13 @@ void SurfaceSegmenter<PointT>::clustersToPointClouds(PointCloudPtr const& cloud_
 }
 
 template<class PointT>
-std::vector<typename pcl::PointCloud<PointT>::ConstPtr> SurfaceSegmenter<PointT>::segment(
-		const typename pcl::PointCloud<PointT>::ConstPtr& cloud) {
+void SurfaceSegmenter<PointT>::segment(
+		const typename pcl::PointCloud<PointT>::ConstPtr& cloud,
+		std::vector<typename pcl::PointCloud<PointT>::ConstPtr> &surfaces) {
 	PointCloudPtr cloud_filtered = preprocessCloud(cloud);
     // extract those planes that are considered as surfaces and put them in cloud_surfaces_
     findSurfaces(cloud_filtered);
-	return cluster();
-	//return vec_segments;
+    surfaces = cluster();
 }
 
 } // namespace lepp

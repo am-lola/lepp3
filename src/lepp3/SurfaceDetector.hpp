@@ -91,9 +91,12 @@ void SurfaceDetector<PointT>::notifyNewFrame(
 template<class PointT>
 void SurfaceDetector<PointT>::update() {
 
+  typename pcl::PointCloud<PointT>::Ptr cloudMinusSurfaces(new pcl::PointCloud<PointT>());
+  std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces;
+
   Timer t;
   t.start();
-  std::vector<CloudConstPtr> surfaces(segmenter_->segment(cloud_));
+  segmenter_->segment(cloud_,surfaces);
   t.stop();
   //std::cerr << "Surface segmentation took " << t.duration() << std::endl;
 

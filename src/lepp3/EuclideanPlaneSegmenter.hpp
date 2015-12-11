@@ -21,8 +21,9 @@ class EuclideanPlaneSegmenter : public BaseSegmenter<PointT> {
 public:
   EuclideanPlaneSegmenter();
 
-  virtual std::vector<typename pcl::PointCloud<PointT>::ConstPtr> segment(
-      const typename pcl::PointCloud<PointT>::ConstPtr& cloud);
+  virtual void segment(
+      const typename pcl::PointCloud<PointT>::ConstPtr& cloud,
+      std::vector<typename pcl::PointCloud<PointT>::ConstPtr> &segments);
 private:
   // Helper typedefs to make the implementation code cleaner
   typedef pcl::PointCloud<PointT> PointCloudT;
@@ -186,13 +187,13 @@ EuclideanPlaneSegmenter<PointT>::clustersToPointClouds(
 }
 
 template<class PointT>
-std::vector<typename pcl::PointCloud<PointT>::ConstPtr>
-EuclideanPlaneSegmenter<PointT>::segment(
-    const typename pcl::PointCloud<PointT>::ConstPtr& cloud) {
+void EuclideanPlaneSegmenter<PointT>::segment(
+    const typename pcl::PointCloud<PointT>::ConstPtr& cloud,
+    std::vector<typename pcl::PointCloud<PointT>::ConstPtr> &segments) {
   PointCloudPtr cloud_filtered = preprocessCloud(cloud);
   removePlanes(cloud_filtered);
   std::vector<pcl::PointIndices> cluster_indices = getClusters(cloud_filtered);
-  return clustersToPointClouds(cloud_filtered, cluster_indices);
+  segments = clustersToPointClouds(cloud_filtered, cluster_indices);
 }
 
 

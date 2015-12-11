@@ -124,7 +124,9 @@ template<class PointT>
 void BaseObstacleDetector<PointT>::update() {
   Timer t;
   t.start();
-  std::vector<PointCloudConstPtr> segments(segmenter_->segment(cloud_));
+
+  std::vector<typename pcl::PointCloud<PointT>::ConstPtr> segments;
+  segmenter_->segment(cloud_, segments);
 
   // Iteratively approximate the segments
   size_t segment_count = segments.size();

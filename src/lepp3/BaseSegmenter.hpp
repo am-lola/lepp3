@@ -22,8 +22,9 @@ public:
    * Returns a number of point clouds representing segments from the given
    * original point cloud.
    */
-  virtual std::vector<typename pcl::PointCloud<PointT>::ConstPtr> segment(
-      const typename pcl::PointCloud<PointT>::ConstPtr& cloud) = 0;
+  virtual void segment(
+      const typename pcl::PointCloud<PointT>::ConstPtr& cloud,
+      std::vector<typename pcl::PointCloud<PointT>::ConstPtr> &surfaces) = 0;
 };
 
 } // namespace lepp
