@@ -158,7 +158,7 @@ int main(int argc, char* argv[]) {
       new BaseObstacleDetector<PointT>(obstacleApprox));
   // Attaching the detector to the source: process the point clouds obtained
   // by the source.
-  source->attachObserver(obstacleDetector);
+  surfaceDetector->attachSurfaceAggregator(obstacleDetector);
 
   // The visualizer is additionally decorated by the "smoothener" to smooth out
   // the output...

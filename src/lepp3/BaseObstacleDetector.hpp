@@ -6,7 +6,6 @@
 
 #include <pcl/visualization/cloud_viewer.h>
 
-#include "lepp3/VideoObserver.hpp"
 #include "lepp3/BaseSegmenter.hpp"
 #include "lepp3/NoopSegmenter.hpp"
 #include "lepp3/EuclideanPlaneSegmenter.hpp"
@@ -14,6 +13,7 @@
 #include "lepp3/ObjectApproximator.hpp"
 #include "lepp3/MomentOfInertiaApproximator.hpp"
 #include "lepp3/SplitApproximator.hpp"
+#include "lepp3/SurfaceAggregator.hpp"
 
 #include "deps/easylogging++.h"
 
@@ -62,8 +62,8 @@ private:
  * of each of them by the given `ObjectApproximator` instance.
  */
 template<class PointT>
-class BaseObstacleDetector : public lepp::VideoObserver<PointT>,
-                             public IObstacleDetector {
+class BaseObstacleDetector : public IObstacleDetector,
+                             public SurfaceAggregator<PointT>{
 public:
   /**
    * Creates a new `BaseObstacleDetector` that will use the given
@@ -73,12 +73,9 @@ public:
   BaseObstacleDetector(boost::shared_ptr<ObjectApproximator<PointT> > approx);
   virtual ~BaseObstacleDetector() {}
 
-  /**
-   * VideoObserver interface method implementation.
-   */
-  virtual void notifyNewFrame(
-      int idx,
-      const typename pcl::PointCloud<PointT>::ConstPtr& point_cloud);
+
+  virtual void updateSurfaces(std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces,
+      typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces);
 
 protected:
   /// Some convenience typedefs
@@ -86,7 +83,7 @@ protected:
   typedef typename pcl::PointCloud<PointT>::ConstPtr PointCloudConstPtr;
 
 private:
-  typename pcl::PointCloud<PointT>::ConstPtr cloud_;
+  typename pcl::PointCloud<PointT>::Ptr cloud_;
 
   boost::shared_ptr<BaseSegmenter<PointT> > segmenter_;
   boost::shared_ptr<ObjectApproximator<PointT> > approximator_;
@@ -108,10 +105,9 @@ BaseObstacleDetector<PointT>::BaseObstacleDetector(
 
 
 template<class PointT>
-void BaseObstacleDetector<PointT>::notifyNewFrame(
-    int id,
-    const typename pcl::PointCloud<PointT>::ConstPtr& point_cloud) {
-  cloud_ = point_cloud;
+void BaseObstacleDetector<PointT>::updateSurfaces(std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces,
+      typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces) {
+  cloud_ = cloudMinusSurfaces;
   try {
     update();
   } catch (...) {
@@ -119,14 +115,13 @@ void BaseObstacleDetector<PointT>::notifyNewFrame(
   }
 }
 
-
 template<class PointT>
 void BaseObstacleDetector<PointT>::update() {
   Timer t;
   t.start();
-
+  typename pcl::PointCloud<PointT>::ConstPtr dummyCloud(new pcl::PointCloud<PointT>());
   std::vector<typename pcl::PointCloud<PointT>::ConstPtr> segments;
-  segmenter_->segment(cloud_, segments);
+  segmenter_->segment(dummyCloud, segments, cloud_);
 
   // Iteratively approximate the segments
   size_t segment_count = segments.size();

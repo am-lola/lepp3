@@ -24,7 +24,8 @@ public:
    */
   virtual void segment(
       const typename pcl::PointCloud<PointT>::ConstPtr& cloud,
-      std::vector<typename pcl::PointCloud<PointT>::ConstPtr> &surfaces) = 0;
+      std::vector<typename pcl::PointCloud<PointT>::ConstPtr> &surfaces,
+      typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces) = 0;
 };
 
 } // namespace lepp

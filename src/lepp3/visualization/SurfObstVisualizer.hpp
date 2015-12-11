@@ -147,7 +147,8 @@ public:
    * SurfaceAggregator interface implementation: processes detected surfaces.
   */
   virtual void updateSurfaces(
-          std::vector<typename pcl::PointCloud<PointT>::ConstPtr> cloud_surfaces);
+          std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces,
+      typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces);
 
   
 private:
@@ -250,7 +251,8 @@ void SurfObstVisualizer<PointT>::drawSurfaces(
 
 template<class PointT>
 void SurfObstVisualizer<PointT>::updateSurfaces(
-        std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces) {
+        std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces,
+      typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces) {
     //std::cout << "entered updateSurfaces" << std::endl;
     pcl::visualization::CloudViewer::VizCallable surface_visualization =
             boost::bind(&SurfObstVisualizer::drawSurfaces, this, surfaces, _1);

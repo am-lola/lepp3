@@ -20,7 +20,8 @@ public:
    * The member function that all concrete aggregators need to implement in
    * order to be able to process newly detected surfaces.
    */
-    virtual void updateSurfaces(std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces) = 0;
+    virtual void updateSurfaces(std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces,
+    	typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces) = 0;
 };
 
 } // namespace lepp

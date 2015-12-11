@@ -47,7 +47,8 @@ class SurfaceDetector : public lepp::VideoObserver<PointT> {
     /**
      * Notifies any observers about newly detected surfaces.
      */
-    void notifySurfaces(std::vector<CloudConstPtr> surfaces);
+    void notifySurfaces(std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces,
+      typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces);
 
   private:
 
@@ -96,11 +97,11 @@ void SurfaceDetector<PointT>::update() {
 
   Timer t;
   t.start();
-  segmenter_->segment(cloud_,surfaces);
+  segmenter_->segment(cloud_,surfaces,cloudMinusSurfaces);
   t.stop();
   //std::cerr << "Surface segmentation took " << t.duration() << std::endl;
 
-  notifySurfaces(surfaces);
+  notifySurfaces(surfaces,cloudMinusSurfaces);
 
 //  // Iteratively approximate the segments
 //  size_t segment_count = segments.size();
@@ -121,10 +122,11 @@ void SurfaceDetector<PointT>::attachSurfaceAggregator(
 }
 
 template<class PointT>
-void SurfaceDetector<PointT>::notifySurfaces(std::vector<CloudConstPtr> surfaces) {
+void SurfaceDetector<PointT>::notifySurfaces(std::vector<CloudConstPtr> surfaces,
+  typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces) {
   size_t sz = aggregators.size();
   for (size_t i = 0; i < sz; ++i) {
-    aggregators[i]->updateSurfaces(surfaces);
+    aggregators[i]->updateSurfaces(surfaces,cloudMinusSurfaces);
   }
 }
 
