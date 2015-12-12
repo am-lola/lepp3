@@ -12,12 +12,6 @@
 
 namespace lepp {
 
-typedef pcl::PointXYZ SimplePoint;
-typedef pcl::PointCloud<SimplePoint> SimplePointCloud;
-typedef pcl::PointXYZRGBA ColoredPoint;
-typedef pcl::PointCloud<ColoredPoint> ColoredPointCloud;
-
-
 /**
  * The abstract base class for all classes that wish to be sources of point
  * cloud video information.
@@ -110,13 +104,6 @@ void VideoSource<PointT>::attachObserver(
     boost::shared_ptr<ObserverType> observer) {
   observers_.push_back(observer);
 }
-
-/**
- * Convenience typedefs referring to VideoSource classes based on the template
- * parameter.
- */
-typedef VideoSource<ColoredPoint> ColoredVideoSource;
-typedef VideoSource<SimplePoint> SimpleVideoSource;
 
 }  // namespace lepp
 

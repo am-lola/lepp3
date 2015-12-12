@@ -794,19 +794,19 @@ private:
 int main(int argc, char* argv[]) {
   _START_EASYLOGGINGPP(argc, argv);
   // Initialize the context container
-  boost::shared_ptr<Context<SimplePoint> > context;
+  boost::shared_ptr<Context<pcl::PointXYZ> > context;
   try {
     for (int i = 1; i < argc; ++i) {
       if (std::string(argv[i]) == "--cfg" && i != argc) {
         // Default to using the FileConfigContext if a `cfg` CLI parameter is
         // passed.
-        context.reset(new FileConfigContext<SimplePoint>(argv[i + 1]));
+        context.reset(new FileConfigContext<pcl::PointXYZ>(argv[i + 1]));
       }
     }
 
     if (!context) {
       // Fall back to trying to do a hardcoded context if no config file given.
-      context.reset(new HardcodedContext<SimplePoint>(argv, argc));
+      context.reset(new HardcodedContext<pcl::PointXYZ>(argv, argc));
     }
   } catch (char const* exc) {
     std::cerr << exc << std::endl;

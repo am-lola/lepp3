@@ -28,7 +28,7 @@
 using namespace lepp;
 
 namespace {
-  typedef SimplePoint PointT;
+  typedef pcl::PointXYZ PointT;
 }
 
 /**
