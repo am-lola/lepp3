@@ -1,6 +1,7 @@
 #ifndef LEPP3_EUCLIDEAN_PLANE_SEGMENTER_H__
 #define LEPP3_EUCLIDEAN_PLANE_SEGMENTER_H__
 
+#include "lepp3/Typedefs.hpp"
 #include "lepp3/BaseSegmenter.hpp"
 
 #include <pcl/segmentation/sac_segmentation.h>
@@ -22,15 +23,10 @@ public:
   EuclideanPlaneSegmenter();
 
   virtual void segment(
-      const typename pcl::PointCloud<PointT>::ConstPtr& cloud,
-      std::vector<typename pcl::PointCloud<PointT>::ConstPtr> &segments,
-      typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces);
+      const PointCloundConstPtr& cloud,
+      std::vector<PointCloundConstPtr> &segments,
+      PointCloudPtr &cloudMinusSurfaces);
 private:
-  // Helper typedefs to make the implementation code cleaner
-  typedef pcl::PointCloud<PointT> PointCloudT;
-  typedef typename PointCloudT::Ptr PointCloudPtr;
-  typedef typename PointCloudT::ConstPtr CloudConstPtr;
-
   // Private helper member functions
   /**
    * Performs some initial preprocessing and filtering appropriate for the
@@ -38,7 +34,7 @@ private:
    * Takes the original cloud as a parameter and returns a pointer to a newly
    * created (and allocated) cloud containing the result of the filtering.
    */
-  PointCloudPtr preprocessCloud(CloudConstPtr const& cloud);
+  PointCloudPtr preprocessCloud(PointCloundConstPtr const& cloud);
   /**
    * Removes all planes from the given point cloud.
    */
@@ -55,8 +51,8 @@ private:
    * by copying the corresponding points from the cloud to the corresponding
    * new point cloud.
    */
-  std::vector<CloudConstPtr> clustersToPointClouds(
-      CloudConstPtr const& cloud_filtered,
+  std::vector<PointCloundConstPtr> clustersToPointClouds(
+      PointCloundConstPtr const& cloud_filtered,
       std::vector<pcl::PointIndices> const& cluster_indices);
 
 
@@ -102,9 +98,9 @@ EuclideanPlaneSegmenter<PointT>::EuclideanPlaneSegmenter()
 }
 
 template<class PointT>
-typename pcl::PointCloud<PointT>::Ptr
+PointCloudPtr
 EuclideanPlaneSegmenter<PointT>::preprocessCloud(
-    CloudConstPtr const& cloud) {
+    PointCloundConstPtr const& cloud) {
   // Remove NaN points from the input cloud.
   // The pcl API forces us to pass in a reference to the vector, even if we have
   // no use of it later on ourselves.
@@ -164,16 +160,16 @@ std::vector<pcl::PointIndices> EuclideanPlaneSegmenter<PointT>::getClusters(
 }
 
 template<class PointT>
-std::vector<typename pcl::PointCloud<PointT>::ConstPtr>
+std::vector<PointCloundConstPtr>
 EuclideanPlaneSegmenter<PointT>::clustersToPointClouds(
-    CloudConstPtr const& cloud_filtered,
+    PointCloundConstPtr const& cloud_filtered,
     std::vector<pcl::PointIndices> const& cluster_indices) {
   // Now copy the points belonging to each cluster to a separate PointCloud
   // and finally return a vector of these point clouds.
-  std::vector<CloudConstPtr> ret;
+  std::vector<PointCloundConstPtr> ret;
   size_t const cluster_count = cluster_indices.size();
   for (size_t i = 0; i < cluster_count; ++i) {
-    typename PointCloudT::Ptr current(new PointCloudT());
+    PointCloudPtr current(new PointCloudT());
     std::vector<int> const& curr_indices = cluster_indices[i].indices;
     size_t const curr_indices_sz = curr_indices.size();
     for (size_t j = 0; j < curr_indices_sz; ++j) {
@@ -189,9 +185,9 @@ EuclideanPlaneSegmenter<PointT>::clustersToPointClouds(
 
 template<class PointT>
 void EuclideanPlaneSegmenter<PointT>::segment(
-    const typename pcl::PointCloud<PointT>::ConstPtr& cloud,
-    std::vector<typename pcl::PointCloud<PointT>::ConstPtr> &segments,
-    typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces) {
+    const PointCloundConstPtr& cloud,
+    std::vector<PointCloundConstPtr> &segments,
+    PointCloudPtr &cloudMinusSurfaces) {
   //PointCloudPtr cloud_filtered = preprocessCloud(cloud);
   //removePlanes(cloud_filtered);
   std::vector<pcl::PointIndices> cluster_indices = getClusters(cloudMinusSurfaces);

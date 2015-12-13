@@ -1,6 +1,7 @@
 #ifndef LEPP3_OBJECT_APPROXIMATOR_H__
 #define LEPP3_OBJECT_APPROXIMATOR_H__
 
+#include "lepp3/Typedefs.hpp"
 #include <pcl/common/projection_matrix.h>
 
 namespace lepp {
@@ -24,7 +25,7 @@ public:
    * own specific approximation method.
    */
   virtual boost::shared_ptr<CompositeModel> approximate(
-      const typename pcl::PointCloud<PointT>::ConstPtr& point_cloud) = 0;
+      const PointCloundConstPtr& point_cloud) = 0;
 };
 
 }  // namespace lepp

@@ -6,6 +6,7 @@
 
 #include <pcl/visualization/cloud_viewer.h>
 
+#include "lepp3/Typedefs.hpp"
 #include "lepp3/BaseSegmenter.hpp"
 #include "lepp3/NoopSegmenter.hpp"
 #include "lepp3/EuclideanPlaneSegmenter.hpp"
@@ -74,16 +75,11 @@ public:
   virtual ~BaseObstacleDetector() {}
 
 
-  virtual void updateSurfaces(std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces,
-      typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces);
-
-protected:
-  /// Some convenience typedefs
-  typedef pcl::PointCloud<PointT> PointCloud;
-  typedef typename pcl::PointCloud<PointT>::ConstPtr PointCloudConstPtr;
+  virtual void updateSurfaces(std::vector<PointCloundConstPtr> surfaces,
+      PointCloudPtr &cloudMinusSurfaces);
 
 private:
-  typename pcl::PointCloud<PointT>::Ptr cloud_;
+  PointCloudPtr cloud_;
 
   boost::shared_ptr<BaseSegmenter<PointT> > segmenter_;
   boost::shared_ptr<ObjectApproximator<PointT> > approximator_;
@@ -105,8 +101,8 @@ BaseObstacleDetector<PointT>::BaseObstacleDetector(
 
 
 template<class PointT>
-void BaseObstacleDetector<PointT>::updateSurfaces(std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces,
-      typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces) {
+void BaseObstacleDetector<PointT>::updateSurfaces(std::vector<PointCloundConstPtr> surfaces,
+      PointCloudPtr &cloudMinusSurfaces) {
   cloud_ = cloudMinusSurfaces;
   try {
     update();
@@ -119,8 +115,8 @@ template<class PointT>
 void BaseObstacleDetector<PointT>::update() {
   Timer t;
   t.start();
-  typename pcl::PointCloud<PointT>::ConstPtr dummyCloud(new pcl::PointCloud<PointT>());
-  std::vector<typename pcl::PointCloud<PointT>::ConstPtr> segments;
+  PointCloundConstPtr dummyCloud(new PointCloudT());
+  std::vector<PointCloundConstPtr> segments;
   segmenter_->segment(dummyCloud, segments, cloud_);
 
   // Iteratively approximate the segments

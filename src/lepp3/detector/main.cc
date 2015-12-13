@@ -7,6 +7,7 @@
 #include <pcl/io/openni2_grabber.h>
 #include <pcl/io/pcd_grabber.h>
 
+#include "lepp3/Typedefs.hpp"
 #include "lepp3/BaseObstacleDetector.hpp"
 #include "lepp3/SurfaceDetector.hpp"
 #include "lepp3/GrabberVideoSource.hpp"
@@ -23,13 +24,10 @@
 
 #include "lepp3/models/ObjectModel.h"
 #include "deps/easylogging++.h"
+
  _INITIALIZE_EASYLOGGINGPP
 
 using namespace lepp;
-
-namespace {
-  typedef pcl::PointXYZ PointT;
-}
 
 /**
  * Prints out the expected CLI usage of the program.

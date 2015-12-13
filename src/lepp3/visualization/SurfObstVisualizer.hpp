@@ -7,6 +7,7 @@
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
+#include "lepp3/Typedefs.hpp"
 #include "lepp3/VideoObserver.hpp"
 #include "lepp3/ObstacleAggregator.hpp"
 #include "lepp3/models/ObjectModel.h"
@@ -134,7 +135,7 @@ public:
    */
   virtual void notifyNewFrame(
       int idx,
-      const typename pcl::PointCloud<PointT>::ConstPtr& pointCloud) {
+      const PointCloundConstPtr& pointCloud) {
     viewer_.showCloud(pointCloud);
   }
 
@@ -147,8 +148,8 @@ public:
    * SurfaceAggregator interface implementation: processes detected surfaces.
   */
   virtual void updateSurfaces(
-          std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces,
-      typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces);
+          std::vector<PointCloundConstPtr> surfaces,
+      PointCloudPtr &cloudMinusSurfaces);
 
   
 private:
@@ -166,7 +167,7 @@ private:
 
 
   void drawSurfaces(
-            std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces,
+            std::vector<PointCloundConstPtr> surfaces,
       pcl::visualization::PCLVisualizer& viewer);
 };
 
@@ -197,7 +198,7 @@ void SurfObstVisualizer<PointT>::updateObstacles(
 
 template<class PointT>
 void SurfObstVisualizer<PointT>::drawSurfaces(
-        std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces,
+        std::vector<PointCloundConstPtr> surfaces,
     pcl::visualization::PCLVisualizer& pclViz) {
 
      pclViz.removePointCloud("SUR1",0);
@@ -251,8 +252,8 @@ void SurfObstVisualizer<PointT>::drawSurfaces(
 
 template<class PointT>
 void SurfObstVisualizer<PointT>::updateSurfaces(
-        std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces,
-      typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces) {
+        std::vector<PointCloundConstPtr> surfaces,
+      PointCloudPtr &cloudMinusSurfaces) {
     //std::cout << "entered updateSurfaces" << std::endl;
     pcl::visualization::CloudViewer::VizCallable surface_visualization =
             boost::bind(&SurfObstVisualizer::drawSurfaces, this, surfaces, _1);

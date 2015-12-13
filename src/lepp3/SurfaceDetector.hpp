@@ -6,6 +6,7 @@
 
 #include <pcl/visualization/cloud_viewer.h>
 
+#include "lepp3/Typedefs.hpp"
 #include "lepp3/VideoObserver.hpp"
 #include "lepp3/BaseSegmenter.hpp"
 #include "lepp3/NoopSegmenter.hpp"
@@ -31,7 +32,7 @@ class SurfaceDetector : public lepp::VideoObserver<PointT> {
      */
     virtual void notifyNewFrame(
         int idx,
-        const typename pcl::PointCloud<PointT>::ConstPtr& point_cloud);
+        const PointCloundConstPtr& point_cloud);
     /**
        * Attaches a new SurfaceAggregator, which will be notified of newly detected
        * surfaces by this detector.
@@ -39,20 +40,15 @@ class SurfaceDetector : public lepp::VideoObserver<PointT> {
     void attachSurfaceAggregator(boost::shared_ptr<SurfaceAggregator<PointT> > aggregator);
 
   protected:
-    /// Helper typedefs to make the implementation cleaner
-    typedef pcl::PointCloud<PointT> PointCloudT;
-    typedef typename PointCloudT::Ptr PointCloudPtr;
-    typedef typename PointCloudT::ConstPtr CloudConstPtr;
-
     /**
      * Notifies any observers about newly detected surfaces.
      */
-    void notifySurfaces(std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces,
-      typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces);
+    void notifySurfaces(std::vector<PointCloundConstPtr> surfaces,
+      PointCloudPtr &cloudMinusSurfaces);
 
   private:
 
-    typename pcl::PointCloud<PointT>::ConstPtr cloud_;
+    PointCloundConstPtr cloud_;
 
     /**
      * Tracks all attached SurfaceAggregators that wish to be notified of newly
@@ -80,7 +76,7 @@ SurfaceDetector<PointT>::SurfaceDetector(
 template<class PointT>
 void SurfaceDetector<PointT>::notifyNewFrame(
     int id,
-    const typename pcl::PointCloud<PointT>::ConstPtr& point_cloud) {
+    const PointCloundConstPtr& point_cloud) {
   cloud_ = point_cloud;
   try {
     update();
@@ -92,8 +88,8 @@ void SurfaceDetector<PointT>::notifyNewFrame(
 template<class PointT>
 void SurfaceDetector<PointT>::update() {
 
-  typename pcl::PointCloud<PointT>::Ptr cloudMinusSurfaces(new pcl::PointCloud<PointT>());
-  std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces;
+  PointCloudPtr cloudMinusSurfaces(new PointCloudT());
+  std::vector<PointCloundConstPtr> surfaces;
 
   Timer t;
   t.start();
@@ -122,8 +118,8 @@ void SurfaceDetector<PointT>::attachSurfaceAggregator(
 }
 
 template<class PointT>
-void SurfaceDetector<PointT>::notifySurfaces(std::vector<CloudConstPtr> surfaces,
-  typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces) {
+void SurfaceDetector<PointT>::notifySurfaces(std::vector<PointCloundConstPtr> surfaces,
+  PointCloudPtr &cloudMinusSurfaces) {
   size_t sz = aggregators.size();
   for (size_t i = 0; i < sz; ++i) {
     aggregators[i]->updateSurfaces(surfaces,cloudMinusSurfaces);

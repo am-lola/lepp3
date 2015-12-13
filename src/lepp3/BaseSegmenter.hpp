@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "lepp3/Typedefs.hpp"
 #include <pcl/common/projection_matrix.h>
 
 namespace lepp {
@@ -23,9 +24,9 @@ public:
    * original point cloud.
    */
   virtual void segment(
-      const typename pcl::PointCloud<PointT>::ConstPtr& cloud,
-      std::vector<typename pcl::PointCloud<PointT>::ConstPtr> &surfaces,
-      typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces) = 0;
+      const PointCloundConstPtr& cloud,
+      std::vector<PointCloundConstPtr> &surfaces,
+      PointCloudPtr &cloudMinusSurfaces) = 0;
 };
 
 } // namespace lepp

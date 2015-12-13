@@ -8,6 +8,7 @@
 #include <pcl/io/openni_grabber.h>
 #include <pcl/visualization/cloud_viewer.h>
 
+#include "lepp3/Typedefs.hpp"
 #include "VideoObserver.hpp"
 
 namespace lepp {
@@ -31,11 +32,6 @@ public:
    * Convenience type for defining observers for a particular VideoSource.
    */
   typedef VideoObserver<PointT> ObserverType;
-  /**
-   * Convenience type for referring to the type of the pcl::PointCloud that is
-   * handled by a particular VideoSource.
-   */
-  typedef pcl::PointCloud<PointT> PointCloudType;
 
   VideoSource() : frame_counter_(0) {}
   virtual ~VideoSource();
@@ -58,7 +54,7 @@ protected:
    * point cloud as the most recent one, as well as to notify all source
    * observers.
    */
-  virtual void setNextFrame(const typename PointCloudType::ConstPtr& cloud);
+  virtual void setNextFrame(const PointCloundConstPtr& cloud);
 private:
   /**
    * Private helper method.  Notifies all known observers that a new point cloud
@@ -66,7 +62,7 @@ private:
    */
   void notifyObservers(
       int idx,
-      const typename PointCloudType::ConstPtr& cloud) const;
+      const PointCloundConstPtr& cloud) const;
   /**
    * Keeps track of all observers that are attached to the source.
    */
@@ -85,7 +81,7 @@ VideoSource<PointT>::~VideoSource() {
 template<class PointT>
 void VideoSource<PointT>::notifyObservers(
     int idx,
-    const typename pcl::PointCloud<PointT>::ConstPtr& cloud) const {
+    const PointCloundConstPtr& cloud) const {
   size_t const sz = observers_.size();
   for (size_t i = 0; i < sz; ++i) {
     observers_[i]->notifyNewFrame(idx, cloud);
@@ -94,7 +90,7 @@ void VideoSource<PointT>::notifyObservers(
 
 template<class PointT>
 void VideoSource<PointT>::setNextFrame(
-    const typename PointCloudType::ConstPtr& cloud) {
+    const PointCloundConstPtr& cloud) {
   ++frame_counter_;
   notifyObservers(frame_counter_, cloud);
 }

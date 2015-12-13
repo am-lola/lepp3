@@ -1,6 +1,7 @@
 #ifndef GRABBER_VIDEO_SOURCE_H_
 #define GRABBER_VIDEO_SOURCE_H_
 
+#include "lepp3/Typedefs.hpp"
 #include "BaseVideoSource.hpp"
 #include <pcl/io/openni_grabber.h>
 
@@ -45,7 +46,7 @@ private:
    * Acts as the bond between the VideoSource and the Grabber, allowing the
    * adaptation of the interface.
    */
-  void cloud_cb_(const typename pcl::PointCloud<PointT>::ConstPtr& cloud);
+  void cloud_cb_(const PointCloundConstPtr& cloud);
   void image_cb_ (const boost::shared_ptr<openni_wrapper::Image>& rgb);
 };
 
@@ -57,7 +58,7 @@ GeneralGrabberVideoSource<PointT>::~GeneralGrabberVideoSource() {
 
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::cloud_cb_(
-    const typename pcl::PointCloud<PointT>::ConstPtr& cloud) {
+    const PointCloundConstPtr& cloud) {
   this->setNextFrame(cloud);
 }
 
@@ -80,7 +81,7 @@ void GeneralGrabberVideoSource<PointT>::image_cb_ (
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::open() {
   // Register the callback and start grabbing frames...
-  typedef void (callback_t)(const typename pcl::PointCloud<PointT>::ConstPtr&);
+  typedef void (callback_t)(const PointCloundConstPtr&);
   boost::function<callback_t> f = boost::bind(
       &GeneralGrabberVideoSource::cloud_cb_,
       this, _1);

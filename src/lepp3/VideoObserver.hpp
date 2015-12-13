@@ -1,6 +1,8 @@
 #ifndef VIDEO_OBSERVER_H_
 #define VIDEO_OBSERVER_H_
 
+#include "lepp3/Typedefs.hpp"
+
 namespace lepp {
 
 /**
@@ -18,7 +20,7 @@ public:
    */
   virtual void notifyNewFrame(
       int idx,
-      const typename pcl::PointCloud<PointT>::ConstPtr& pointCloud) = 0;
+      const PointCloundConstPtr& pointCloud) = 0;
 };
 
 }  // namespace lepp

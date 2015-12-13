@@ -1,6 +1,7 @@
 #ifndef LEPP2_SURFACE_AGGREGATOR_H__
 #define LEPP2_SURFACE_AGGREGATOR_H__
 
+#include "lepp3/Typedefs.hpp"
 #include <vector>
 
 namespace lepp
@@ -20,8 +21,8 @@ public:
    * The member function that all concrete aggregators need to implement in
    * order to be able to process newly detected surfaces.
    */
-    virtual void updateSurfaces(std::vector<typename pcl::PointCloud<PointT>::ConstPtr> surfaces,
-    	typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces) = 0;
+    virtual void updateSurfaces(std::vector<PointCloundConstPtr> surfaces,
+    	PointCloudPtr &cloudMinusSurfaces) = 0;
 };
 
 } // namespace lepp

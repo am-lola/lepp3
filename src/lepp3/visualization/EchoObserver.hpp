@@ -1,6 +1,7 @@
 #ifndef LEPP3_VISUALIZATION_ECHO_OBSERVER_H__
 #define LEPP3_VISUALIZATION_ECHO_OBSERVER_H__
 
+#include "lepp3/Typedefs.hpp"
 #include "lepp3/VideoObserver.hpp"
 
 namespace lepp {
@@ -16,7 +17,7 @@ public:
 
   virtual void notifyNewFrame(
       int idx,
-      const typename pcl::PointCloud<PointT>::ConstPtr& pointCloud) {
+      const PointCloundConstPtr& pointCloud) {
     viewer_.showCloud(pointCloud);
   }
 

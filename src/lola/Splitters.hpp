@@ -1,5 +1,7 @@
 #ifndef LOLA_SPLITTERS_H__
 #define LOLA_SPLITTERS_H__
+
+#include "lepp3/Typedefs.hpp"
 #include "lepp3/SplitApproximator.hpp"
 #include "lepp3/models/Coordinate.h"
 #include "lola/Robot.h"
@@ -28,7 +30,7 @@ public:
           robot_(robot) {}
   bool shouldSplit(
       int split_depth,
-      const typename pcl::PointCloud<PointT>::ConstPtr& point_cloud);
+      const PointCloundConstPtr& point_cloud);
 private:
   /**
    * The square of the distance threshold at which we will stop splitting
@@ -47,7 +49,7 @@ private:
 template<class PointT>
 bool DistanceThresholdSplitCondition<PointT>::shouldSplit(
     int split_depth,
-    const typename pcl::PointCloud<PointT>::ConstPtr& point_cloud) {
+    const PointCloundConstPtr& point_cloud) {
   // The distance should be in [cm] so we need to scale up the original points
   // (as they are in [m])
   Coordinate const robot_position = 100 * robot_.robot_position();

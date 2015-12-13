@@ -1,6 +1,7 @@
 #ifndef LEPP2_SMOOTH_OBSTACLE_AGGREGATOR_H__
 #define LEPP2_SMOOTH_OBSTACLE_AGGREGATOR_H__
 
+#include "lepp3/Typedefs.hpp"
 #include "lepp3/SurfaceAggregator.hpp"
 #include <pcl/surface/concave_hull.h>
 
@@ -69,10 +70,6 @@ public:
 	 */
 	virtual void updateSurfaces(std::vector<ObjectModelPtr> const& obstacles);
 private:
-	typedef pcl::PointCloud<PointT> PointCloudT;
-	typedef typename PointCloudT::Ptr PointCloudPtr;
-	typedef typename PointCloudT::ConstPtr CloudConstPtr;
-
 	// Private types
 	/**
 	 * The type that represents model IDs. For convenience it aliases an int.

@@ -1,6 +1,7 @@
 #ifndef LEPP2_SURFACE_SEGMENTER_H__
 #define LEPP2_SURFACE_SEGMENTER_H__
 
+#include "lepp3/Typedefs.hpp"
 #include "lepp3/BaseSegmenter.hpp"
 
 #include <pcl/segmentation/sac_segmentation.h>
@@ -18,15 +19,10 @@ class SurfaceSegmenter: public BaseSegmenter<PointT> {
 public:
     SurfaceSegmenter();
 
-	virtual void segment(const typename pcl::PointCloud<PointT>::ConstPtr& cloud,
-			std::vector<typename pcl::PointCloud<PointT>::ConstPtr> &surfaces,
-			typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces);
+	virtual void segment(const PointCloundConstPtr& cloud,
+			std::vector<PointCloundConstPtr> &surfaces,
+			PointCloudPtr &cloudMinusSurfaces);
 private:
-	// Helper typedefs to make the implementation code cleaner
-	typedef pcl::PointCloud<PointT> PointCloudT;
-	typedef typename PointCloudT::Ptr PointCloudPtr;
-	typedef typename PointCloudT::ConstPtr CloudConstPtr;
-
 	// Private helper member functions
 	/**
 	 * Performs some initial preprocessing and filtering appropriate for the
@@ -34,7 +30,7 @@ private:
 	 * Takes the original cloud as a parameter and returns a pointer to a newly
 	 * created (and allocated) cloud containing the result of the filtering.
 	 */
-	PointCloudPtr preprocessCloud(CloudConstPtr const& cloud);
+	PointCloudPtr preprocessCloud(PointCloundConstPtr const& cloud);
 	/**
 	 * Removes all planes from the given point cloud.
 	 */
@@ -82,7 +78,7 @@ private:
 	 *type of surface and saved together.
 	 * */
 
-	std::vector<typename pcl::PointCloud<PointT>::ConstPtr> cluster(void);
+	std::vector<PointCloundConstPtr> cluster(void);
 	/* Returns the vector of clusters of surface groups after processing the clustering*/
 
 	bool addPlane(int const index, const PointCloudPtr & cloud_planar_surface);
@@ -114,14 +110,14 @@ private:
 	/**
      * TEMP: vector containing clouds for each surface
 	 */
-    std::vector<CloudConstPtr> vec_cloud_surfaces_;
+    std::vector<PointCloundConstPtr> vec_cloud_surfaces_;
 
 	/* The vector containing surface groups, created according to difference in inclination during the segmentation
 	 * */
 	std::vector<PointCloudPtr> vec_surface;
 
 
-	std::vector<CloudConstPtr> vec_segments;
+	std::vector<PointCloundConstPtr> vec_segments;
 
 
 	/* List of plane coefficients [normal_x normal_y normal_z hessian_component_d]
@@ -148,8 +144,8 @@ SurfaceSegmenter<PointT>::SurfaceSegmenter() :
 }
 
 template<class PointT>
-typename pcl::PointCloud<PointT>::Ptr SurfaceSegmenter<PointT>::preprocessCloud(
-		CloudConstPtr const& cloud) {
+PointCloudPtr SurfaceSegmenter<PointT>::preprocessCloud(
+		PointCloundConstPtr const& cloud) {
 	// Remove NaN points from the input cloud.
 	// The pcl API forces us to pass in a reference to the vector, even if we have
 	// no use of it later on ourselves.
@@ -310,7 +306,7 @@ bool SurfaceSegmenter<PointT>::addPlane(int const index,
 	return true;
 
 }
-template<class PointT> std::vector<typename pcl::PointCloud<PointT>::ConstPtr> SurfaceSegmenter<
+template<class PointT> std::vector<PointCloundConstPtr> SurfaceSegmenter<
 		PointT>::cluster(void) {
 	for (int i = 0; i < vec_surface.size(); i++) {
         std::vector<pcl::PointIndices> cluster_indices = getSurfaceClusters(
@@ -329,11 +325,11 @@ void SurfaceSegmenter<PointT>::clustersToPointClouds(PointCloudPtr const& cloud_
 		std::vector<pcl::PointIndices> const& cluster_indices) {
 	// Now copy the points belonging to each cluster to a separate PointCloud
 	// and finally return a vector of these point clouds.
-	//std::vector<CloudConstPtr> ret;
+	//std::vector<PointCloundConstPtr> ret;
 	size_t const cluster_count = cluster_indices.size();
 	for (size_t i = 0; i < cluster_count; ++i) {
 
-		typename PointCloudT::Ptr current(new PointCloudT());
+		PointCloudPtr current(new PointCloudT());
 		std::vector<int> const& curr_indices = cluster_indices[i].indices;
 		size_t const curr_indices_sz = curr_indices.size();
 		for (size_t j = 0; j < curr_indices_sz; j++) {
@@ -349,9 +345,9 @@ void SurfaceSegmenter<PointT>::clustersToPointClouds(PointCloudPtr const& cloud_
 
 template<class PointT>
 void SurfaceSegmenter<PointT>::segment(
-		const typename pcl::PointCloud<PointT>::ConstPtr& cloud,
-		std::vector<typename pcl::PointCloud<PointT>::ConstPtr> &surfaces,
-		typename pcl::PointCloud<PointT>::Ptr &cloudMinusSurfaces) {
+		const PointCloundConstPtr& cloud,
+		std::vector<PointCloundConstPtr> &surfaces,
+		PointCloudPtr &cloudMinusSurfaces) {
 	PointCloudPtr cloud_filtered = preprocessCloud(cloud);
     // extract those planes that are considered as surfaces and put them in cloud_surfaces_
     findSurfaces(cloud_filtered);
