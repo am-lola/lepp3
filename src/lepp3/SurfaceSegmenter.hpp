@@ -348,10 +348,9 @@ void SurfaceSegmenter<PointT>::segment(
 		const PointCloundConstPtr& cloud,
 		std::vector<PointCloundConstPtr> &surfaces,
 		PointCloudPtr &cloudMinusSurfaces) {
-	PointCloudPtr cloud_filtered = preprocessCloud(cloud);
+	cloudMinusSurfaces = preprocessCloud(cloud);
     // extract those planes that are considered as surfaces and put them in cloud_surfaces_
-    findSurfaces(cloud_filtered);
-    cloudMinusSurfaces = cloud_filtered;
+    findSurfaces(cloudMinusSurfaces);
     surfaces = cluster();
 }
 

@@ -28,13 +28,7 @@ public:
       PointCloudPtr &cloudMinusSurfaces);
 private:
   // Private helper member functions
-  /**
-   * Performs some initial preprocessing and filtering appropriate for the
-   * segmentation algorithm.
-   * Takes the original cloud as a parameter and returns a pointer to a newly
-   * created (and allocated) cloud containing the result of the filtering.
-   */
-  PointCloudPtr preprocessCloud(PointCloundConstPtr const& cloud);
+
   /**
    * Removes all planes from the given point cloud.
    */
@@ -82,36 +76,22 @@ private:
 
 template<class PointT>
 EuclideanPlaneSegmenter<PointT>::EuclideanPlaneSegmenter()
-    : min_filter_percentage_(0.2),
+    : min_filter_percentage_(0.6), // 0.2
       kd_tree_(new pcl::search::KdTree<PointT>()) {
   // Parameter initialization of the plane segmentation
   segmentation_.setOptimizeCoefficients(true);
   segmentation_.setModelType(pcl::SACMODEL_PLANE);
   segmentation_.setMethodType(pcl::SAC_RANSAC);
   segmentation_.setMaxIterations(100);
-  segmentation_.setDistanceThreshold(0.05);
+  segmentation_.setDistanceThreshold(0.08); //0.05
 
   // Parameter initialization of the clusterizer
-  clusterizer_.setClusterTolerance(0.03);
+  clusterizer_.setClusterTolerance(0.03); //0.03
   clusterizer_.setMinClusterSize(100);
   clusterizer_.setMaxClusterSize(25000);
 }
 
-template<class PointT>
-PointCloudPtr
-EuclideanPlaneSegmenter<PointT>::preprocessCloud(
-    PointCloundConstPtr const& cloud) {
-  // Remove NaN points from the input cloud.
-  // The pcl API forces us to pass in a reference to the vector, even if we have
-  // no use of it later on ourselves.
-  PointCloudPtr cloud_filtered(new PointCloudT());
-  std::vector<int> index;
-  pcl::removeNaNFromPointCloud<PointT>(*cloud,
-                                       *cloud_filtered,
-                                       index);
 
-  return cloud_filtered;
-}
 
 template<class PointT>
 void EuclideanPlaneSegmenter<PointT>::removePlanes(
@@ -189,7 +169,7 @@ void EuclideanPlaneSegmenter<PointT>::segment(
     std::vector<PointCloundConstPtr> &segments,
     PointCloudPtr &cloudMinusSurfaces) {
   //PointCloudPtr cloud_filtered = preprocessCloud(cloud);
-  //removePlanes(cloud_filtered);
+  removePlanes(cloudMinusSurfaces);
   std::vector<pcl::PointIndices> cluster_indices = getClusters(cloudMinusSurfaces);
   segments = clustersToPointClouds(cloudMinusSurfaces, cluster_indices);
 }
