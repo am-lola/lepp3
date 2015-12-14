@@ -8,6 +8,9 @@
 #include <algorithm>
 #include <numeric>
 
+#include <pcl/common/transforms.h>
+#include <pcl/filters/conditional_removal.h>
+
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
@@ -144,6 +147,17 @@ private:
    * implementation.
    */
   std::vector<boost::shared_ptr<PointFilter<PointT> > > point_filters_;
+
+  /*
+  * Transform all points given in the point cloud to world coordinates.
+  */
+  void transformToWorldCoordinates(PointCloudT &cloud);
+
+  /**
+  * Remove all points from the given point cloud whose z-coordinate is less than
+  * a defined value.
+  */
+  void removeGround(PointCloudPtr &cloud);
 };
 
 template<class PointT>
@@ -153,6 +167,51 @@ void FilteredVideoSource<PointT>::open() {
   source_->attachObserver(this->shared_from_this());
   source_->open();
 }
+
+
+/*
+* Transform all points given in the point cloud to world coordinates.
+*/
+template<class PointT>
+void FilteredVideoSource<PointT>::transformToWorldCoordinates(PointCloudT &cloud)
+{
+  float theta = M_PI/4;
+  Eigen::Affine3f transform_2 = Eigen::Affine3f::Identity();
+  
+  transform_2.rotate (Eigen::AngleAxisf (theta, Eigen::Vector3f::UnitX()));
+  transform_2.translation() << 0.0, 0.0, -1.78;
+
+  PointCloudPtr transformed_cloud (new PointCloudT());
+  // You can either apply transform_1 or transform_2; they are the same
+  pcl::transformPointCloud (cloud, *transformed_cloud, transform_2);
+  cloud = *transformed_cloud;
+}
+
+
+/**
+* Remove all points from the given point cloud whose z-coordinate is less than
+* a defined value.
+*/
+template<class PointT>
+void FilteredVideoSource<PointT>::removeGround(PointCloudPtr &cloudPtr)
+{
+  pcl::ExtractIndices<PointT> extract;
+  pcl::PointIndices::Ptr currentPlaneIndices(new pcl::PointIndices);
+
+
+  int i = 0;
+  for (PointCloudT::iterator it = cloudPtr->begin(); it != cloudPtr->end(); it++, i++)
+  {
+    if (it->z > -0.1)
+      currentPlaneIndices->indices.push_back(i);
+  }
+
+  extract.setInputCloud(cloudPtr);
+  extract.setIndices(currentPlaneIndices);
+  extract.setNegative(true);
+  extract.filter(*cloudPtr);
+}
+
 
 template<class PointT>
 void FilteredVideoSource<PointT>::notifyNewFrame(
@@ -205,6 +264,9 @@ void FilteredVideoSource<PointT>::notifyNewFrame(
 
   // Now we obtain the fully filtered cloud...
   this->getFiltered(filtered);
+  this->transformToWorldCoordinates(filtered); 
+  this->removeGround(cloud_filtered);
+
   // ...and we're done!
   t.stop();
 
@@ -212,6 +274,7 @@ void FilteredVideoSource<PointT>::notifyNewFrame(
   //PINFO << "Filtering took " << t.duration();
   // Finally, the cloud that is emitted by this instance is the filtered cloud.
   this->setNextFrame(cloud_filtered);
+  //cout << filtered.size() << "   " << cloud_filtered->size() << endl;
 }
 
 /**

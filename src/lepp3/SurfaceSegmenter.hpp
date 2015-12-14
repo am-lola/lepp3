@@ -203,11 +203,19 @@ void SurfaceSegmenter<PointT>::findSurfaces(PointCloudPtr const& cloud_filtered)
 		extract.setNegative(true);
 		extract.filter(*cloud_filtered);
 
+
+/*
 		if(first)
 		{
 			first=false;
+			for (int i = 0; i < cloud_planar_surface->size(); i++)
+			{
+				cout << cloud_planar_surface->at(i).z << endl;
+			}
 			continue;
 		}
+*/
+		
         *cloud_surfaces_ += *cloud_planar_surface;
 
 		//vec_segments.push_back(cloud_planar_surface);
@@ -267,8 +275,8 @@ void SurfaceSegmenter<PointT>::classify(PointCloudPtr const& cloud_planar_surfac
 
 	for (int i = 0; i < size; i++) {
 		double angle = getAngle(coeffs, i);
-		if (angle < 3 || angle > 177) {
 
+		if (angle < 3 || angle > 177) {
 			//cout << "Expected addition to surface: " << i << std::endl;
 
 			coeff_exists = addPlane(i, cloud_planar_surface);

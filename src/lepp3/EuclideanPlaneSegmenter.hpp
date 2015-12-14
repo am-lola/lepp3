@@ -76,14 +76,14 @@ private:
 
 template<class PointT>
 EuclideanPlaneSegmenter<PointT>::EuclideanPlaneSegmenter()
-    : min_filter_percentage_(0.6), // 0.2
+    : min_filter_percentage_(0.9), // 0.2
       kd_tree_(new pcl::search::KdTree<PointT>()) {
   // Parameter initialization of the plane segmentation
   segmentation_.setOptimizeCoefficients(true);
   segmentation_.setModelType(pcl::SACMODEL_PLANE);
   segmentation_.setMethodType(pcl::SAC_RANSAC);
   segmentation_.setMaxIterations(100);
-  segmentation_.setDistanceThreshold(0.08); //0.05
+  segmentation_.setDistanceThreshold(0.05); //0.05
 
   // Parameter initialization of the clusterizer
   clusterizer_.setClusterTolerance(0.03); //0.03
@@ -96,6 +96,8 @@ EuclideanPlaneSegmenter<PointT>::EuclideanPlaneSegmenter()
 template<class PointT>
 void EuclideanPlaneSegmenter<PointT>::removePlanes(
     PointCloudPtr const& cloud_filtered) {
+
+  PointCloudPtr tmp(new PointCloudT());
   // Instance that will be used to perform the elimination of unwanted points
   // from the point cloud.
   pcl::ExtractIndices<PointT>  extract;
@@ -168,7 +170,6 @@ void EuclideanPlaneSegmenter<PointT>::segment(
     const PointCloundConstPtr& cloud,
     std::vector<PointCloundConstPtr> &segments,
     PointCloudPtr &cloudMinusSurfaces) {
-  //PointCloudPtr cloud_filtered = preprocessCloud(cloud);
   removePlanes(cloudMinusSurfaces);
   std::vector<pcl::PointIndices> cluster_indices = getClusters(cloudMinusSurfaces);
   segments = clustersToPointClouds(cloudMinusSurfaces, cluster_indices);
