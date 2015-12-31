@@ -97,7 +97,12 @@ public:
   virtual void notifyNewFrame(
       int idx,
       const typename pcl::PointCloud<PointT>::ConstPtr& cloud);
-
+  /**
+   * Implementation of the VideoObserver interface.
+   */
+  virtual void notifyNewFrame(
+      int idx,
+      const typename boost::shared_ptr<openni_wrapper::Image>& image);
   /**
    * Add a filter that will be applied to individual points before the entire
    * cloud itself is filtered.
@@ -212,6 +217,13 @@ void FilteredVideoSource<PointT>::notifyNewFrame(
   PINFO << "Filtering took " << t.duration();
   // Finally, the cloud that is emitted by this instance is the filtered cloud.
   this->setNextFrame(cloud_filtered);
+}
+
+template<class PointT>
+void FilteredVideoSource<PointT>::notifyNewFrame(
+    int idx,
+    const typename boost::shared_ptr<openni_wrapper::Image>& image) {
+      this->setNextFrame(image);
 }
 
 /**

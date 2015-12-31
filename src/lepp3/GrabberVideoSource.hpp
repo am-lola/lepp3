@@ -64,16 +64,7 @@ void GeneralGrabberVideoSource<PointT>::cloud_cb_(
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::image_cb_ (
     const typename boost::shared_ptr<openni_wrapper::Image>& rgb) {
-  cv::Mat frameRGB = cv::Mat(rgb->getHeight(), rgb->getWidth(), CV_8UC3);
-  rgb->fillRGB(frameRGB.cols,frameRGB.rows,frameRGB.data,frameRGB.step);
-  cv::Mat frameBGR;
-  cv::cvtColor(frameRGB,frameBGR,CV_RGB2BGR);
-
-  cv::Mat frame = frameBGR;
-
-
-  imshow( "RGB CAM", frame );
-  cv::waitKey(30);
+  this->setNextFrame(rgb);
 }
 
 

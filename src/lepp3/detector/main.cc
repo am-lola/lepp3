@@ -84,7 +84,7 @@ boost::shared_ptr<VideoSource<PointT> > GetVideoSource(int argc, char* argv[]) {
   std::string const option = argv[1];
   if (option == "--stream") {
     return boost::shared_ptr<VideoSource<PointT> >(
-        new LiveStreamSource<PointT>());
+        new LiveStreamSource<PointT>(true));
   } else if (option == "--pcd" && argc >= 3) {
     std::string const directory_path = argv[2];
     FileManager fm(directory_path);
@@ -94,7 +94,7 @@ boost::shared_ptr<VideoSource<PointT> > GetVideoSource(int argc, char* argv[]) {
       30.,
       true));
     return boost::shared_ptr<VideoSource<PointT> >(
-        new GeneralGrabberVideoSource<PointT>(interface));
+        new GeneralGrabberVideoSource<PointT>(interface, true));
   } else if (option == "--oni" && argc >= 3) {
     std::string const file_path = argv[2];
     boost::shared_ptr<pcl::Grabber> interface(new pcl::io::OpenNI2Grabber(
@@ -102,7 +102,7 @@ boost::shared_ptr<VideoSource<PointT> > GetVideoSource(int argc, char* argv[]) {
       pcl::io::OpenNI2Grabber::OpenNI_Default_Mode,
       pcl::io::OpenNI2Grabber::OpenNI_Default_Mode));
     return boost::shared_ptr<VideoSource<PointT> >(
-        new GeneralGrabberVideoSource<PointT>(interface));
+        new GeneralGrabberVideoSource<PointT>(interface, true));
   }
 
   // Unknown option: return a "null" pointer.

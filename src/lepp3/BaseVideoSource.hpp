@@ -65,6 +65,13 @@ protected:
    * observers.
    */
   virtual void setNextFrame(const typename PointCloudType::ConstPtr& cloud);
+  /**
+   * Convenience method for subclasses to indicate that a new RGB image has been
+   * received.  It is enough to invoke this method in order to register a new
+   * RGB image as the most recent one, as well as to notify all source
+   * observers.
+   */
+  virtual void setNextFrame(const typename boost::shared_ptr<openni_wrapper::Image>& rgb);
 private:
   /**
    * Private helper method.  Notifies all known observers that a new point cloud
@@ -73,6 +80,13 @@ private:
   void notifyObservers(
       int idx,
       const typename PointCloudType::ConstPtr& cloud) const;
+  /**
+   * Private helper method.  Notifies all known observers that a new RGB image
+   * has been received.
+   */
+  void notifyObservers(
+      int idx,
+      const typename boost::shared_ptr<openni_wrapper::Image>& rgb) const;
   /**
    * Keeps track of all observers that are attached to the source.
    */
@@ -99,10 +113,27 @@ void VideoSource<PointT>::notifyObservers(
 }
 
 template<class PointT>
+void VideoSource<PointT>::notifyObservers(
+    int idx,
+    const typename boost::shared_ptr<openni_wrapper::Image>& rgb) const {
+  size_t const sz = observers_.size();
+  for (size_t i = 0; i < sz; ++i) {
+    observers_[i]->notifyNewFrame(idx, rgb);
+  }
+}
+
+template<class PointT>
 void VideoSource<PointT>::setNextFrame(
     const typename PointCloudType::ConstPtr& cloud) {
   ++frame_counter_;
   notifyObservers(frame_counter_, cloud);
+}
+
+template<class PointT>
+void VideoSource<PointT>::setNextFrame(
+    const typename boost::shared_ptr<openni_wrapper::Image>& rgb) {
+  ++frame_counter_;
+  notifyObservers(frame_counter_, rgb);
 }
 
 template<class PointT>

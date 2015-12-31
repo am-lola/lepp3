@@ -137,6 +137,25 @@ public:
       const typename pcl::PointCloud<PointT>::ConstPtr& pointCloud) {
     viewer_.showCloud(pointCloud);
   }
+  /**
+   * VideoObserver interface implementation: processes the current RGB image.
+   */
+  virtual void notifyNewFrame(
+      int idx,
+      const typename boost::shared_ptr<openni_wrapper::Image>& image) {
+
+        // convert openni image to cv::Mat
+        cv::Mat frameRGB = cv::Mat(image->getHeight(), image->getWidth(), CV_8UC3);
+        image->fillRGB(frameRGB.cols,frameRGB.rows,frameRGB.data,frameRGB.step);
+        cv::Mat frameBGR;
+        cv::cvtColor(frameRGB,frameBGR,CV_RGB2BGR);
+
+        cv::Mat frame = frameBGR;
+
+        // display current video frame
+        imshow( "RGB CAM", frame );
+        cv::waitKey(30);
+  }
 
   /**
    * ObstacleAggregator interface implementation: processes detected obstacles.

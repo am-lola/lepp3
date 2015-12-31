@@ -12,13 +12,22 @@ class VideoObserver {
 public:
   /**
    * Method that the observers need to implement in order to handle a new
-   * incoming frame.  Each frame is represented by its an integer identifier
-   * (representing the number of the frame in the sequence of the source)
-   * and the point cloud extracted from that frame.
+   * incoming point cloud frame.  Each frame is represented by an integer
+   * identifier (representing the number of the frame in the sequence of the
+   *  source) and the point cloud extracted from that frame.
    */
   virtual void notifyNewFrame(
       int idx,
       const typename pcl::PointCloud<PointT>::ConstPtr& pointCloud) = 0;
+  /**
+   * Method that the observers need to implement in order to handle a new
+   * incoming RGB frame.  Each frame is represented by an integer identifier
+   * (representing the number of the frame in the sequence of the source)
+   * and the RGB image extracted from that frame.
+   */
+  virtual void notifyNewFrame(
+      int idx,
+      const typename boost::shared_ptr<openni_wrapper::Image>& image) = 0;
 };
 
 }  // namespace lepp
