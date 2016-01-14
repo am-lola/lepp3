@@ -25,7 +25,8 @@ public:
   virtual void segment(
       const PointCloundConstPtr& cloud,
       std::vector<PointCloundConstPtr> &segments,
-      PointCloudPtr &cloudMinusSurfaces);
+      PointCloudPtr &cloudMinusSurfaces,
+      std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
 private:
   // Private helper member functions
 
@@ -169,7 +170,8 @@ template<class PointT>
 void EuclideanPlaneSegmenter<PointT>::segment(
     const PointCloundConstPtr& cloud,
     std::vector<PointCloundConstPtr> &segments,
-    PointCloudPtr &cloudMinusSurfaces) {
+    PointCloudPtr &cloudMinusSurfaces,
+    std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) {
   removePlanes(cloudMinusSurfaces);
   std::vector<pcl::PointIndices> cluster_indices = getClusters(cloudMinusSurfaces);
   segments = clustersToPointClouds(cloudMinusSurfaces, cluster_indices);

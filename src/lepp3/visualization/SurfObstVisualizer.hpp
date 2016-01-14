@@ -12,6 +12,7 @@
 #include "lepp3/ObstacleAggregator.hpp"
 #include "lepp3/models/ObjectModel.h"
 #include "lepp3/SurfaceAggregator.hpp"
+#include "lepp3/ConvexHullDetector.hpp"
 
 namespace lepp {
 
@@ -148,8 +149,9 @@ public:
    * SurfaceAggregator interface implementation: processes detected surfaces.
   */
   virtual void updateSurfaces(
-          std::vector<PointCloundConstPtr> surfaces,
-      PointCloudPtr &cloudMinusSurfaces);
+      std::vector<PointCloundConstPtr> surfaces,
+      PointCloudPtr &cloudMinusSurfaces,
+      std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
 
   
 private:
@@ -253,7 +255,8 @@ void SurfObstVisualizer<PointT>::drawSurfaces(
 template<class PointT>
 void SurfObstVisualizer<PointT>::updateSurfaces(
         std::vector<PointCloundConstPtr> surfaces,
-      PointCloudPtr &cloudMinusSurfaces) {
+      PointCloudPtr &cloudMinusSurfaces,
+      std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) {
     //std::cout << "entered updateSurfaces" << std::endl;
     pcl::visualization::CloudViewer::VizCallable surface_visualization =
             boost::bind(&SurfObstVisualizer::drawSurfaces, this, surfaces, _1);

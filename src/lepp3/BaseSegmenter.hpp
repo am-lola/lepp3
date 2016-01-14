@@ -5,6 +5,7 @@
 
 #include "lepp3/Typedefs.hpp"
 #include <pcl/common/projection_matrix.h>
+#include <pcl/ModelCoefficients.h>
 
 namespace lepp {
 
@@ -26,7 +27,8 @@ public:
   virtual void segment(
       const PointCloundConstPtr& cloud,
       std::vector<PointCloundConstPtr> &surfaces,
-      PointCloudPtr &cloudMinusSurfaces) = 0;
+      PointCloudPtr &cloudMinusSurfaces,
+      std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) = 0;
 };
 
 } // namespace lepp

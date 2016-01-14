@@ -21,7 +21,8 @@ public:
 
 	virtual void segment(const PointCloundConstPtr& cloud,
 			std::vector<PointCloundConstPtr> &surfaces,
-			PointCloudPtr &cloudMinusSurfaces);
+			PointCloudPtr &cloudMinusSurfaces,
+			std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
 private:
 	// Private helper member functions
 	/**
@@ -355,11 +356,13 @@ template<class PointT>
 void SurfaceSegmenter<PointT>::segment(
 		const PointCloundConstPtr& cloud,
 		std::vector<PointCloundConstPtr> &surfaces,
-		PointCloudPtr &cloudMinusSurfaces) {
+		PointCloudPtr &cloudMinusSurfaces,
+		std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) {
 	cloudMinusSurfaces = preprocessCloud(cloud);
     // extract those planes that are considered as surfaces and put them in cloud_surfaces_
     findSurfaces(cloudMinusSurfaces);
     surfaces = cluster();
+    surfaceCoefficients = &m_coefficients;
 }
 
 } // namespace lepp

@@ -2,6 +2,7 @@
 #define LEPP2_SURFACE_AGGREGATOR_H__
 
 #include "lepp3/Typedefs.hpp"
+#include <pcl/ModelCoefficients.h>
 #include <vector>
 
 namespace lepp
@@ -22,7 +23,8 @@ public:
    * order to be able to process newly detected surfaces.
    */
     virtual void updateSurfaces(std::vector<PointCloundConstPtr> surfaces,
-    	PointCloudPtr &cloudMinusSurfaces) = 0;
+    	PointCloudPtr &cloudMinusSurfaces, 
+    	std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) = 0;
 };
 
 } // namespace lepp

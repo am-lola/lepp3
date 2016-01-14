@@ -15,6 +15,7 @@
 #include "lepp3/VideoObserver.hpp"
 #include "lepp3/FilteredVideoSource.hpp"
 #include "lepp3/SmoothObstacleAggregator.hpp"
+#include "lepp3/ConvexHullDetector.hpp"
 
 #include "lepp3/visualization/EchoObserver.hpp"
 #include "lepp3/visualization/SurfObstVisualizer.hpp"
@@ -135,6 +136,10 @@ int main(int argc, char* argv[]) {
       new SurfaceDetector<PointT>(surfaceApprox));
   source->attachObserver(surfaceDetector);
 
+    // add the surface convex hull detector
+  boost::shared_ptr<ConvexHullDetector> convHullDetector(
+    new ConvexHullDetector());
+
 
 //~~~~~~~~~~~~~~~~~~~~~~~Obstacles~~~~~~~~~~~~~~~~~~~~~~~~
 // Prepare the approximator that the detector is to use.
@@ -173,6 +178,7 @@ int main(int argc, char* argv[]) {
   // Attaching the visualizer to the source: allow it to display the original point cloud.
   source->attachObserver(surfObstVisualizer);
   surfaceDetector->attachSurfaceAggregator(surfObstVisualizer);
+  surfaceDetector->attachSurfaceAggregator(convHullDetector);
   smooth_decorator->attachObstacleAggregator(surfObstVisualizer);
   
   // Starts capturing new frames and forwarding them to attached observers.
