@@ -99,7 +99,7 @@ public:
    */
   virtual void notifyNewFrame(
       int idx,
-      const PointCloundConstPtr& cloud);
+      const PointCloudConstPtr& cloud);
 
   /**
    * Add a filter that will be applied to individual points before the entire
@@ -216,7 +216,7 @@ void FilteredVideoSource<PointT>::removeGround(PointCloudPtr &cloudPtr)
 template<class PointT>
 void FilteredVideoSource<PointT>::notifyNewFrame(
     int idx,
-    const PointCloundConstPtr& cloud) {
+    const PointCloudConstPtr& cloud) {
   Timer t;
   t.start();
 
@@ -265,7 +265,7 @@ void FilteredVideoSource<PointT>::notifyNewFrame(
   // Now we obtain the fully filtered cloud...
   this->getFiltered(filtered);
   this->transformToWorldCoordinates(filtered); 
-  this->removeGround(cloud_filtered);
+  //this->removeGround(cloud_filtered);
 
   // ...and we're done!
   t.stop();

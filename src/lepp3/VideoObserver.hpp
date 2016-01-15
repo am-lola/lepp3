@@ -20,7 +20,7 @@ public:
    */
   virtual void notifyNewFrame(
       int idx,
-      const PointCloundConstPtr& pointCloud) = 0;
+      const PointCloudConstPtr& pointCloud) = 0;
 };
 
 }  // namespace lepp

@@ -22,7 +22,7 @@ public:
    * The member function that all concrete aggregators need to implement in
    * order to be able to process newly detected surfaces.
    */
-    virtual void updateSurfaces(std::vector<PointCloundConstPtr> surfaces,
+    virtual void updateSurfaces(std::vector<PointCloudConstPtr> surfaces,
     	PointCloudPtr &cloudMinusSurfaces, 
     	std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) = 0;
 };

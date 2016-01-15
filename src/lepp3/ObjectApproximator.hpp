@@ -25,7 +25,7 @@ public:
    * own specific approximation method.
    */
   virtual boost::shared_ptr<CompositeModel> approximate(
-      const PointCloundConstPtr& point_cloud) = 0;
+      const PointCloudConstPtr& point_cloud) = 0;
 };
 
 }  // namespace lepp

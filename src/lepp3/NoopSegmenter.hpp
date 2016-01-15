@@ -13,15 +13,15 @@ namespace lepp {
 template<class PointT>
 class NoopSegmenter : public BaseSegmenter<PointT> {
 public:
-  virtual std::vector<PointCloundConstPtr> segment(
-      const PointCloundConstPtr& cloud);
+  virtual std::vector<PointCloudConstPtr> segment(
+      const PointCloudConstPtr& cloud);
 };
 
 template<class PointT>
-std::vector<PointCloundConstPtr>
+std::vector<PointCloudConstPtr>
 NoopSegmenter<PointT>::segment(
-    const PointCloundConstPtr& cloud) {
-  std::vector<PointCloundConstPtr> ret;
+    const PointCloudConstPtr& cloud) {
+  std::vector<PointCloudConstPtr> ret;
 
   // The result contains only the original cloud. No segmentation is performed.
   ret.push_back(cloud);

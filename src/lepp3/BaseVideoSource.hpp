@@ -54,7 +54,7 @@ protected:
    * point cloud as the most recent one, as well as to notify all source
    * observers.
    */
-  virtual void setNextFrame(const PointCloundConstPtr& cloud);
+  virtual void setNextFrame(const PointCloudConstPtr& cloud);
 private:
   /**
    * Private helper method.  Notifies all known observers that a new point cloud
@@ -62,7 +62,7 @@ private:
    */
   void notifyObservers(
       int idx,
-      const PointCloundConstPtr& cloud) const;
+      const PointCloudConstPtr& cloud) const;
   /**
    * Keeps track of all observers that are attached to the source.
    */
@@ -81,7 +81,7 @@ VideoSource<PointT>::~VideoSource() {
 template<class PointT>
 void VideoSource<PointT>::notifyObservers(
     int idx,
-    const PointCloundConstPtr& cloud) const {
+    const PointCloudConstPtr& cloud) const {
   size_t const sz = observers_.size();
   for (size_t i = 0; i < sz; ++i) {
     observers_[i]->notifyNewFrame(idx, cloud);
@@ -90,7 +90,7 @@ void VideoSource<PointT>::notifyObservers(
 
 template<class PointT>
 void VideoSource<PointT>::setNextFrame(
-    const PointCloundConstPtr& cloud) {
+    const PointCloudConstPtr& cloud) {
   ++frame_counter_;
   notifyObservers(frame_counter_, cloud);
 }

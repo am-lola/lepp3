@@ -75,7 +75,7 @@ public:
   virtual ~BaseObstacleDetector() {}
 
 
-  virtual void updateSurfaces(std::vector<PointCloundConstPtr> surfaces,
+  virtual void updateSurfaces(std::vector<PointCloudConstPtr> surfaces,
       PointCloudPtr &cloudMinusSurfaces,
       std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
 
@@ -102,7 +102,7 @@ BaseObstacleDetector<PointT>::BaseObstacleDetector(
 
 
 template<class PointT>
-void BaseObstacleDetector<PointT>::updateSurfaces(std::vector<PointCloundConstPtr> surfaces,
+void BaseObstacleDetector<PointT>::updateSurfaces(std::vector<PointCloudConstPtr> surfaces,
       PointCloudPtr &cloudMinusSurfaces,
       std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) {
   cloud_ = cloudMinusSurfaces;
@@ -117,8 +117,8 @@ template<class PointT>
 void BaseObstacleDetector<PointT>::update() {
   Timer t;
   t.start();
-  PointCloundConstPtr dummyCloud(new PointCloudT());
-  std::vector<PointCloundConstPtr> segments;
+  PointCloudConstPtr dummyCloud(new PointCloudT());
+  std::vector<PointCloudConstPtr> segments;
   std::vector<pcl::ModelCoefficients> *tmp;
   segmenter_->segment(dummyCloud, segments, cloud_, tmp);
 

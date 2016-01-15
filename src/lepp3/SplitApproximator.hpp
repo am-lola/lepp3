@@ -61,7 +61,7 @@ public:
    */
   virtual std::vector<PointCloudPtr> split(
       int split_depth,
-      const PointCloundConstPtr& point_cloud);
+      const PointCloudConstPtr& point_cloud);
 protected:
   /**
    * A pure virtual method that decides whether the given point cloud should be
@@ -75,14 +75,14 @@ protected:
    */
   virtual bool shouldSplit(
       int split_depth,
-      const PointCloundConstPtr& point_cloud) = 0;
+      const PointCloudConstPtr& point_cloud) = 0;
   /**
    * A helper method that does the actual split, when needed.
    * A default implementation is provided, since that is what most splitters
    * will want to use...
    */
   virtual std::vector<PointCloudPtr> doSplit(
-      const PointCloundConstPtr& point_cloud);
+      const PointCloudConstPtr& point_cloud);
 private:
   SplitAxis axis_;
 };
@@ -90,7 +90,7 @@ private:
 template<class PointT>
 std::vector<PointCloudPtr> SplitStrategy<PointT>::split(
     int split_depth,
-    const PointCloundConstPtr& point_cloud) {
+    const PointCloudConstPtr& point_cloud) {
   if (this->shouldSplit(split_depth, point_cloud)) {
     return this->doSplit(point_cloud);
   } else {
@@ -101,7 +101,7 @@ std::vector<PointCloudPtr> SplitStrategy<PointT>::split(
 template<class PointT>
 std::vector<PointCloudPtr>
 SplitStrategy<PointT>::doSplit(
-    const PointCloundConstPtr& point_cloud) {
+    const PointCloudConstPtr& point_cloud) {
   // Compute PCA for the input cloud
   pcl::PCA<PointT> pca;
   pca.setInputCloud(point_cloud);
@@ -169,7 +169,7 @@ public:
    */
   virtual bool shouldSplit(
       int split_depth,
-      const PointCloundConstPtr& point_cloud) = 0;
+      const PointCloudConstPtr& point_cloud) = 0;
 };
 
 /**
@@ -191,7 +191,7 @@ public:
 protected:
   bool shouldSplit(
       int split_depth,
-      const PointCloundConstPtr& point_cloud) {
+      const PointCloudConstPtr& point_cloud) {
     size_t const sz = conditions_.size();
     if (sz == 0) {
       // If there are no conditions, do not split the object, in order to avoid
@@ -226,7 +226,7 @@ public:
   DepthLimitSplitCondition(int depth_limit) : limit_(depth_limit) {}
   bool shouldSplit(
       int split_depth,
-      const PointCloundConstPtr& point_cloud) {
+      const PointCloudConstPtr& point_cloud) {
     return split_depth < limit_;
   }
 private:
@@ -248,7 +248,7 @@ public:
   SizeLimitSplitCondition(int size_limit) : limit_(size_limit) {}
   bool shouldSplit(
       int split_depth,
-      const PointCloundConstPtr& point_cloud) {
+      const PointCloudConstPtr& point_cloud) {
     // Find the limits of the bounding box of the cloud
     PointT min_pt;
     PointT max_pt;
@@ -283,7 +283,7 @@ public:
       : sphere1(sphere1), sphere2(sphere2), capsule(capsule) {}
   bool shouldSplit(
       int split_depth,
-      const PointCloundConstPtr& point_cloud) {
+      const PointCloudConstPtr& point_cloud) {
     float major_value, middle_value, minor_value;
     pcl::PCA<PointT> pca;
     pca.setInputCloud(point_cloud);
@@ -335,7 +335,7 @@ public:
    * `ObjectApproximator` interface method.
    */
   boost::shared_ptr<CompositeModel> approximate(
-      const PointCloundConstPtr& point_cloud);
+      const PointCloudConstPtr& point_cloud);
 private:
   /**
    * An `ObjectApproximator` used to generate approximations for object parts.
@@ -349,14 +349,14 @@ private:
 
 template<class PointT>
 boost::shared_ptr<CompositeModel> SplitObjectApproximator<PointT>::approximate(
-    const PointCloundConstPtr& point_cloud) {
+    const PointCloudConstPtr& point_cloud) {
   boost::shared_ptr<CompositeModel> approx(new CompositeModel);
-  std::deque<std::pair<int, PointCloundConstPtr> > queue;
+  std::deque<std::pair<int, PointCloudConstPtr> > queue;
   queue.push_back(std::make_pair(0, point_cloud));
 
   while (!queue.empty()) {
     int const depth = queue[0].first;
-    PointCloundConstPtr const current_cloud = queue[0].second;
+    PointCloudConstPtr const current_cloud = queue[0].second;
     queue.pop_front();
 
     // Delegates to the wrapped approximator for each part's approximation.

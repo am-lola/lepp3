@@ -6,6 +6,8 @@
 
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/geometry/planar_polygon.h>
+#include <string>
 
 #include "lepp3/Typedefs.hpp"
 #include "lepp3/VideoObserver.hpp"
@@ -13,6 +15,7 @@
 #include "lepp3/models/ObjectModel.h"
 #include "lepp3/SurfaceAggregator.hpp"
 #include "lepp3/ConvexHullDetector.hpp"
+#include "lepp3/ConvexHullAggregator.hpp"
 
 namespace lepp {
 
@@ -127,7 +130,7 @@ void ModelDrawer::visitCapsule(lepp::CapsuleModel& capsule) {
  * Implements the VideoObserver and ObstacleAggregator interfaces.
  */
 template<class PointT>
-class SurfObstVisualizer : public VideoObserver<PointT>, public ObstacleAggregator, public SurfaceAggregator<PointT> {
+class SurfObstVisualizer : public VideoObserver<PointT>, public ObstacleAggregator, public SurfaceAggregator<PointT>, public ConvexHullAggregator<PointT> {
 public:
   SurfObstVisualizer() : viewer_("SurfObstVisualizer") {}
 
@@ -136,8 +139,8 @@ public:
    */
   virtual void notifyNewFrame(
       int idx,
-      const PointCloundConstPtr& pointCloud) {
-    viewer_.showCloud(pointCloud);
+      const PointCloudConstPtr& pointCloud) {
+    //viewer_.showCloud(pointCloud);
   }
 
   /**
@@ -149,9 +152,15 @@ public:
    * SurfaceAggregator interface implementation: processes detected surfaces.
   */
   virtual void updateSurfaces(
-      std::vector<PointCloundConstPtr> surfaces,
+      std::vector<PointCloudConstPtr> surfaces,
       PointCloudPtr &cloudMinusSurfaces,
       std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
+
+
+  /**
+  * Convex Hull Aggregator interface implementation: process detected convex hulls.
+  */
+  virtual void updateHulls(std::vector<PointCloudConstPtr> &hulls);
 
   
 private:
@@ -169,8 +178,12 @@ private:
 
 
   void drawSurfaces(
-            std::vector<PointCloundConstPtr> surfaces,
+            std::vector<PointCloudConstPtr> surfaces,
       pcl::visualization::PCLVisualizer& viewer);
+
+
+  void drawConvexHulls(std::vector<PointCloudConstPtr> &hulls,
+    pcl::visualization::PCLVisualizer& pclViz);
 };
 
 template<class PointT>
@@ -200,15 +213,14 @@ void SurfObstVisualizer<PointT>::updateObstacles(
 
 template<class PointT>
 void SurfObstVisualizer<PointT>::drawSurfaces(
-        std::vector<PointCloundConstPtr> surfaces,
+        std::vector<PointCloudConstPtr> surfaces,
     pcl::visualization::PCLVisualizer& pclViz) {
+  pclViz.removePointCloud("SUR1",0);
+  pclViz.removePointCloud("SUR2",0);
+  pclViz.removePointCloud("SUR3",0);
+  pclViz.removePointCloud("SUR4",0);
 
-     pclViz.removePointCloud("SUR1",0);
-     pclViz.removePointCloud("SUR2",0);
-     pclViz.removePointCloud("SUR3",0);
-     pclViz.removePointCloud("SUR4",0);
-
-    size_t const sz = surfaces.size();
+  size_t const sz = surfaces.size();
   for (size_t i = 0; i < sz; ++i) {
 
      if (i ==0) {
@@ -247,22 +259,55 @@ void SurfObstVisualizer<PointT>::drawSurfaces(
 //          "SUR5");
 //    }
   }
-
-  //std::cout << "exiting stair drawer..." << std::endl;
-  //std::cout << "=======================" << std::endl;
 }
 
 template<class PointT>
 void SurfObstVisualizer<PointT>::updateSurfaces(
-        std::vector<PointCloundConstPtr> surfaces,
+        std::vector<PointCloudConstPtr> surfaces,
       PointCloudPtr &cloudMinusSurfaces,
       std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) {
-    //std::cout << "entered updateSurfaces" << std::endl;
     pcl::visualization::CloudViewer::VizCallable surface_visualization =
             boost::bind(&SurfObstVisualizer::drawSurfaces, this, surfaces, _1);
-  //std::cout << "call runOnVisualizationThreadOnce" << std::endl;
-    viewer_.runOnVisualizationThread(surface_visualization);
-    //std::cout << "exiting updateSurfaces..." << std::endl;
+   // viewer_.runOnVisualizationThread(surface_visualization);
+}
+
+
+
+
+
+template<class PointT>
+void SurfObstVisualizer<PointT>::drawConvexHulls(
+    std::vector<PointCloudConstPtr> &hulls,
+    pcl::visualization::PCLVisualizer& pclViz) {
+
+  double r[5] = {1,0,0,1,1};
+  double b[5] = {0,1,0,1,0};
+  double g[5] = {0,0,1,0,1};
+
+  std::string id("hull0");
+  int max = hulls.size() < 5 ? hulls.size() : 5;
+  for (int i = 0; i < max; i++)
+  {
+    pcl::PlanarPolygon<PointT> polygon;
+    polygon.setContour(*hulls[i]);
+    id[4] = i;
+    pclViz.removePointCloud(id,0);
+    pclViz.addPolygon(polygon, r[i], b[i], g[i], id);
+    pclViz.setRepresentationToSurfaceForAllActors();
+
+  }   
+}
+
+
+
+template<class PointT>
+void SurfObstVisualizer<PointT>::updateHulls(std::vector<PointCloudConstPtr> &hulls)
+{
+  pcl::visualization::CloudViewer::VizCallable hull_visualization =
+            boost::bind(&SurfObstVisualizer::drawConvexHulls, this, hulls, _1);
+
+  viewer_.runOnVisualizationThread(hull_visualization);
+
 }
 
 

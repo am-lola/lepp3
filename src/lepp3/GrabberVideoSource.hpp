@@ -46,7 +46,7 @@ private:
    * Acts as the bond between the VideoSource and the Grabber, allowing the
    * adaptation of the interface.
    */
-  void cloud_cb_(const PointCloundConstPtr& cloud);
+  void cloud_cb_(const PointCloudConstPtr& cloud);
   void image_cb_ (const boost::shared_ptr<openni_wrapper::Image>& rgb);
 };
 
@@ -58,7 +58,7 @@ GeneralGrabberVideoSource<PointT>::~GeneralGrabberVideoSource() {
 
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::cloud_cb_(
-    const PointCloundConstPtr& cloud) {
+    const PointCloudConstPtr& cloud) {
   this->setNextFrame(cloud);
 }
 
@@ -81,7 +81,7 @@ void GeneralGrabberVideoSource<PointT>::image_cb_ (
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::open() {
   // Register the callback and start grabbing frames...
-  typedef void (callback_t)(const PointCloundConstPtr&);
+  typedef void (callback_t)(const PointCloudConstPtr&);
   boost::function<callback_t> f = boost::bind(
       &GeneralGrabberVideoSource::cloud_cb_,
       this, _1);

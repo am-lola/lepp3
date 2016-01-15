@@ -23,8 +23,8 @@ public:
   EuclideanPlaneSegmenter();
 
   virtual void segment(
-      const PointCloundConstPtr& cloud,
-      std::vector<PointCloundConstPtr> &segments,
+      const PointCloudConstPtr& cloud,
+      std::vector<PointCloudConstPtr> &segments,
       PointCloudPtr &cloudMinusSurfaces,
       std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
 private:
@@ -46,8 +46,8 @@ private:
    * by copying the corresponding points from the cloud to the corresponding
    * new point cloud.
    */
-  std::vector<PointCloundConstPtr> clustersToPointClouds(
-      PointCloundConstPtr const& cloud_filtered,
+  std::vector<PointCloudConstPtr> clustersToPointClouds(
+      PointCloudConstPtr const& cloud_filtered,
       std::vector<pcl::PointIndices> const& cluster_indices);
 
 
@@ -143,13 +143,13 @@ std::vector<pcl::PointIndices> EuclideanPlaneSegmenter<PointT>::getClusters(
 }
 
 template<class PointT>
-std::vector<PointCloundConstPtr>
+std::vector<PointCloudConstPtr>
 EuclideanPlaneSegmenter<PointT>::clustersToPointClouds(
-    PointCloundConstPtr const& cloud_filtered,
+    PointCloudConstPtr const& cloud_filtered,
     std::vector<pcl::PointIndices> const& cluster_indices) {
   // Now copy the points belonging to each cluster to a separate PointCloud
   // and finally return a vector of these point clouds.
-  std::vector<PointCloundConstPtr> ret;
+  std::vector<PointCloudConstPtr> ret;
   size_t const cluster_count = cluster_indices.size();
   for (size_t i = 0; i < cluster_count; ++i) {
     PointCloudPtr current(new PointCloudT());
@@ -168,8 +168,8 @@ EuclideanPlaneSegmenter<PointT>::clustersToPointClouds(
 
 template<class PointT>
 void EuclideanPlaneSegmenter<PointT>::segment(
-    const PointCloundConstPtr& cloud,
-    std::vector<PointCloundConstPtr> &segments,
+    const PointCloudConstPtr& cloud,
+    std::vector<PointCloudConstPtr> &segments,
     PointCloudPtr &cloudMinusSurfaces,
     std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) {
   removePlanes(cloudMinusSurfaces);

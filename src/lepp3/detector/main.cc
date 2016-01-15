@@ -179,6 +179,7 @@ int main(int argc, char* argv[]) {
   source->attachObserver(surfObstVisualizer);
   surfaceDetector->attachSurfaceAggregator(surfObstVisualizer);
   surfaceDetector->attachSurfaceAggregator(convHullDetector);
+  convHullDetector->attachConvexHullAggregator(surfObstVisualizer);
   smooth_decorator->attachObstacleAggregator(surfObstVisualizer);
   
   // Starts capturing new frames and forwarding them to attached observers.

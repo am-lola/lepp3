@@ -32,7 +32,7 @@ class SurfaceDetector : public lepp::VideoObserver<PointT> {
      */
     virtual void notifyNewFrame(
         int idx,
-        const PointCloundConstPtr& point_cloud);
+        const PointCloudConstPtr& point_cloud);
     /**
        * Attaches a new SurfaceAggregator, which will be notified of newly detected
        * surfaces by this detector.
@@ -43,12 +43,12 @@ class SurfaceDetector : public lepp::VideoObserver<PointT> {
     /**
      * Notifies any observers about newly detected surfaces.
      */
-    void notifySurfaces(std::vector<PointCloundConstPtr> surfaces,
+    void notifySurfaces(std::vector<PointCloudConstPtr> surfaces,
       PointCloudPtr &cloudMinusSurfaces, std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
 
   private:
 
-    PointCloundConstPtr cloud_;
+    PointCloudConstPtr cloud_;
 
     /**
      * Tracks all attached SurfaceAggregators that wish to be notified of newly
@@ -76,7 +76,7 @@ SurfaceDetector<PointT>::SurfaceDetector(
 template<class PointT>
 void SurfaceDetector<PointT>::notifyNewFrame(
     int id,
-    const PointCloundConstPtr& point_cloud) {
+    const PointCloudConstPtr& point_cloud) {
   cloud_ = point_cloud;
   try {
     update();
@@ -89,7 +89,7 @@ template<class PointT>
 void SurfaceDetector<PointT>::update() {
 
   PointCloudPtr cloudMinusSurfaces(new PointCloudT());
-  std::vector<PointCloundConstPtr> surfaces;
+  std::vector<PointCloudConstPtr> surfaces;
   std::vector<pcl::ModelCoefficients> *surfaceCoefficients;
 
   Timer t;
@@ -119,7 +119,7 @@ void SurfaceDetector<PointT>::attachSurfaceAggregator(
 }
 
 template<class PointT>
-void SurfaceDetector<PointT>::notifySurfaces(std::vector<PointCloundConstPtr> surfaces,
+void SurfaceDetector<PointT>::notifySurfaces(std::vector<PointCloudConstPtr> surfaces,
   PointCloudPtr &cloudMinusSurfaces, std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) {
   size_t sz = aggregators.size();
   for (size_t i = 0; i < sz; ++i) {

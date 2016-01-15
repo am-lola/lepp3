@@ -17,7 +17,7 @@ public:
 
   virtual void notifyNewFrame(
       int idx,
-      const PointCloundConstPtr& pointCloud) {
+      const PointCloudConstPtr& pointCloud) {
     viewer_.showCloud(pointCloud);
   }
 

@@ -25,8 +25,8 @@ public:
    * original point cloud.
    */
   virtual void segment(
-      const PointCloundConstPtr& cloud,
-      std::vector<PointCloundConstPtr> &surfaces,
+      const PointCloudConstPtr& cloud,
+      std::vector<PointCloudConstPtr> &surfaces,
       PointCloudPtr &cloudMinusSurfaces,
       std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) = 0;
 };
