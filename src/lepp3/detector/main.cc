@@ -106,6 +106,28 @@ boost::shared_ptr<VideoSource<PointT> > GetVideoSource(int argc, char* argv[]) {
 
 
 
+/*
+int main()
+{
+  ConvexHullDetector *chd = new ConvexHullDetector();
+
+  PointCloudPtr hull = boost::shared_ptr<PointCloudT>(new PointCloudT());
+
+  hull->push_back(*(new PointT(0,0,0)));
+  hull->push_back(*(new PointT(0,1,0)));
+  hull->push_back(*(new PointT(1,2,0)));
+  hull->push_back(*(new PointT(3,2,0)));
+  hull->push_back(*(new PointT(3.5,1.5,0)));
+  hull->push_back(*(new PointT(3.5,1,0)));
+  hull->push_back(*(new PointT(2,-1.5,0)));
+
+  chd->reduceConvHullPoints(hull, 3);
+}
+*/
+
+
+
+
 int main(int argc, char* argv[]) {
   // Obtain a video source based on the command line arguments received
   boost::shared_ptr<VideoSource<PointT> > raw_source(GetVideoSource(argc, argv));
