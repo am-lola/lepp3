@@ -1,9 +1,9 @@
-#ifndef LEPP2_SMOOTH_OBSTACLE_AGGREGATOR_H__
-#define LEPP2_SMOOTH_OBSTACLE_AGGREGATOR_H__
+#ifndef lepp3_SMOOTH_SURFACE_AGGREGATOR_H__
+#define lepp3_SMOOTH_SURFACE_AGGREGATOR_H__
 
-#include "lepp3/Typedefs.hpp"
 #include "lepp3/SurfaceAggregator.hpp"
 #include <pcl/surface/concave_hull.h>
+#include <pcl/surface/convex_hull.h>
 
 #include <list>
 #include <map>
@@ -14,126 +14,155 @@ namespace lepp {
  * A visitor implementation that will perform a translation of models that it
  * visits by the given translation vector.
  */
-class BlendVisitor: public ModelVisitor {
+class BlendVisitors: public PlaneVisitor {
 public:
 	/**
-	 * Create a new `BlendVisitor` that will translate objects by the given
+	 * Create a new `BlendVisitor` that will translate surface by the given
 	 * vector.
 	 */
-	BlendVisitor(Coordinate translation_vec) :
+	BlendVisitors(Coordinate translation_vec) :
 			translation_vec_(translation_vec) {
 	}
-	void visitSphere(SphereModel& sphere) {
-		sphere.set_center(sphere.center() + translation_vec_);
+	void visitPlane(PlaneModel & plane) {
+		plane.set_center(plane.centerpoint() + translation_vec_);
 	}
-	void visitCapsule(CapsuleModel& capsule) {
-		capsule.set_first(capsule.first() + translation_vec_);
-		capsule.set_second(capsule.second() + translation_vec_);
-	}
+
 private:
 	Coordinate const translation_vec_;
 };
 
 /**
- * An `ObstacleAggregator` decorator.
+ * A `SurfaceAggregator` decorator.
  *
- * It takes the obstacles found by an obstacle detector and applies some
- * postprocessing in order to "smooth out" the obstacles being passed on to the
+ * It takes the surfaces found by  surface detector and applies some
+ * postprocessing in order to "smooth out" the surfaces being passed on to the
  * final output.
  *
- * It does so by tracking which of the obstacles detected in the new frame have
+ * It does so by tracking which of the surfaces detected in the new frame have
  * also been previously found and outputting only those that have been found in
  * a sufficient number of consecutive frames, so as to give us some certainty
  * that its appearance is not due to sensor noise.
  *
- * Conversely, it also tracks which obstacles have disappeared, propagating the
- * disappearance only if the obstacle has been gone in a sufficient number of
+ * Conversely, it also tracks which surfaces have disappeared, propagating the
+ * disappearance only if the surface has been gone in a sufficient number of
  * consecutive frames.
  *
- * It emits the obstacles that it considers real in each frame to all
+ * It emits the surfaces that it considers real in each frame to all
  * aggregators that are attached to it.
  */
-class SmoothObstacleAggregator: public ObstacleAggregator {
+template<class PointT>
+class PostSurfaceAggregator: public lepp::SurfaceAggregator<PointT> {
+
 public:
+
+	typedef int model_id_t;
+	typedef pcl::PointCloud<PointT> PointCloudT;
+	typedef typename PointCloudT::Ptr PointCloudPtr;
+	typedef typename PointCloudT::ConstPtr CloudConstPtr;
+
 	/**
-	 * Creates a new `SmoothObstacleAggregator`.
+	 * Creates a new `PostSurfaceAggregator`.
 	 */
 	PostSurfaceAggregator();
 	/**
-	 * Attach a new `ObstacleAggregator` that will be notified of obstacles that
+	 * Attach a new `SurfaceAggregator` that will be notified of surfaces that
 	 * this instance generates.
 	 */
-	void attachSurfaceAggregator(boost::shared_ptr<ObstacleAggregator> aggreg);
+	void attachSurfaceAggregator(
+			boost::shared_ptr<SurfaceAggregator<PointT> > aggreg);
 	/**
 	 * The member function that all concrete aggregators need to implement in
-	 * order to be able to process newly detected obstacles.
+	 * order to be able to process newly detected surfaces.
 	 */
-	virtual void updateSurfaces(std::vector<ObjectModelPtr> const& obstacles);
-private:
-	// Private types
+	virtual void updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
+                              PointCloudPtr &cloudMinusSurfaces, 
+                              std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
+
+//	typedef typename pcl::PointCloud<PointT> PointCloudT;
+//	typedef typename PointCloudT::Ptr PointCloudPtr;
+//	typedef typename PointCloudT::ConstPtr CloudConstPtr;
+
+
+// Private types
 	/**
 	 * The type that represents model IDs. For convenience it aliases an int.
 	 */
-	typedef int model_id_t;
 
 	// Private member functions
 	/**
-	 * Sends the given obstacles to all attached aggregators.
+	 * Sends the given surfaces to all attached aggregators.
 	 */
-	void notifyAggregators(std::vector<ObjectModelPtr> const& obstacles);
+	void notifySurfaces(std::vector<SurfaceModelPtr> const& surfaces,
+		    			PointCloudPtr &cloudMinusSurfaces, 
+    					std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
 	/**
-	 * Computes the matching of the new obstacles to the obstacles that are being
+	 * Computes the matching of the new surfaces to the surfaces that are being
 	 * tracked already.
 	 *
-	 * If a new obstacle does not have a match in the ones being tracked, a new
+	 * If a new surface does not have a match in the ones being tracked, a new
 	 * ID is assigned to it and it is added to the `tracked_models_`.
 	 *
 	 * The returned map represents a mapping of model IDs (found in the
-	 * `tracked_models_`) to the index of this obstacle in the `new_obstacles`
+	 * `tracked_models_`) to the index of this surface in the `new_surfaces`
 	 * list.
 	 */
-	std::map<model_id_t, size_t> matchToPrevious(
-			std::vector<ObjectModelPtr> const& new_obstacles);
+
+
+	std::map<int, size_t> matchToPrevious(std::vector<SurfaceModelPtr> const& new_surfaces);
 	/**
-	 * Adapts the currently tracked objects by taking into account their new
-	 * representations.
+	 * Goes through all the tracked models, which are also detected in the new detection
+	 * to recalculate necessary differences -like a small shift in the center of the surface
+	 * and adjust the matching criterias,
 	 */
-	void adaptTracked(std::map<model_id_t, size_t> const& correspondence,
-			std::vector<ObjectModelPtr> const& new_obstacles);
+	void adaptTracked(std::map< int, size_t> const& correspondence,
+			std::vector<SurfaceModelPtr> const& new_surfaces);
 	/**
 	 * Updates the internal `frames_found_` and `frames_lost_` counters for each
 	 * mode, based on the given new matches description, i.e. increments the
 	 * seen counter for all models that were already tracked and found in the new
-	 * frame (i.e. included in the `new_matches`); increments the lost counter for
+	 * frame (i.e. included in the `new_matches` (matching of the already tracked models with
+	 * the addition of newly appeared surfaces in the latest scene)
+	 * increments the lost counter for
 	 * all models that were tracked, but not found in the new frame.
-	 *
 	 * The format of the given parameter is the one returned by the
 	 * `matchToPrevious` member function.
+	 * ****************************************************************
+	 * Here the important point is, frames_found and frames_lost do not keep
+	 * ids of materialized models. They keep the track of sequential information.
+	 * Those lists stand between "being dropped" and "being materialized".
 	 */
-	void updateLostAndFound(std::map<model_id_t, size_t> const& new_matches);
+	void updateLostAndFound(std::map<int,size_t> const& new_matches);
 	/**
-	 * Drops any object that has been lost too many frames in a row.
-	 * This means that the object is removed from tracked objects, as well as no
-	 * longer returned as a "real" (materialized) object.
+	 * Drops any surface that has been lost too many frames in a row.
+	 * This means that the surface is removed from tracked surface, as well as no
+	 * longer returned as a "real" (materialized) surface.
 	 */
-	void dropLostObjects();
+	void dropLostSurface();
 	/**
-	 * Materializes any object that has been seen enough frames in a row.
-	 * This means that tracked objects that seem to be stable are "graduated up"
-	 * to a "real" object and from there on out presented to the underlying
-	 * aggregator.
+	 * Materializes any surface that has been seen enough frames in a row.
+	 * This means that tracked surfaces that seem to be stable are "graduated up"
+	 * to a "real" surface and from there on out presented to the underlying
+	 * aggregator. Those surfaces are removed from frames_found list as well.
 	 */
-	void materializeFoundObjects();
+	void materializeFoundSurfaces();
 	/**
-	 * Convenience function that copies the list of materialized objects to a list
+	 * Convenience function that copies the list of materialized surfaces to a list
 	 * that can then be given to the underlying aggregator.
 	 */
-	std::vector<ObjectModelPtr> copyMaterialized();
+	std::vector<SurfaceModelPtr> copyMaterialized();
+
+	/*
+	 * The function to calculate convex hull for each materialized surface.
+	 * */
+	//void getConvexHull(std::vector<PointCloudPtr> const &surfaceList);
+	/* The function to calculate concave hull for each materialized surface.
+	 * */
+	//void getConcaveHull(std::vector<PointCloudPtr> const &surfaceList);
 	/**
 	 * The function returns the next available model ID. It makes sure that no
 	 * models are ever assigned the same ID.
 	 */
-	model_id_t nextModelId();
+	 model_id_t nextModelId();
 	/**
 	 * Returns the ID of a model tracked that matches the given model.
 	 *
@@ -141,96 +170,128 @@ private:
 	 * characteristic point has the smallest distance from the point of the given
 	 * mode, but given that the distance is below a certain threshold.
 	 *
-	 * Objects for which no such match can be found are given a new ID and this ID
+	 * Surfaces for which no such match can be found are given a new ID and this ID
 	 * is returned.
 	 */
-	model_id_t getMatchByDistance(ObjectModelPtr model);
+	model_id_t getMatchByDistance(SurfaceModelPtr model);
 
 	// Private members
 	/**
-	 * A list of aggregators to which this one will pass its own list of obstacles
+	 * A list of aggregators to which this one will pass its own list of surfaces
 	 */
-	std::vector<boost::shared_ptr<ObstacleAggregator> > aggregators_;
+	std::vector<boost::shared_ptr<SurfaceAggregator<PointT> > > aggregators_;
 	/**
 	 * Keeps track of which model ID is the next one that can be assigned.
 	 */
 	model_id_t next_model_id_;
 	/**
-	 * A mapping of model IDs to their `ObjectModel` representation.
+	 * A mapping of model IDs to their `SurfaceModel` representation.
 	 */
-	std::map<model_id_t, boost::shared_ptr<ObjectModel> > tracked_models_;
+		std::map<model_id_t, boost::shared_ptr<SurfaceModel> > tracked_models_;
+
+		//template <typename model_id_t ,boost::shared_ptr<SurfaceModel>>
+		//using tracked_models_=std::map<model_id_t,boost::shared_ptr<SurfaceModel>>;
+
+//?????????????
+
+
 	/**
 	 * A mapping of the model ID to the number of subsequent frames that the model
 	 * was found in.
 	 */
 	std::map<model_id_t, int> frames_found_;
+		//template <typename model_id_t ,int>
+	//using frames_found_=std::map<model_id_t,int>
+
 	/**
 	 * A mapping of the model ID to the number of subsequent frames that the model
 	 * was no longer found in.
 	 */
 	std::map<model_id_t, int> frames_lost_;
+//		template <typename model_id_t, int>
+//	using frames_lost_=std::map<model_id_t,int>
 	/**
 	 * Contains those models that are currently considered "real", i.e. not simply
 	 * perceived in one frame, but with sufficient certainty in many frames that
-	 * we can claim it's a real object (therefore, it got "materialized").
+	 * we can claim it's a real surface (therefore, it got "materialized").
 	 * We use a linked-list for this purpose since we need efficient removals
 	 * without copying elements or (importantly) invalidating iterators.
 	 */
-	std::list<ObjectModelPtr> materialized_models_;
+	std::list<SurfaceModelPtr> materialized_models_;
 	/**
 	 * Maps the model to their position in the linked list so as to allow removing
-	 * objects efficiently.
+	 * surfaces efficiently.
 	 * Theoretically, the removal would asymptotically be dominated by the map
 	 * lookup (since it's a red-black tree, not a hash table). In practice, since
-	 * the number of objects will always be extremely small, it may as well be
+	 * the number of surfaces will always be extremely small, it may as well be
 	 * O(1).
 	 */
-	std::map<model_id_t, std::list<ObjectModelPtr>::iterator> model_idx_in_list_;
+	std::map<model_id_t, std::list<SurfaceModelPtr>::iterator> model_idx_in_list_;
+	//	template <typename model_id_t, std::list<SurfaceModelPtr>::iterator>
+	//	using model_idx_in_list_=std::map <model_id_t,std::list<SurfaceModelPtr>::iterator>;
+
 	/**
 	 * Current count of the number of frames processed by the aggregator.
 	 */
 	int frame_cnt_;
 
-	std::vector<PointCloudPtr>  surfaceContourList;
+	//std::vector<PointCloudPtr>  surfaceContourList;
 };
 
-SmoothObstacleAggregator::SmoothObstacleAggregator() :
+template<class PointT>
+PostSurfaceAggregator<PointT>::PostSurfaceAggregator() :
 		next_model_id_(0), frame_cnt_(0) {
 }
 
-void SmoothObstacleAggregator::attachObstacleAggregator(
-		boost::shared_ptr<ObstacleAggregator> aggregator) {
+template<class PointT>
+void PostSurfaceAggregator<PointT>::attachSurfaceAggregator(
+		boost::shared_ptr<SurfaceAggregator<PointT> > aggregator) {
 	aggregators_.push_back(aggregator);
 }
 
-SmoothObstacleAggregator::model_id_t SmoothObstacleAggregator::nextModelId() {
+template<class PointT>
+typename PostSurfaceAggregator<PointT>::model_id_t PostSurfaceAggregator<PointT>::nextModelId() {
 	return next_model_id_++;
 }
 
-SmoothObstacleAggregator::model_id_t SmoothObstacleAggregator::getMatchByDistance(
-		ObjectModelPtr model) {
-	Coordinate const query_point = model->center_point();
+/*!!!!!min_dist definition, should be checked !!!! */
+template<class PointT>
+typename PostSurfaceAggregator<PointT>::model_id_t PostSurfaceAggregator<PointT>::getMatchByDistance(
+		SurfaceModelPtr surfacemodel) {
+
+	Coordinate const query_point = surfacemodel->centerpoint();
+
 	bool found = false;
 	double min_dist = 1e10;
+
 	model_id_t match = 0;
-	for (std::map<model_id_t, ObjectModelPtr>::const_iterator it =
-			tracked_models_.begin(); it != tracked_models_.end(); ++it) {
-		Coordinate const p(it->second->center_point());
+
+		for(std::map<model_id_t,SurfaceModelPtr>::const_iterator it = tracked_models_.begin(); it!=tracked_models_.end(); ++it)
+	 {
+		/*Iterate through tracked models for the same surface check. Now the only criteria for the check is the center point
+		 * distance error.
+		 * This has to be extended to inclination and area criteria
+		 * */
+			//TODO include area and maybe eliminate the point clouds with too small areas from the beginning.?
+		Coordinate const p(it->second->centerpoint());
 		double const dist = (p.x - query_point.x) * (p.x - query_point.x)
 				+ (p.y - query_point.y) * (p.y - query_point.y)
 				+ (p.z - query_point.z) * (p.z - query_point.z);
-		//std::cout << "Distance was " << dist << " ";
+
+		std::cout << "Distance was " << dist << " ";
+
 		if (dist <= 0.05) {
-			//std::cout << " accept";
+			std::cout << " accept";
 			if (!found)
 				min_dist = dist;
 			found = true;
+
 			if (dist <= min_dist) {
 				min_dist = dist;
 				match = it->first;
 			}
 		}
-		//std::cout << std::endl;
+		std::cout << std::endl;
 	}
 
 	if (found) {
@@ -240,108 +301,147 @@ SmoothObstacleAggregator::model_id_t SmoothObstacleAggregator::getMatchByDistanc
 	}
 }
 
-std::map<SmoothObstacleAggregator::model_id_t, size_t> SmoothObstacleAggregator::matchToPrevious(
-		std::vector<ObjectModelPtr> const& new_obstacles) {
-	// Maps the ID of the model to its index in the new list of obstacles.
-	// This lets us know the new approximation of each currently tracked object.
-	// If the model ID is not in the `tracked_models_`, it means we've got a new
-	// object in the stream.
-	std::map<model_id_t, size_t> correspondence;
-	// Keeps a list of objects that were new in the frame (the ID and its index
-	// in the `new_obstacles`). This is done in order to insert the new objects
-	// after the matching step, since we don't want some of the new objects to
-	// accidentaly get matched to one of the other new ones. Therefore, we defer
-	// the update of the tracked objects 'till after the matching step.
-	std::vector < std::pair<model_id_t, size_t> > new_in_frame;
+template<class PointT>
+std::map<int, size_t> PostSurfaceAggregator<PointT>::matchToPrevious(std::vector<SurfaceModelPtr> const& new_surfaces) {
 
-	// First we match each new obstacle to one of the models that is currently
+	// Maps the ID of the model to its index in the new list of surfaces.
+	// This lets us know the new approximation of each currently tracked surface.
+	// If the model ID is not in the `tracked_models_`, it means we've got a new
+	// surface in the stream.
+	// Model_ID in the tracking side, and the index of the surface in the "vector of new_surfaces"
+	//which is basically the surfaces in the current frame.
+	//template <typename model_id_t,typename size_t>
+	//using correspondence= std::map < model_id_t, size_t >;
+	std::map<int,size_t> correspondence;
+
+	// Keeps a list of surfaces that are new in the frame (the ID and its index
+	// in the `new_surfaces`). This is done in order to insert the new surfaces
+	// after the matching step, since we don't want some of the new surfaces to
+	// accidentaly get matched to one of the other new ones. Therefore, we defer
+	// the update of the tracked surfaces 'till after the matching step.
+
+	//template <typename model_id_t ,typename size_t>
+	//using TPair = std::pair<model_id_t,size_t>;
+
+	//template <typename model_id_t,typename size_t>
+	//using new_in_frame = std::vector<TPair<model_id_t,size_t>>;
+	std::vector < std::pair<int, size_t> > new_in_frame;
+
+	// First we match each new surface to one of the models that is currently
 	// being tracked or give it a brand new model ID, if we are unable to find a
 	// match.
-	for (size_t i = 0; i < new_obstacles.size(); ++i) {
-		//std::cout << "Matching " << i << " (" << *new_obstacles[i] << ")"
-		//		<< std::endl;
-		model_id_t const model_id = getMatchByDistance(new_obstacles[i]);
-		//std::cout << "Matched " << i << " --> " << model_id << std::endl;
-		correspondence[model_id] = i;
-		// If this one wasn't in the tracked models before, add it!
+	for (size_t i = 0; i < new_surfaces.size(); ++i) {
+		std::cout << "Matching " << i << " (" << *new_surfaces[i] << ")"
+				<< std::endl;
+		//If the surface is new, then it will get a new model_id. If the surface has already
+		//been tracked, then its existing model_id is going to be returned.
+		 model_id_t const model_id = getMatchByDistance(new_surfaces[i]);
+		std::cout << "Matched " << i << " --> " << model_id << std::endl;
+	     correspondence[model_id] = i;
+		// If this ID wasn't in the tracked models before, add it to new in frame!
+
 		if (tracked_models_.find(model_id) == tracked_models_.end()) {
-			new_in_frame.push_back(std::make_pair(model_id, i));
+			//Could not be found, so make a pair of model_id and the index number i in new_surface
+			 new_in_frame.push_back(std::make_pair(model_id, i));
 		}
 	}
 
-	// We start tracking each obstacle for which we were unable to find a match
-	// in the currently tracked list of objects.
+	// We start tracking each surface for which we were unable to find a match
+	// in the currently tracked list of surfaces. To those, that are just added:
 	for (size_t i = 0; i < new_in_frame.size(); ++i) {
-		model_id_t const& model_id = new_in_frame[i].first;
-		size_t const corresp = new_in_frame[i].second;
-		//std::cout << "Inserting previously untracked model " << model_id
-		//		<< std::endl;
-		tracked_models_[model_id] = new_obstacles[corresp];
+
+		model_id_t const& model_id = new_in_frame[i].first; //model_id in the whole tracking
+		size_t const corresp = new_in_frame[i].second; //corresponding index number in new_surface
+		std::cout << "Inserting previously untracked model " << model_id
+				<< std::endl;
+		tracked_models_[model_id] = new_surfaces[corresp]; // corresp=i basically
 		frames_lost_[model_id] = 0;
 		frames_found_[model_id] = 0;
-		// We assign it the ID here too!
-		new_obstacles[corresp]->set_id(model_id);
+
+		// We assign an ID to our newly appeared surface in our frame here too!
+		new_surfaces[corresp]->set_id(model_id);
+
 	}
 
 	return correspondence;
 }
 
-void SmoothObstacleAggregator::adaptTracked(
-		std::map<model_id_t, size_t> const& correspondence,
-		std::vector<ObjectModelPtr> const& new_obstacles) {
-	for (std::map<model_id_t, size_t>::const_iterator it =
+
+template<class PointT>
+void PostSurfaceAggregator<PointT>::adaptTracked(
+		std::map<int, size_t> const& correspondence,
+		std::vector<SurfaceModelPtr> const& new_surfaces) {
+
+	for (std::map<int, size_t>:: const_iterator it =
 			correspondence.begin(); it != correspondence.end(); ++it) {
 		model_id_t const& model_id = it->first;
 		int const& i = it->second;
+
 		// Blend the new representation into the one we're tracking
-		Coordinate const translation_vec = (new_obstacles[i]->center_point()
-				- tracked_models_[model_id]->center_point()) / 2;
-		BlendVisitor blender(translation_vec);
+		Coordinate const translation_vec = (new_surfaces[i]->centerpoint()
+				- tracked_models_[model_id]->centerpoint()) / 2;
+
+		BlendVisitors blender(translation_vec);
 		tracked_models_[model_id]->accept(blender);
-		if (frame_cnt_ % 30 == 0) {
-			CompositeModel* tracked =
-					dynamic_cast<CompositeModel*>(&*tracked_models_[model_id]);
-			CompositeModel* new_model =
-					dynamic_cast<CompositeModel*>(&*new_obstacles[i]);
-			if (tracked && new_model) {
-				tracked->set_models(new_model->models());
-			}
-		}
+
+//		/////////////////////////////////////////////////////////////////////
+//		if (frame_cnt_ % 30 == 0) {
+//			PlaneModel* tracked =
+//					dynamic_cast<PlaneModel*>(&*tracked_models_[model_id]);
+//			PlaneModel* new_model =
+//					dynamic_cast<PlaneModel*>(&*new_surfaces[i]);
+//
+//			if (tracked && new_model) {
+//				tracked->set_models(new_model->models());
+//			}
+//		}
+
+		//////////////////////////////////////////////////////////////////////
 	}
 }
+template <class PointT>
+void PostSurfaceAggregator<PointT>::updateLostAndFound(std::map<int, size_t> const& new_matches) {
 
-void SmoothObstacleAggregator::updateLostAndFound(
-		std::map<model_id_t, size_t> const& new_matches) {
-	for (std::map<model_id_t, boost::shared_ptr<ObjectModel> >::const_iterator it =
+	for (std::map<model_id_t, boost::shared_ptr<SurfaceModel> >::const_iterator it =
 			tracked_models_.begin(); it != tracked_models_.end(); ++it) {
+
 		model_id_t const& model_id = it->first;
+
+		//New matches is the correspondence map (model_id, i (index in new surfaces))
 		if (new_matches.find(model_id) != new_matches.end()) {
-			// Update the seen count only if the object isn't already materialized.
+
+			// Update the seen count only if the surface isn't already materialized.
 			if (model_idx_in_list_.find(model_id) == model_idx_in_list_.end()) {
-				//std::cout << "Incrementing the seen count for " << model_id
-				//		<< std::endl;
+
+				//The model id is no not in model_idx_in_list
+				std::cout << "Incrementing the seen count for Surface ID: " << model_id
+						<< std::endl;
 				++frames_found_[model_id];
 			}
 			// ...but always reset its lost counter, since we've now seen it.
 			frames_lost_[model_id] = 0;
 		} else {
-			std::cout << "Incrementing the lost count for " << model_id
+			std::cout << "Incrementing the lost count for Surface ID: " << model_id
 					<< std::endl;
 			++frames_lost_[model_id];
 			frames_found_[model_id] = 0;
 		}
 	}
 }
+template<class PointT>
+void PostSurfaceAggregator<PointT>::dropLostSurface() {
+	// Drop surfaces that haven't been seen in a while
 
-void SmoothObstacleAggregator::dropLostObjects() {
-	// Drop obstacles that haven't been seen in a while
-	// !!!NOTE!!! Deleting while iterating is no longer the same in C++11!
+	cout<<"DropLostSurface..."<<std::endl;
 	std::map<model_id_t, int>::iterator it = frames_lost_.begin();
-	int const LOST_LIMIT = 10;
+	int const LOST_LIMIT = 10; //5
+
 	while (it != frames_lost_.end()) {
 		if (it->second >= LOST_LIMIT) {
-			//std::cout << "Object " << it->first
-			//		<< " not found 5 times in a row: DROPPING" << std::endl;
+
+			std::cout << "Surface ID: " << it->first
+					<< "is not found 10 times in a row: DROPPING" << std::endl;
+
 			// Stop tracking the model, since it's been gone for a while.
 			if (tracked_models_.find(it->first) != tracked_models_.end()) {
 				tracked_models_.erase(tracked_models_.find(it->first));
@@ -349,24 +449,29 @@ void SmoothObstacleAggregator::dropLostObjects() {
 			// If the model was also materialized, make sure we drop it from there too
 			if (model_idx_in_list_.find(it->first)
 					!= model_idx_in_list_.end()) {
+
 				materialized_models_.erase(model_idx_in_list_[it->first]);
 				model_idx_in_list_.erase(model_idx_in_list_.find(it->first));
+
 			}
+
 			// Remove the helper tracking data too.
 			if (frames_found_.find(it->first) != frames_found_.end()) {
 				frames_found_.erase(frames_found_.find(it->first));
 			}
+
 			frames_lost_.erase(it++);
 		} else {
-			//std::cout << "Object " << it->first
-			//		<< " not lost enough times to be dropped" << " ("
-			//		<< it->second << ")" << std::endl;
+			std::cout << "Surface ID:" << it->first
+					<< " is not lost enough times to be dropped. Only:" << " ("
+					<< it->second << ") times lost." << std::endl;
 			++it;
 		}
 	}
 }
-
-void SmoothObstacleAggregator::materializeFoundObjects() {
+template<class PointT>
+void PostSurfaceAggregator<PointT>::materializeFoundSurfaces() {
+	std::cout<<"Materialize Surfaces"<<std::endl;
 	int const FOUND_LIMIT = 5;
 	std::map<model_id_t, int>::iterator it = frames_found_.begin();
 	while (it != frames_found_.end()) {
@@ -374,137 +479,70 @@ void SmoothObstacleAggregator::materializeFoundObjects() {
 		model_id_t const model_id = it->first;
 		int const seen_count = it->second;
 		if (seen_count >= FOUND_LIMIT) {
-			//std::cout << "Object found " << model_id
-			//		<< " 5 times in a row: INCLUDING!" << std::endl;
+			std::cout << "Surface found " << model_id
+					<< " 5 times in a row: Materializing!" << std::endl;
 			// Get the corresponding model
-			ObjectModelPtr const& model = tracked_models_.find(model_id)->second;
+			SurfaceModelPtr const& model =
+					tracked_models_.find(model_id)->second;
 			// Materialize it...
 			materialized_models_.push_back(model);
 			// ...and make sure we know where in the list it got inserted.
-			std::list<ObjectModelPtr>::iterator pos =
+			std::list<SurfaceModelPtr>::iterator pos =
 					materialized_models_.end();
 			--pos;
 			model_idx_in_list_[model_id] = pos;
 			// Finally, make sure we remove it from the mapping so that we don't end
-			// up adding it more than once to the list of materialized objects.
+			// up adding it more than once to the list of materialized surfaces.
 			frames_found_.erase(it++);
+
 		} else {
-			//std::cout << "Object " << it->first
-			//		<< " not seen enough times to be included" << " ("
-			//		<< it->second << ")" << std::endl;
+			std::cout << "Surface ID: " << it->first
+					<< " is not seen enough times to be materialized" << " ("
+					<< it->second << ") Times seen" << std::endl;
 			++it;
 		}
 	}
 
 }
-
-std::vector<ObjectModelPtr> SmoothObstacleAggregator::copyMaterialized() {
-	std::vector<ObjectModelPtr> smooth_obstacles(materialized_models_.begin(),
-			materialized_models_.end());
-	return smooth_obstacles;
+template<class PointT>
+std::vector<SurfaceModelPtr> PostSurfaceAggregator<PointT>::copyMaterialized() {
+	std::vector < SurfaceModelPtr
+			> smooth_surfaces(materialized_models_.begin(),
+					materialized_models_.end());
+	return smooth_surfaces;
 }
 
-void SmoothObstacleAggregator::notifyAggregators(
-		std::vector<ObjectModelPtr> const& obstacles) {
-	size_t const sz = aggregators_.size();
-	for (size_t i = 0; i < sz; ++i) {
-		aggregators_[i]->updateObstacles(obstacles);
-	}
+template<class PointT>
+void PostSurfaceAggregator<PointT>::notifySurfaces(std::vector<SurfaceModelPtr> const& surfaces,
+										PointCloudPtr &cloudMinusSurfaces, 
+    									std::vector<pcl::ModelCoefficients> *&surfaceCoefficients)
+{
+  size_t sz = aggregators_.size();
+  for (size_t i = 0; i < sz; ++i) {
+    aggregators_[i]->updateSurfaces(surfaces,cloudMinusSurfaces,surfaceCoefficients);
+  }
 }
 
-void SmoothObstacleAggregator::updateObstacles(
-		std::vector<ObjectModelPtr> const& obstacles) {
-	++frame_cnt_;
-	//std::cout << "#new = " << obstacles.size() << std::endl;
 
-	std::map<model_id_t, size_t> correspondence = matchToPrevious(obstacles);
-	updateLostAndFound(correspondence);
-	adaptTracked(correspondence, obstacles);
-	dropLostObjects();
-	materializeFoundObjects();
-	std::vector<ObjectModelPtr> smooth_obstacles(copyMaterialized());
+template<class PointT>
+void PostSurfaceAggregator<PointT>::updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
+										PointCloudPtr &cloudMinusSurfaces, 
+    									std::vector<pcl::ModelCoefficients> *&surfaceCoefficients)
+{
+//	++frame_cnt_;
+	std::cout << "#new surface number= " << surfaces.size() << std::endl;
+	std::map<int, size_t> correspondence =matchToPrevious(surfaces);
+    updateLostAndFound(correspondence);
+	adaptTracked(correspondence, surfaces);
+	dropLostSurface();
+    materializeFoundSurfaces();
+    std::vector<SurfaceModelPtr> smooth_surfaces(copyMaterialized());
+    std::cout << "Number of Real Surfaces in this frame = " << smooth_surfaces.size()<< std::endl;
 
-	//std::cout << "Real in this frame = " << smooth_obstacles.size()
-	//		<< std::endl;
-	notifyAggregators(smooth_obstacles);
+	notifySurfaces(surfaces,cloudMinusSurfaces,surfaceCoefficients);
 }
 
-void PostSurfaceAggregator::getConvexHull(
-		std::vector<PointCloudPtr> const & surfaceList){
 
-	for (int i = 0; i < surfaceList.size(); ++i) {
-		if (i == 6)
-			break;
-		PointCloudPtr cloud_temp(new PointCloudPtr);
-		PointCloudPtr cloud_hull(new PointCloudPtr);
-
-		*cloud_temp += *(surfaceList->at(i));
-
-		pcl::ConvexHull<pcl::PointXYZ> chull;
-		chull.setInputCloud(cloud_temp);
-		chull.setDimension(2);
-		chull.setComputeAreaVolume(true);
-		chull.reconstruct(*cloud_hull);
-
-
-		surfaceContourList.push_back(cloud_hull);
-//		if (cloud_hull->points.size() > 0) {
-//
-//			//Heigth and Width
-//			if (PCL_Polygon_Area_Calculation(cloud_hull) >= 400 * 200) {
-//
-//				Eigen::Vector4f min_pt;
-//				Eigen::Vector4f max_pt;
-//				pcl::getMinMax3D(*cloud_hull, min_pt, max_pt);
-//
-//				if ((Calculate_Width(max_pt[0], min_pt[0]) >= 200)
-//						&& (Calculate_Heigth(max_pt[1], min_pt[1]) >= 200)) {
-//					cout << "[INFO] A Surface Found" << std::endl;
-//					cout << "Size: " << cloud_hull->points.size() << std::endl;
-//					cout << "Convex Area: " << chull.getTotalArea() / 1000000
-//							<< std::endl;
-//					cout << "Convex AreaP: " << PCL_Polygon_Area_Calculation(cloud_hull) / 1000000
-//												<< std::endl;
-//
-//					for (int j = 0; j < cloud_hull->points.size(); j++) {
-//
-//						getSurfaceList()->at(i)->push_back(
-//								cloud_hull->points.at(j));
-//					}
-//				}
-//			}
-//
-//		}
-	}
-}
-void PostSurfaceAggregator::getConcaveHull(
-		std::vector<PointCloudPtr> const & surfaceList) {
-
-	 for (int i = 0; i < surfaceList.size(); i++) {
-
-		PointCloudPtr cloud_hull(new PointCloudT());
-		std::vector < pcl::Vertices > polygons;
-
-		*cloud_hull += *(surfaceList.at(i));
-		pcl::ConcaveHull <PointT> chull;
-		chull.setInputCloud(cloud_hull);
-		chull.setAlpha(70);
-		chull.setKeepInformation(true);
-		chull.reconstruct(*cloud_hull, polygons);
-
-		//std::cerr << "Concave hull has: " << cloud_hull->points.size()
-		//		<< " data points." << std::endl;
-		//std::cerr << "Polygons size: " << polygons.size()<< std::endl;
-
-		//for (int m = 0; m < polygons.size(); m++)
-		//	cout << " " << m << ": " << polygons[m] << std::endl;
-
-		//std::cerr << "Cloud " << i << "  has area: "<< PCL_Polygon_Area_Calculation(cloud_hull) / 1000000<< std::endl;
-
-		surfaceContourList.push_back(cloud_hull);
-	 }
-}
-
-}  // namespace lepp
+}// namespace lepp
 
 #endif

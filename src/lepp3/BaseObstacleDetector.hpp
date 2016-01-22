@@ -75,9 +75,9 @@ public:
   virtual ~BaseObstacleDetector() {}
 
 
-  virtual void updateSurfaces(std::vector<PointCloudConstPtr> surfaces,
-      PointCloudPtr &cloudMinusSurfaces,
-      std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
+  virtual void updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
+                              PointCloudPtr &cloudMinusSurfaces, 
+                              std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
 
 private:
   PointCloudPtr cloud_;
@@ -102,9 +102,9 @@ BaseObstacleDetector<PointT>::BaseObstacleDetector(
 
 
 template<class PointT>
-void BaseObstacleDetector<PointT>::updateSurfaces(std::vector<PointCloudConstPtr> surfaces,
-      PointCloudPtr &cloudMinusSurfaces,
-      std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) {
+void BaseObstacleDetector<PointT>::updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
+                              PointCloudPtr &cloudMinusSurfaces, 
+                              std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) {
   cloud_ = cloudMinusSurfaces;
   try {
     update();

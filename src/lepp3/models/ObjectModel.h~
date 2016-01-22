@@ -1,7 +1,7 @@
-#ifndef LEPP2_MODELS_OBJECT_MODEL_H__
-#define LEPP2_MODELS_OBJECT_MODEL_H__
+#ifndef lepp3_MODELS_OBJECT_MODEL_H__
+#define lepp3_MODELS_OBJECT_MODEL_H__
 
-#include "lepp2/models/Coordinate.h"
+#include "lepp3/models/Coordinate.h"
 
 namespace lepp {
 

@@ -15,6 +15,8 @@
 #include "lepp3/ObjectApproximator.hpp"
 #include "lepp3/MomentOfInertiaApproximator.hpp"
 #include "lepp3/SplitApproximator.hpp"
+#include "lepp3/SurfaceApproximator.hpp"
+#include "lepp3/SurfaceFeatureEstimator.hpp"
 
 using namespace lepp;
 
@@ -24,7 +26,7 @@ template<class PointT>
 class SurfaceDetector : public lepp::VideoObserver<PointT> {
 
  public:
-    SurfaceDetector(boost::shared_ptr<ObjectApproximator<PointT> > approx);
+    SurfaceDetector();
     virtual ~SurfaceDetector() {}
 
     /**
@@ -43,7 +45,7 @@ class SurfaceDetector : public lepp::VideoObserver<PointT> {
     /**
      * Notifies any observers about newly detected surfaces.
      */
-    void notifySurfaces(std::vector<PointCloudConstPtr> surfaces,
+    void notifySurfaces(std::vector<SurfaceModelPtr> const& surfaces,
       PointCloudPtr &cloudMinusSurfaces, std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
 
   private:
@@ -57,7 +59,7 @@ class SurfaceDetector : public lepp::VideoObserver<PointT> {
     std::vector<boost::shared_ptr<SurfaceAggregator<PointT> > > aggregators;
 
     boost::shared_ptr<BaseSegmenter<PointT> > segmenter_;
-    boost::shared_ptr<ObjectApproximator<PointT> > approximator_;
+    boost::shared_ptr<SurfaceApproximator<PointT> > approximator_;
 
     /**
      * Performs a new update of the surface approximations.
@@ -67,9 +69,10 @@ class SurfaceDetector : public lepp::VideoObserver<PointT> {
 };
 
 template<class PointT>
-SurfaceDetector<PointT>::SurfaceDetector(
-      boost::shared_ptr<ObjectApproximator<PointT> > approx)
-    : approximator_(approx),
+SurfaceDetector<PointT>::SurfaceDetector()
+    : approximator_(
+      boost::shared_ptr<SurfaceApproximator<PointT> >(
+        new SurfaceFeatureEstimator<PointT>)),
       segmenter_(new SurfaceSegmenter<PointT>()) {
 }
 
@@ -97,8 +100,11 @@ void SurfaceDetector<PointT>::update() {
   segmenter_->segment(cloud_,surfaces,cloudMinusSurfaces,surfaceCoefficients);
   t.stop();
   //std::cerr << "Surface segmentation took " << t.duration() << std::endl;
+  std::vector<SurfaceModelPtr> surfaceModels;
+  for(size_t i = 0; i < surfaces.size(); i++)
+    surfaceModels.push_back(approximator_->approximate(surfaces[i]));
 
-  notifySurfaces(surfaces,cloudMinusSurfaces,surfaceCoefficients);
+  notifySurfaces(surfaceModels,cloudMinusSurfaces,surfaceCoefficients);
 
 //  // Iteratively approximate the segments
 //  size_t segment_count = segments.size();
@@ -119,7 +125,7 @@ void SurfaceDetector<PointT>::attachSurfaceAggregator(
 }
 
 template<class PointT>
-void SurfaceDetector<PointT>::notifySurfaces(std::vector<PointCloudConstPtr> surfaces,
+void SurfaceDetector<PointT>::notifySurfaces(std::vector<SurfaceModelPtr> const& surfaces,
   PointCloudPtr &cloudMinusSurfaces, std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) {
   size_t sz = aggregators.size();
   for (size_t i = 0; i < sz; ++i) {

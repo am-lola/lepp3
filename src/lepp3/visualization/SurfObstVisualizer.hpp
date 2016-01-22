@@ -19,7 +19,7 @@
 
 namespace lepp {
 
-/**
+/**c
  * A class that can draw `ObjectModel` instances onto a PCLVisualizer.
  * It is a `ModelVisitor` implementation and it draws each model that it visits.
  *
@@ -151,10 +151,9 @@ public:
   /**
    * SurfaceAggregator interface implementation: processes detected surfaces.
   */
-  virtual void updateSurfaces(
-      std::vector<PointCloudConstPtr> surfaces,
-      PointCloudPtr &cloudMinusSurfaces,
-      std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
+  virtual void updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
+                PointCloudPtr &cloudMinusSurfaces, 
+                  std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
 
 
   /**
@@ -178,7 +177,7 @@ private:
 
 
   void drawSurfaces(
-            std::vector<PointCloudConstPtr> surfaces,
+            std::vector<SurfaceModelPtr> const& surfaces,
       pcl::visualization::PCLVisualizer& viewer);
 
 
@@ -213,7 +212,7 @@ void SurfObstVisualizer<PointT>::updateObstacles(
 
 template<class PointT>
 void SurfObstVisualizer<PointT>::drawSurfaces(
-        std::vector<PointCloudConstPtr> surfaces,
+        std::vector<SurfaceModelPtr> const& surfaces,
     pcl::visualization::PCLVisualizer& pclViz) {
   pclViz.removePointCloud("SUR1",0);
   pclViz.removePointCloud("SUR2",0);
@@ -224,29 +223,29 @@ void SurfObstVisualizer<PointT>::drawSurfaces(
   for (size_t i = 0; i < sz; ++i) {
 
      if (i ==0) {
-            if (!pclViz.updatePointCloud(surfaces[i], "SUR1"))
-                pclViz.addPointCloud(surfaces[i], "SUR1");                       //RED
+            if (!pclViz.updatePointCloud(surfaces[i]->getCloud(), "SUR1"))
+                pclViz.addPointCloud(surfaces[i]->getCloud(), "SUR1");                       //RED
       pclViz.setPointCloudRenderingProperties(
           pcl::visualization::PCL_VISUALIZER_COLOR, 1.0, 0, 0,
                     "SUR1");
     }
     else if (i == 1) {
-            if (!pclViz.updatePointCloud(surfaces[i], "SUR2"))                  //GREEN
-                pclViz.addPointCloud(surfaces[i], "SUR2");
+            if (!pclViz.updatePointCloud(surfaces[i]->getCloud(), "SUR2"))                  //GREEN
+                pclViz.addPointCloud(surfaces[i]->getCloud(), "SUR2");
       pclViz.setPointCloudRenderingProperties(
           pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1.0, 0,
                     "SUR2");
     }
     else if (i == 2) {
-            if (!pclViz.updatePointCloud(surfaces[i], "SUR3"))                  //BLUE
-                pclViz.addPointCloud(surfaces[i], "SUR3");
+            if (!pclViz.updatePointCloud(surfaces[i]->getCloud(), "SUR3"))                  //BLUE
+                pclViz.addPointCloud(surfaces[i]->getCloud(), "SUR3");
       pclViz.setPointCloudRenderingProperties(
           pcl::visualization::PCL_VISUALIZER_COLOR, 0, 0, 1.0,
                     "SUR3");
     }
     else if (i == 3) {
-            if (!pclViz.updatePointCloud(surfaces[i], "SUR4"))
-                pclViz.addPointCloud(surfaces[i], "SUR4");                       //PURPLE
+            if (!pclViz.updatePointCloud(surfaces[i]->getCloud(), "SUR4"))
+                pclViz.addPointCloud(surfaces[i]->getCloud(), "SUR4");                       //PURPLE
       pclViz.setPointCloudRenderingProperties(
           pcl::visualization::PCL_VISUALIZER_COLOR, 0.580392, 0,
                     0.827451, "SUR4");
@@ -262,10 +261,9 @@ void SurfObstVisualizer<PointT>::drawSurfaces(
 }
 
 template<class PointT>
-void SurfObstVisualizer<PointT>::updateSurfaces(
-        std::vector<PointCloudConstPtr> surfaces,
-      PointCloudPtr &cloudMinusSurfaces,
-      std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) {
+void SurfObstVisualizer<PointT>::updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
+                          PointCloudPtr &cloudMinusSurfaces, 
+                          std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) {
     pcl::visualization::CloudViewer::VizCallable surface_visualization =
             boost::bind(&SurfObstVisualizer::drawSurfaces, this, surfaces, _1);
    // viewer_.runOnVisualizationThread(surface_visualization);

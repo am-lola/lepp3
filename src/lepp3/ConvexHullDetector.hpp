@@ -136,8 +136,9 @@ class ConvexHullDetector : public SurfaceAggregator<PointT>
 {
 public:
 	// inherited from the SurfaceAggregator interface
-	virtual void updateSurfaces(std::vector<PointCloudConstPtr> surfaces,
-    	PointCloudPtr &cloudMinusSurfaces, std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
+	virtual void updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
+                              PointCloudPtr &cloudMinusSurfaces, 
+                              std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
 
 	// other classes can be connected to the output of the ConvexHullAggregator as aggregators.
 	// Thus, the ConvHullAggregator is a SurfaceAggregator itself, and is also a subject for
@@ -249,15 +250,15 @@ void ConvexHullDetector::reduceConvHullPoints(PointCloudPtr &hull, int numPoints
 
 
 // this function is called because a ConvexHullDetector is also a SurfaceAggregator.
-void ConvexHullDetector::updateSurfaces(std::vector<PointCloudConstPtr> surfaces,
-    	PointCloudPtr &cloudMinusSurfaces, 
-    	std::vector<pcl::ModelCoefficients> *&surfaceCoefficients)
+void ConvexHullDetector::updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
+                              PointCloudPtr &cloudMinusSurfaces, 
+                              std::vector<pcl::ModelCoefficients> *&surfaceCoefficients)
 {
 	std::vector<PointCloudPtr> convexHulls(surfaces.size());
 
 	for (int i = 0; i < surfaces.size(); i++)
 	{
-		detectConvexHull(surfaces[i], convexHulls[i], (*surfaceCoefficients)[i]);
+		detectConvexHull(surfaces[i]->getCloud(), convexHulls[i], (*surfaceCoefficients)[i]);
 		reduceConvHullPoints(convexHulls[i], 8);
 	}
 	// cast to const pointers

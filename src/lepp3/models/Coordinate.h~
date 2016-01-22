@@ -1,5 +1,5 @@
-#ifndef LEPP2_MODELS_COORDINATE_H__
-#define LEPP2_MODELS_COORDINATE_H__
+#ifndef lepp3_MODELS_COORDINATE_H__
+#define lepp3_MODELS_COORDINATE_H__
 
 #include <iostream>
 #include <pcl/common/pca.h>

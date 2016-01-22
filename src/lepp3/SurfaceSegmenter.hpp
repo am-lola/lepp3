@@ -1,5 +1,5 @@
-#ifndef LEPP2_SURFACE_SEGMENTER_H__
-#define LEPP2_SURFACE_SEGMENTER_H__
+#ifndef lepp3_SURFACE_SEGMENTER_H__
+#define lepp3_SURFACE_SEGMENTER_H__
 
 #include "lepp3/Typedefs.hpp"
 #include "lepp3/BaseSegmenter.hpp"

@@ -16,6 +16,7 @@
 #include "lepp3/FilteredVideoSource.hpp"
 #include "lepp3/SmoothObstacleAggregator.hpp"
 #include "lepp3/ConvexHullDetector.hpp"
+#include "lepp3/PostSurfaceAggregator.hpp"
 
 #include "lepp3/visualization/EchoObserver.hpp"
 #include "lepp3/visualization/SurfObstVisualizer.hpp"
@@ -141,27 +142,21 @@ int main(int argc, char* argv[]) {
   boost::shared_ptr<FilteredVideoSource<PointT> > source(
       buildFilteredSource(raw_source));
 
-  boost::shared_ptr<ObjectApproximator<PointT> > surface_simple_approx(
-      boost::shared_ptr<ObjectApproximator<PointT> >(
-        new MomentOfInertiaObjectApproximator<PointT>));  
-
-  boost::shared_ptr<CompositeSplitStrategy<PointT> > surfaceSplitter(
-      new CompositeSplitStrategy<PointT>);
-  surfaceSplitter->addSplitCondition(boost::shared_ptr<SplitCondition<PointT> >(
-      new DepthLimitSplitCondition<PointT>(1)));
-
-  // Prepare the detector
-  boost::shared_ptr<ObjectApproximator<PointT> > surfaceApprox(
-      new SplitObjectApproximator<PointT>(surface_simple_approx, surfaceSplitter));
-
   boost::shared_ptr<SurfaceDetector<PointT> > surfaceDetector(
-      new SurfaceDetector<PointT>(surfaceApprox));
+      new SurfaceDetector<PointT>());
   source->attachObserver(surfaceDetector);
+
+  // Surface Post Processing
+  boost::shared_ptr<PostSurfaceAggregator<PointT> > post_surface_processor(
+          new PostSurfaceAggregator<PointT>);
+
+  surfaceDetector->attachSurfaceAggregator(post_surface_processor);
+
 
     // add the surface convex hull detector
   boost::shared_ptr<ConvexHullDetector> convHullDetector(
     new ConvexHullDetector());
-
+  post_surface_processor->attachSurfaceAggregator(convHullDetector);
 
 //~~~~~~~~~~~~~~~~~~~~~~~Obstacles~~~~~~~~~~~~~~~~~~~~~~~~
 // Prepare the approximator that the detector is to use.
@@ -199,8 +194,7 @@ int main(int argc, char* argv[]) {
 
   // Attaching the visualizer to the source: allow it to display the original point cloud.
   source->attachObserver(surfObstVisualizer);
-  surfaceDetector->attachSurfaceAggregator(surfObstVisualizer);
-  surfaceDetector->attachSurfaceAggregator(convHullDetector);
+  post_surface_processor->attachSurfaceAggregator(surfObstVisualizer);
   convHullDetector->attachConvexHullAggregator(surfObstVisualizer);
   smooth_decorator->attachObstacleAggregator(surfObstVisualizer);
   
