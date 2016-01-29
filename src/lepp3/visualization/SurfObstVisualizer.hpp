@@ -269,10 +269,8 @@ void SurfObstVisualizer<PointT>::updateSurfaces(std::vector<SurfaceModelPtr> con
    // viewer_.runOnVisualizationThread(surface_visualization);
 }
 
-
-
-
-
+//TODO There will be flickering in the surface visualization, as long as the surfaces
+//are not visualized with the colors according to their IDs.
 template<class PointT>
 void SurfObstVisualizer<PointT>::drawConvexHulls(
     std::vector<PointCloudConstPtr> &hulls,

@@ -222,7 +222,7 @@ public:
 	 * Maps the model to their position in the linked list so as to allow removing
 	 * surfaces efficiently.
 	 * Theoretically, the removal would asymptotically be dominated by the map
-	 * lookup (since it's a red-black tree, not a hash table). In practice, since
+	 * lookup. In practice, since
 	 * the number of surfaces will always be extremely small, it may as well be
 	 * O(1).
 	 */
@@ -537,7 +537,15 @@ void PostSurfaceAggregator<PointT>::updateSurfaces(std::vector<SurfaceModelPtr> 
 	dropLostSurface();
     materializeFoundSurfaces();
     std::vector<SurfaceModelPtr> smooth_surfaces(copyMaterialized());
-    std::cout << "Number of Real Surfaces in this frame = " << smooth_surfaces.size()<< std::endl;
+
+    //TODO -Correct what is returned from tracking. Smoothed surfaces are the result.
+    //Smoothed_surfaces are the tracked surfaces. Their point cloud is not sorted, stored or
+    //represented in anywhere. The surfaces vector is just the most recent clustered surface
+    //point cloud passed to the tracking. What is materialized in tracking is what has been seen
+    //in the last 10 frames and those point clouds are not saved in anywhere yet. That information is stored in
+    // a materialized list above.
+
+    std::cout << "Tracking verified surfaces in the last 10 frames= " << smooth_surfaces.size()<< std::endl;
 
 	notifySurfaces(surfaces,cloudMinusSurfaces,surfaceCoefficients);
 }
