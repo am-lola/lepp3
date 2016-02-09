@@ -1,5 +1,5 @@
-#ifndef VIDEO_RECORDER_H_
-#define VIDEO_RECORDER_H_
+#ifndef LEPP3_VIDEO_RECORDER_H_
+#define LEPP3_VIDEO_RECORDER_H_
 
 #include <iostream>
 #include <string>
@@ -62,19 +62,19 @@ template<class PointT>
 class VideoRecorder : public VideoObserver<PointT>, public TFObserver {
 public:
   VideoRecorder()
-    : p_( get_dir_name() ),
+    : path_( get_dir_name() ),
       tf_file_name_("tf.txt"),
       cloud_lk_(false),
       tf_lk_(false) {
-      if(boost::filesystem::exists(p_)) {
-        if(boost::filesystem::is_directory(p_))
-          std::cout << "directory " << p_ << "already exists. terminating...\n";
+      if(boost::filesystem::exists(path_)) {
+        if(boost::filesystem::is_directory(path_))
+          std::cout << "directory " << path_ << "already exists. terminating...\n";
           // TODO finish up the termination process
       }
       else {
-        boost::filesystem::create_directory(p_);
+        boost::filesystem::create_directory(path_);
         //change current path to the new directory
-        boost::filesystem::current_path(p_);
+        boost::filesystem::current_path(path_);
 
         // write header to tf_file
         std::ofstream tf_fout(tf_file_name_.c_str());
@@ -96,7 +96,7 @@ public:
   virtual void notifyNewTF(int idx, const LolaKinematicsParams& tf);
 private:
 
-  boost::filesystem::path p_;
+  boost::filesystem::path path_;
   std::string tf_file_name_;
   int cloud_idx_;
   int tf_idx_;
@@ -152,4 +152,4 @@ void VideoRecorder<PointT>::notifyNewTF(int idx, const LolaKinematicsParams& par
   std::cout << "SAVING POSE TOOK: " << t.duration() << " ms" << std::endl;
 }
 
-#endif // VIDEO_RECORDER_H_
+#endif // LEPP3_VIDEO_RECORDER_H_
