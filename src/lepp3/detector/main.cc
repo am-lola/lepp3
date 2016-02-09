@@ -7,6 +7,8 @@
 #include <pcl/io/openni2_grabber.h>
 #include <pcl/io/pcd_grabber.h>
 
+#include "lepp3/util/FileManager.hpp"
+
 #include "lepp3/BaseObstacleDetector.hpp"
 #include "lepp3/GrabberVideoSource.hpp"
 #include "lepp3/BaseVideoSource.hpp"
@@ -84,10 +86,12 @@ boost::shared_ptr<VideoSource<PointT> > GetVideoSource(int argc, char* argv[]) {
     return boost::shared_ptr<VideoSource<PointT> >(
         new LiveStreamSource<PointT>());
   } else if (option == "--pcd" && argc >= 3) {
-    std::string const file_path = argv[2];
+    std::string const directory_path = argv[2];
+    FileManager fm(directory_path);
+    const std::vector<std::string> file_names = fm.getFileNames(".pcd");
     boost::shared_ptr<pcl::Grabber> interface(new pcl::PCDGrabber<PointT>(
-      file_path,
-      20.,
+      file_names,
+      30.,
       true));
     return boost::shared_ptr<VideoSource<PointT> >(
         new GeneralGrabberVideoSource<PointT>(interface));
