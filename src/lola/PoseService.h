@@ -40,8 +40,8 @@ using boost::asio::ip::udp;
 
   Struct reused verbatim from the original LOLA source code to keep compatibility.
 */
-#pragma pack(push)
-#pragma pack(1)
+//#pragma pack(push)
+//#pragma pack(1)
 struct HR_Pose
 {
   enum{RIGHT=0,LEFT=1};
@@ -144,6 +144,56 @@ struct HR_Pose
   //!<currently active angular velocity [rad/s]
   float om_act;
 };
+/* #pragma pack (pop) */
+
+/*!
+  Robot pose data - reduced version for sending to new vision system
+
+  vectors given in world coordinate frame
+
+  ub = upper body
+  fl = left foot
+  fr = right foot
+  cl = left camera
+  cr = right camera
+  im = IMU,
+
+  wr = world frame
+  odo = drift frame
+
+  Struct reused verbatim from the original LOLA source code to keep compatibility.
+*/
+#pragma pack(push)
+#pragma pack(1)
+struct HR_Pose_Red
+{
+
+  //////////////////////////////////////////////////
+  //// 1 -- header
+  //!data struct version
+  uint32_t version;
+  //! tick counter
+  uint64_t tick_counter;
+  //!<stance leg (RIGHT/LEFT)
+  uint8_t stance;
+
+  uint64_t stamp;
+
+  //////////////////////////////////////////////////
+  //// 2 -- simplified /abstract robot model (feet, cameras, upper body)
+  //!vector from world frame to left camera in world frame
+  float t_wr_cl[3];
+  //!transformation matrix from left camera to world frame
+  float R_wr_cl[3*3];
+
+  //////////////////////////////////////////////////
+  //// 4 -- "drift pose" (odometry)
+  //!stance leg in drift frame
+  float t_stance_odo[3];
+  //!stance foot rotation in drift frame
+  float phi_z_odo;
+
+};
 #pragma pack (pop)
 
 /**
@@ -175,7 +225,7 @@ public:
    * Obtains the current pose information. Using this method is completely
    * thread safe.
    */
-  HR_Pose getCurrentPose() const;
+  HR_Pose_Red getCurrentPose() const;
 
   /**
    * Returns the "World" origin in ODO coordinate system.
@@ -240,13 +290,13 @@ private:
   /**
    * The buffer into which the socket will place its read data.
    */
-  boost::array<char, sizeof(HR_Pose)> recv_buffer_;
+  boost::array<char, sizeof(HR_Pose_Red)> recv_buffer_;
 
   /**
    * A pointer to the last known pose information.
    * Updated by the service on every newly received packet.
    */
-  boost::shared_ptr<HR_Pose> pose_;
+  boost::shared_ptr<HR_Pose_Red> pose_;
   /**
    * Keeps track of all TF observers
    */
