@@ -79,7 +79,13 @@ public:
         // write header to tf_file
         std::ofstream tf_fout(tf_file_name_.c_str());
         if(tf_fout.is_open()) {
-          tf_fout << "#" << std::endl;
+          tf_fout << "# t_wr_cl[0],\tt_wr_cl[1],\tt_wr_cl[2],\t"
+                  << "R_wr_cl[0][0],\tR_wr_cl[0][1],\tR_wr_cl[0][2],\t"
+                  << "R_wr_cl[1][0],\tR_wr_cl[1][1],\tR_wr_cl[1][2],\t"
+                  << "R_wr_cl[2][0],\tR_wr_cl[2][1],\tR_wr_cl[2][2],\t"
+                  << "t_stance_odo[0],\tt_stance_odo[1],\tt_stance_odo[2],\t"
+                  << "phi_z_odo,\tstance,\tframe_num,\tstamp"
+                  << std::endl;
           tf_fout.close();
         }
       }
@@ -131,19 +137,19 @@ void VideoRecorder<PointT>::notifyNewTF(int idx, const LolaKinematicsParams& par
   t.start();
   // open the file
   std::ofstream tf_fout_;
-  tf_fout_.open(tf_file_name_.c_str());
+  tf_fout_.open(tf_file_name_.c_str(), std::ofstream::app);
   // write the parameters to the file
   std::stringstream ss;
-  for (size_t i = 0; i < 3; ++i) { ss << params.t_wr_cl[i]; }
+  for (size_t i = 0; i < 3; ++i) { ss << params.t_wr_cl[i] << "\t"; }
   for (size_t i = 0; i < 3; ++i) {
     for (size_t j = 0; j < 3; ++j) {
-      ss << params.R_wr_cl[i][j];
+      ss << params.R_wr_cl[i][j] << "\t";
     }
   }
-  for (size_t i = 0; i < 3; ++i) { ss << params.t_stance_odo[i]; }
-  ss << params.phi_z_odo;
-  ss << params.stance;
-  ss << params.frame_num;
+  for (size_t i = 0; i < 3; ++i) { ss << params.t_stance_odo[i] << "\t"; }
+  ss << params.phi_z_odo << "\t";
+  ss << params.stance << "\t";
+  ss << params.frame_num << "\t";
   ss << params.stamp;
   tf_fout_ << ss.str() << std::endl;
   // and close the file...
