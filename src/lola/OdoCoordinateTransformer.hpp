@@ -73,7 +73,7 @@ std::ostream& operator<<(std::ostream& out, OdoTransformParameters const& param)
 template<class PointT>
 class OdoCoordinateTransformer : public lepp::PointFilter<PointT> {
 public:
-  OdoCoordinateTransformer() : current_frame_(0) {}
+  OdoCoordinateTransformer() : current_frame_(-1) {}
   /**
    * `PointFilter` interface method.
    */
@@ -298,10 +298,16 @@ FileOdoTransformer<PointT>::FileOdoTransformer(
 template<class PointT>
 LolaKinematicsParams FileOdoTransformer<PointT>::getNextParams() {
   LolaKinematicsParams use = current_;
+  std::cout << "this->current_frame_: " << this->current_frame_ << std::endl;
+  std::cout << "next_->frame_num: " << next_.frame_num << std::endl;
+
   if (this->current_frame_ + 1 == next_.frame_num) {
+    std::cout << "******************** READING Next Param ******************\n";
     current_ = next_;
     next_ = this->readNextParams();
   }
+  else
+    std::cout << "******************** AGAIN Current Param ******************\n";
 
   return use;
 }
