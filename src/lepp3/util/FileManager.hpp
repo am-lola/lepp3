@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <iterator>
+#include <algorithm>
 #include <vector>
 #include <sstream>
 #include <boost/filesystem.hpp>
@@ -37,6 +38,11 @@ public:
   FileManager(const std::string& directory)
     : path_(directory),
       current_file_counter_(0) {}
+  /**
+   * This function receives the extension of the files we are looking for in
+   * the current path_ and returns the name of all corresponding files in that
+   * directory. The relative path is sent back to whoever requested.
+   */
   std::vector<std::string> getFileNames(const std::string& extension);
 private:
   fs::path path_;
@@ -50,9 +56,7 @@ std::vector<std::string> FileManager::getFileNames(const std::string& ext) {
 	fs::directory_iterator end_iter;
 	for (fs::directory_iterator iter(path_); iter != end_iter; ++iter)
 		if (iter->path().extension() == ext) {
-      std::stringstream ss;
-      // std::string const fn = iter->path().filename().string();
-      std::string const fn = iter->path().relative_path().string();
+      std::string const fn = iter->path().filename().string();
       file_names.push_back(fn);
     	++current_file_counter_;
     }
@@ -61,6 +65,13 @@ std::vector<std::string> FileManager::getFileNames(const std::string& ext) {
   std::cout << "found " << current_file_counter_
             << " " << ext
             << " files in directory " << path_.relative_path() << std::endl;
+  // append the parent directory path to the file name
+  std::string parent = path_.parent_path().string();
+  for(int i=0; i<current_file_counter_; ++i){
+    std::stringstream ss;
+    ss << parent << "/" << file_names[i];
+    file_names[i] = ss.str();
+  }
 	return file_names;
 }
 
