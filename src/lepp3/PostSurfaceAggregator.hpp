@@ -538,7 +538,7 @@ void PostSurfaceAggregator<PointT>::updateSurfaces(std::vector<SurfaceModelPtr> 
     materializeFoundSurfaces();
     std::vector<SurfaceModelPtr> smooth_surfaces(copyMaterialized());
 
-    //TODO -Correct what is returned from tracking. Smoothed surfaces are the result.
+    //TODO -Smoothed surfaces are the result of tracking of the last 10 frames!!.
     //Smoothed_surfaces are the tracked surfaces. Their point cloud is not sorted, stored or
     //represented in anywhere. The surfaces vector is just the most recent clustered surface
     //point cloud passed to the tracking. What is materialized in tracking is what has been seen

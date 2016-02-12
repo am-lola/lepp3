@@ -102,7 +102,7 @@ void SurfaceDetector<PointT>::update() {
   //std::cerr << "Surface segmentation took " << t.duration() << std::endl;
   std::vector<SurfaceModelPtr> surfaceModels;
   for(size_t i = 0; i < surfaces.size(); i++)
-    surfaceModels.push_back(approximator_->approximate(surfaces[i]));
+    surfaceModels.push_back(approximator_->approximate(surfaces[i],surfaceCoefficients->at(i)));
 
   notifySurfaces(surfaceModels,cloudMinusSurfaces,surfaceCoefficients);
 

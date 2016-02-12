@@ -24,7 +24,7 @@ public:
    * own specific border approximation method.
    */
   virtual boost::shared_ptr<PlaneModel> approximate(
-      PointCloudConstPtr &point_cloud) = 0;
+      PointCloudConstPtr &point_cloud, pcl::ModelCoefficients &coeffs) = 0;
 };
 
 }  // namespace lepp

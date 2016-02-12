@@ -19,9 +19,9 @@ namespace lepp {
 class PlaneVisitor;
 class PlaneModel;
 
-
 /*Base class for a plane representation*/
 
+//TODO remove the point cloud. The new visualizer does not need it.
 class SurfaceModel {
 public:
 	SurfaceModel() :
@@ -30,7 +30,7 @@ public:
 
 	virtual Coordinate centerpoint() const = 0;
 
-	  virtual void accept(PlaneVisitor& visitor) = 0;
+	virtual void accept(PlaneVisitor& visitor) = 0;
 
 	virtual ~SurfaceModel() {
 	}
@@ -63,48 +63,68 @@ typedef boost::shared_ptr<SurfaceModel> SurfaceModelPtr;
 class PlaneVisitor {
 public:
 	virtual void visitPlane(PlaneModel& plane) = 0;
-	virtual ~PlaneVisitor() {}
+	virtual ~PlaneVisitor() {
+	}
 };
 
 /*Plane model for detected surfaces*/
 
 class PlaneModel: public SurfaceModel {
 public:
-	PlaneModel(double area, Coordinate const& center,double inclination, PointCloudConstPtr &cloud);
+	PlaneModel(double approx_area,
+			Coordinate const& center, double inclination,
+			PointCloudConstPtr &cloud);
 	/**
 	 * Returns a model-specific representation of its coefficients packed into
 	 * an std::vector.
 	 */
 	//void accept(ModelVisitor& visitor) { visitor.visitSphere(*this); }
-
 	double area() const {
 		return area_;
+	}
+	double heigth() const {
+		return heigth_;
+	}
+	double width() const {
+		return width_;
+	}
+	double inclination()const
+	{
+		return inclination_;
 	}
 	Coordinate centerpoint() const {
 		return center_;
 	}
 
-	PointCloudConstPtr getCloud(){
+	PointCloudConstPtr getCloud() {
 		return cloud_;
 	}
 
-	void set_area(double area) {
-		area_ = area;
+	void set_area(double approx_area) {
+		area_ = approx_area;
+	}
+	void set_width(double approx_width) {
+		width_ = approx_width;
+	}
+	void set_heigth(double approx_height) {
+		heigth_ = approx_height;
 	}
 	void set_center(Coordinate const& center) {
 		center_ = center;
 	}
-	void set_inclination(double amount) {
-		inclination_ = amount;
+	void set_inclination(double inc_amount) {
+		inclination_ = inc_amount;
 	}
-	void accept(PlaneVisitor & visitor) { visitor.visitPlane(*this); }
-
-	  Coordinate center_point() const { return center_; }
+	void accept(PlaneVisitor & visitor) {
+		visitor.visitPlane(*this);
+	}
 
 	friend std::ostream& operator<<(std::ostream& out, PlaneModel const& plane);
 
 private:
 	double area_;
+	double heigth_;
+	double width_;
 	Coordinate center_;
 	double inclination_;
 	PointCloudConstPtr cloud_;
@@ -116,6 +136,7 @@ inline PlaneModel::PlaneModel(double area, Coordinate const& center,
 		area_(area), center_(center), inclination_(inclination), cloud_(cloud) {
 }
 
+
 inline std::ostream& operator<<(std::ostream& out, PlaneModel const& plane) {
 	out << "[plane; " << "area = " << plane.area_ << "; " << "center = "
 			<< plane.center_ << ";" << "inclination = " << plane.inclination_
@@ -124,34 +145,40 @@ inline std::ostream& operator<<(std::ostream& out, PlaneModel const& plane) {
 	return out;
 }
 
-
-
-
-class FlattenPlaneVisitor : public PlaneVisitor {
+class FlattenPlaneVisitor: public PlaneVisitor {
 public:
-  void visitPlane(PlaneModel& plane) { planes_.push_back(&plane); }
-  std::vector<SurfaceModel*> const& getPlanes() const { return planes_; }
+	void visitPlane(PlaneModel& plane) {
+		planes_.push_back(&plane);
+	}
+	std::vector<SurfaceModel*> const& getPlanes() const {
+		return planes_;
+	}
 private:
-  std::vector<SurfaceModel*> planes_;
+	std::vector<SurfaceModel*> planes_;
 };
 
-class PrintPlaneVisitor : public PlaneVisitor {
+class PrintPlaneVisitor: public PlaneVisitor {
 public:
-  /**
-   * Create a new `PrintVisitor` that will output in the given `std::ostream`.
-   */
-  PrintPlaneVisitor(std::ostream& out) : out_(out) {}
+	/**
+	 * Create a new `PrintVisitor` that will output in the given `std::ostream`.
+	 */
+	PrintPlaneVisitor(std::ostream& out) :
+			out_(out) {
+	}
 
-  void visitPlane(PlaneModel& plane) { out_ << plane; }
+	void visitPlane(PlaneModel& plane) {
+		out_ << plane;
+	}
 private:
-  std::ostream& out_;
+	std::ostream& out_;
 };
 
-inline std::ostream& operator<<(std::ostream& out, SurfaceModel const& plane_model) {
-  PrintPlaneVisitor printer(out);
-  const_cast<SurfaceModel&>(plane_model).accept(printer);
+inline std::ostream& operator<<(std::ostream& out,
+		SurfaceModel const& plane_model) {
+	PrintPlaneVisitor printer(out);
+	const_cast<SurfaceModel&>(plane_model).accept(printer);
 
-  return out;
+	return out;
 }
 
 }  // namespace lepp

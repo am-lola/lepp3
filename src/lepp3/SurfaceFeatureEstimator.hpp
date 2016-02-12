@@ -20,7 +20,7 @@ template<class PointT>
 class SurfaceFeatureEstimator: public SurfaceApproximator<PointT> {
 public:
 	boost::shared_ptr<PlaneModel> approximate(
-			PointCloudConstPtr &point_cloud);
+			PointCloudConstPtr &point_cloud, pcl::ModelCoefficients &coeffs);
 private:
 	/*	Takes a pointer to a plane model and sets the parameters of the
 	 model so that it describes the point cloud with the given features in the
@@ -51,7 +51,7 @@ private:
 
 template<class PointT>
 boost::shared_ptr<PlaneModel> SurfaceFeatureEstimator<PointT>::approximate(
-		PointCloudConstPtr &point_cloud) {
+		PointCloudConstPtr &point_cloud,pcl::ModelCoefficients &coeffs) {
 	// Firstly, obtain the principal component descriptors
 	float major_value, middle_value, minor_value;
 	pcl::PCA<PointT> pca;
