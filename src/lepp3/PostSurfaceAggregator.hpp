@@ -278,10 +278,10 @@ typename PostSurfaceAggregator<PointT>::model_id_t PostSurfaceAggregator<PointT>
 				+ (p.y - query_point.y) * (p.y - query_point.y)
 				+ (p.z - query_point.z) * (p.z - query_point.z);
 
-		std::cout << "Distance was " << dist << " ";
+		//std::cout << "Distance was " << dist << " ";
 
 		if (dist <= 0.05) {
-			std::cout << " accept";
+			//std::cout << " accept";
 			if (!found)
 				min_dist = dist;
 			found = true;
@@ -291,7 +291,7 @@ typename PostSurfaceAggregator<PointT>::model_id_t PostSurfaceAggregator<PointT>
 				match = it->first;
 			}
 		}
-		std::cout << std::endl;
+		//std::cout << std::endl;
 	}
 
 	if (found) {
@@ -331,12 +331,12 @@ std::map<int, size_t> PostSurfaceAggregator<PointT>::matchToPrevious(std::vector
 	// being tracked or give it a brand new model ID, if we are unable to find a
 	// match.
 	for (size_t i = 0; i < new_surfaces.size(); ++i) {
-		std::cout << "Matching " << i << " (" << *new_surfaces[i] << ")"
-				<< std::endl;
+		//std::cout << "Matching " << i << " (" << *new_surfaces[i] << ")"
+		//		<< std::endl;
 		//If the surface is new, then it will get a new model_id. If the surface has already
 		//been tracked, then its existing model_id is going to be returned.
 		 model_id_t const model_id = getMatchByDistance(new_surfaces[i]);
-		std::cout << "Matched " << i << " --> " << model_id << std::endl;
+		//std::cout << "Matched " << i << " --> " << model_id << std::endl;
 	     correspondence[model_id] = i;
 		// If this ID wasn't in the tracked models before, add it to new in frame!
 
@@ -352,8 +352,8 @@ std::map<int, size_t> PostSurfaceAggregator<PointT>::matchToPrevious(std::vector
 
 		model_id_t const& model_id = new_in_frame[i].first; //model_id in the whole tracking
 		size_t const corresp = new_in_frame[i].second; //corresponding index number in new_surface
-		std::cout << "Inserting previously untracked model " << model_id
-				<< std::endl;
+		//std::cout << "Inserting previously untracked model " << model_id
+		//		<< std::endl;
 		tracked_models_[model_id] = new_surfaces[corresp]; // corresp=i basically
 		frames_lost_[model_id] = 0;
 		frames_found_[model_id] = 0;
@@ -414,15 +414,15 @@ void PostSurfaceAggregator<PointT>::updateLostAndFound(std::map<int, size_t> con
 			if (model_idx_in_list_.find(model_id) == model_idx_in_list_.end()) {
 
 				//The model id is no not in model_idx_in_list
-				std::cout << "Incrementing the seen count for Surface ID: " << model_id
-						<< std::endl;
+				//std::cout << "Incrementing the seen count for Surface ID: " << model_id
+				//		<< std::endl;
 				++frames_found_[model_id];
 			}
 			// ...but always reset its lost counter, since we've now seen it.
 			frames_lost_[model_id] = 0;
 		} else {
-			std::cout << "Incrementing the lost count for Surface ID: " << model_id
-					<< std::endl;
+			//std::cout << "Incrementing the lost count for Surface ID: " << model_id
+			//		<< std::endl;
 			++frames_lost_[model_id];
 			frames_found_[model_id] = 0;
 		}
@@ -432,15 +432,15 @@ template<class PointT>
 void PostSurfaceAggregator<PointT>::dropLostSurface() {
 	// Drop surfaces that haven't been seen in a while
 
-	cout<<"DropLostSurface..."<<std::endl;
+	//cout<<"DropLostSurface..."<<std::endl;
 	std::map<model_id_t, int>::iterator it = frames_lost_.begin();
 	int const LOST_LIMIT = 10; //5
 
 	while (it != frames_lost_.end()) {
 		if (it->second >= LOST_LIMIT) {
 
-			std::cout << "Surface ID: " << it->first
-					<< "is not found 10 times in a row: DROPPING" << std::endl;
+			//std::cout << "Surface ID: " << it->first
+			//		<< "is not found 10 times in a row: DROPPING" << std::endl;
 
 			// Stop tracking the model, since it's been gone for a while.
 			if (tracked_models_.find(it->first) != tracked_models_.end()) {
@@ -462,16 +462,16 @@ void PostSurfaceAggregator<PointT>::dropLostSurface() {
 
 			frames_lost_.erase(it++);
 		} else {
-			std::cout << "Surface ID:" << it->first
-					<< " is not lost enough times to be dropped. Only:" << " ("
-					<< it->second << ") times lost." << std::endl;
+			//std::cout << "Surface ID:" << it->first
+			//		<< " is not lost enough times to be dropped. Only:" << " ("
+			//		<< it->second << ") times lost." << std::endl;
 			++it;
 		}
 	}
 }
 template<class PointT>
 void PostSurfaceAggregator<PointT>::materializeFoundSurfaces() {
-	std::cout<<"Materialize Surfaces"<<std::endl;
+	//std::cout<<"Materialize Surfaces"<<std::endl;
 	int const FOUND_LIMIT = 5;
 	std::map<model_id_t, int>::iterator it = frames_found_.begin();
 	while (it != frames_found_.end()) {
@@ -479,8 +479,8 @@ void PostSurfaceAggregator<PointT>::materializeFoundSurfaces() {
 		model_id_t const model_id = it->first;
 		int const seen_count = it->second;
 		if (seen_count >= FOUND_LIMIT) {
-			std::cout << "Surface found " << model_id
-					<< " 5 times in a row: Materializing!" << std::endl;
+			//std::cout << "Surface found " << model_id
+			//		<< " 5 times in a row: Materializing!" << std::endl;
 			// Get the corresponding model
 			SurfaceModelPtr const& model =
 					tracked_models_.find(model_id)->second;
@@ -496,9 +496,9 @@ void PostSurfaceAggregator<PointT>::materializeFoundSurfaces() {
 			frames_found_.erase(it++);
 
 		} else {
-			std::cout << "Surface ID: " << it->first
-					<< " is not seen enough times to be materialized" << " ("
-					<< it->second << ") Times seen" << std::endl;
+			//std::cout << "Surface ID: " << it->first
+			//		<< " is not seen enough times to be materialized" << " ("
+			//		<< it->second << ") Times seen" << std::endl;
 			++it;
 		}
 	}
@@ -530,7 +530,7 @@ void PostSurfaceAggregator<PointT>::updateSurfaces(std::vector<SurfaceModelPtr> 
     									std::vector<pcl::ModelCoefficients> *&surfaceCoefficients)
 {
 //	++frame_cnt_;
-	std::cout << "#new surface number= " << surfaces.size() << std::endl;
+	//std::cout << "#new surface number= " << surfaces.size() << std::endl;
 	std::map<int, size_t> correspondence =matchToPrevious(surfaces);
     updateLostAndFound(correspondence);
 	adaptTracked(correspondence, surfaces);
@@ -545,7 +545,7 @@ void PostSurfaceAggregator<PointT>::updateSurfaces(std::vector<SurfaceModelPtr> 
     //in the last 10 frames and those point clouds are not saved in anywhere yet. That information is stored in
     // a materialized list above.
 
-    std::cout << "Tracking verified surfaces in the last 10 frames= " << smooth_surfaces.size()<< std::endl;
+    //std::cout << "Tracking verified surfaces in the last 10 frames= " << smooth_surfaces.size()<< std::endl;
 
 	notifySurfaces(surfaces,cloudMinusSurfaces,surfaceCoefficients);
 }

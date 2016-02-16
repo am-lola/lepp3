@@ -237,7 +237,7 @@ void ConvexHullDetector::reduceConvHullPoints(PointCloudPtr &hull, int numPoints
 		pq.changeKey(rightTri);
 	}
 
-	// create point cloud only with the left 'mid' points.
+	// create point cloud only with the non-deleted 'mid' points.
 	PointCloudPtr smallHull = boost::shared_ptr<PointCloudT>(new PointCloudT());
 	Triangle *tri = pq.deleteMin();
 	for (int i = 0; i < numPoints; i++)
@@ -246,6 +246,10 @@ void ConvexHullDetector::reduceConvHullPoints(PointCloudPtr &hull, int numPoints
 		tri = tri->leftTriangle;
 	}
 	hull = smallHull;
+
+	// delete all triangles
+	for (int i = 0; i < numHullPoints; i++)
+		delete triangleRef[i];
 }
 
 
