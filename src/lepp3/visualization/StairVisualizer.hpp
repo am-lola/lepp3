@@ -26,7 +26,10 @@ public:
       const typename pcl::PointCloud<PointT>::ConstPtr& pointCloud) {
         viewer_.showCloud(pointCloud);
       }
-
+  void notifyNewFrame(
+      int idx,
+      const typename boost::shared_ptr<openni_wrapper::Image>& image) {}
+  void notifyNewFrame(int idx, const cv::Mat& image) {};
   /**
    * StairAggregator interface implementation: processes detected obstacles.
    */
@@ -34,7 +37,7 @@ public:
     std::vector<typename pcl::PointCloud<PointT>::ConstPtr> cloud_stairs);
   /**
    * 1. Draw each cloud in the vector using a different color,
-   * 2. Put each cloud on top of the raw pointcloud 
+   * 2. Put each cloud on top of the raw pointcloud
    */
   void drawStairs(
     std::vector<typename pcl::PointCloud<PointT>::ConstPtr> stairs,

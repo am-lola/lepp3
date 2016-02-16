@@ -13,6 +13,8 @@
 #include <boost/unordered_map.hpp>
 #include <boost/circular_buffer.hpp>
 
+#include <opencv2/core/core.hpp>
+
 #include "lepp3/debug/timer.hpp"
 
 #include "deps/easylogging++.h"
@@ -103,6 +105,7 @@ public:
   virtual void notifyNewFrame(
       int idx,
       const typename boost::shared_ptr<openni_wrapper::Image>& image);
+  virtual void notifyNewFrame(int idx, const cv::Mat& image);
   /**
    * Add a filter that will be applied to individual points before the entire
    * cloud itself is filtered.
@@ -224,6 +227,14 @@ void FilteredVideoSource<PointT>::notifyNewFrame(
     int idx,
     const typename boost::shared_ptr<openni_wrapper::Image>& image) {
       this->setNextFrame(image);
+}
+
+template<class PointT>
+void FilteredVideoSource<PointT>::notifyNewFrame(
+    int idx,
+    const cv::Mat& image) {
+      std::cout << "entered FilteredVideoSource::notifyNewFrame" << std::endl;
+      VideoSource<PointT>::setNextFrame(image);
 }
 
 /**

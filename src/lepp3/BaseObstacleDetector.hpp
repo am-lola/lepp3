@@ -85,6 +85,11 @@ public:
   virtual void notifyNewFrame(
       int idx,
       const typename boost::shared_ptr<openni_wrapper::Image>& image);
+  /**
+   * VideoObserver interface method implementation.
+   */
+  void notifyNewFrame(int idx, const cv::Mat& image) {}
+
 
 protected:
   /// Some convenience typedefs

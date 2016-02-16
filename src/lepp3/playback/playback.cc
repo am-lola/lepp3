@@ -1,7 +1,3 @@
-/**
- * A program performing detection of obstacles in the given file feed
- * and visualizing their approximations.
- */
 #include <iostream>
 
 #include <pcl/io/openni2_grabber.h>
@@ -16,12 +12,13 @@
 #include "lepp3/FilteredVideoSource.hpp"
 #include "lepp3/SmoothObstacleAggregator.hpp"
 
-#include "lepp3/visualization/EchoObserver.hpp"
 #include "lepp3/visualization/ObstacleVisualizer.hpp"
-#include "lepp3/visualization/StairVisualizer.hpp"
+#include "lepp3/visualization/ImageVisualizer.hpp"
 
 #include "lepp3/filter/TruncateFilter.hpp"
 #include "lepp3/filter/SensorCalibrationFilter.hpp"
+
+#include "lola/OdoCoordinateTransformer.hpp"
 
 #include "lepp3/models/ObjectModel.h"
 #include "deps/easylogging++.h"
@@ -40,10 +37,10 @@ namespace {
 void PrintUsage() {
   std::cout << "usage: detector [--pcd file | --oni file | --stream]"
       << std::endl;
-  std::cout << "--pcd    : " << "read the input from a .pcd file" << std::endl;
-  std::cout << "--oni    : " << "read the input from an .oni file" << std::endl;
-  std::cout << "--stream : " << "read the input from a live stream based on a"
-      << " sensor attached to the computer" << std::endl;
+  std::cout << "--pcd         : " << "read the input from a .pcd file\n";
+  std::cout << "--pcd_rgb     : " << "read the input from a .pcd file\n";
+  std::cout << "--pcd_rgb_pose: " << "read the input from a .pcd file\n";
+  std::cout << "--oni         : " << "read the input from an .oni file\n";
 }
 
 /**
@@ -51,7 +48,7 @@ void PrintUsage() {
  */
 template<class PointT>
 boost::shared_ptr<FilteredVideoSource<PointT> >
-buildFilteredSource(boost::shared_ptr<VideoSource<PointT> > raw) {
+buildFilteredSource(boost::shared_ptr<VideoSource<PointT> > raw, int argc, char* argv[]) {
   // Wrap the given raw source.
   boost::shared_ptr<FilteredVideoSource<PointT> > source(
       new SimpleFilteredVideoSource<PointT>(raw));
@@ -63,6 +60,22 @@ buildFilteredSource(boost::shared_ptr<VideoSource<PointT> > raw) {
         new SensorCalibrationFilter<PointT>(a, b));
     source->addFilter(filter);
   }
+	// add the recorded pose file as filter
+	{
+		std::string const option = argv[1];
+    bool read_pose;
+    if (option == "--pcd_rgb_pose" || option == "--pcd_pose")
+      read_pose = true;
+		if (read_pose && argc >= 3) {
+			std::string const directory_path = argv[2];
+			std::stringstream ss;
+			ss << directory_path << "tf.txt";
+			std::cout << ss.str() << std::endl;
+			boost::shared_ptr<PointFilter<PointT> > filter(
+					new FileOdoTransformer<PointT>(ss.str()));
+			source->addFilter(filter);
+		}
+	}
   {
     boost::shared_ptr<PointFilter<PointT> > filter(
         new TruncateFilter<PointT>(2));
@@ -84,7 +97,34 @@ boost::shared_ptr<VideoSource<PointT> > GetVideoSource(int argc, char* argv[]) {
   std::string const option = argv[1];
   if (option == "--stream") {
     return boost::shared_ptr<VideoSource<PointT> >(
-        new LiveStreamSource<PointT>(true));
+        new LiveStreamSource<PointT>());
+  } else if (option == "--pcd" && argc >= 3) {
+		std::string const directory_path = argv[2];
+		FileManager fm(directory_path);
+    const std::vector<std::string> file_names = fm.getFileNames(".pcd");
+    boost::shared_ptr<pcl::Grabber> interface(new pcl::PCDGrabber<PointT>(
+      file_names,
+      30.,
+      true));
+    return boost::shared_ptr<VideoSource<PointT> >(
+        new GeneralGrabberVideoSource<PointT>(interface));
+  } else if (option == "--pcd_rgb") {
+    std::cout << "pcd and rgb" << std::endl;
+    std::string const directory_path = argv[2];
+    FileManager fm(directory_path);
+    const std::vector<std::string> file_names = fm.getFileNames(".pcd");
+    boost::shared_ptr<pcl::Grabber> pcd_interface(new pcl::PCDGrabber<PointT>(
+      file_names,
+      30.,
+      true));
+    // create filename sequence for cv::VideoCapture
+    std::stringstream ss;
+    ss << directory_path << "image_%04d.jpg";
+    std::cout << "image dir: " << ss.str() << std::endl;
+    const boost::shared_ptr<cv::VideoCapture> img_interface(
+        new cv::VideoCapture(ss.str()));
+    return boost::shared_ptr<VideoSource<PointT> >(
+        new GeneralGrabberVideoSource<PointT>(pcd_interface, img_interface));
   } else if (option == "--oni" && argc >= 3) {
     std::string const file_path = argv[2];
     boost::shared_ptr<pcl::Grabber> interface(new pcl::io::OpenNI2Grabber(
@@ -108,41 +148,18 @@ int main(int argc, char* argv[]) {
   }
   // Wrap the raw source in a filter
   boost::shared_ptr<FilteredVideoSource<PointT> > source(
-      buildFilteredSource(raw_source));
+      buildFilteredSource(raw_source, argc, argv));
 
-  // Prepare the approximator that the detector is to use.
-  // First, the simple approximator...
-  boost::shared_ptr<ObjectApproximator<PointT> > simple_approx(
-      boost::shared_ptr<ObjectApproximator<PointT> >(
-        new MomentOfInertiaObjectApproximator<PointT>));
-  // ...then the split strategy
-  boost::shared_ptr<CompositeSplitStrategy<PointT> > splitter(
-      new CompositeSplitStrategy<PointT>);
-  splitter->addSplitCondition(boost::shared_ptr<SplitCondition<PointT> >(
-      new DepthLimitSplitCondition<PointT>(1)));
-  // ...finally, wrap those into a `SplitObjectApproximator` that is given
-  // to the detector.
-  boost::shared_ptr<ObjectApproximator<PointT> > approx(
-      new SplitObjectApproximator<PointT>(simple_approx, splitter));
-  // Prepare the detector
-  boost::shared_ptr<BaseObstacleDetector<PointT> > detector(
-      new BaseObstacleDetector<PointT>(approx));
-  // Attaching the detector to the source: process the point clouds obtained
-  // by the source.
-  source->attachObserver(detector);
-
-  // Prepare the result visualizer...
-  boost::shared_ptr<ObstacleVisualizer<PointT> > visualizer(
+  // Prepare the visualizer...
+  boost::shared_ptr<ObstacleVisualizer<PointT> > pcd_visualizer(
       new ObstacleVisualizer<PointT>());
+  boost::shared_ptr<ImageVisualizer<PointT> > rgb_visualizer(
+      new ImageVisualizer<PointT>());
+
   // Attaching the visualizer to the source: allow it to display the original
-  // point cloud.
-  source->attachObserver(visualizer);
-  // The visualizer is additionally decorated by the "smoothener" to smooth out
-  // the output...
-  boost::shared_ptr<SmoothObstacleAggregator> smooth_decorator(
-      new SmoothObstacleAggregator);
-  detector->attachObstacleAggregator(smooth_decorator);
-  smooth_decorator->attachObstacleAggregator(visualizer);
+  // point cloud and RGB image
+  source->attachObserver(pcd_visualizer);
+  source->attachObserver(rgb_visualizer);
 
   // Starts capturing new frames and forwarding them to attached observers.
   source->open();

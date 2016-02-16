@@ -1,11 +1,10 @@
 /**
- * A program acting as a pointcloud recorder. The recorded data could be used
- * for offline development
+ * A sample program to demonstrate pointcloud recorder. The recorded data could
+ * be used for offline development
  */
 #include <iostream>
 #include <sstream>
 #include <vector>
-
 
 #include <pcl/io/openni2_grabber.h>
 #include <pcl/io/pcd_grabber.h>
@@ -154,16 +153,23 @@ int main(int argc, char* argv[]) {
   }
   // Obtain a raw live stream video source
   boost::shared_ptr<VideoSource<PointT> > raw_source(
-      new LiveStreamSource<PointT>());
+      new LiveStreamSource<PointT>(true));
   // Wrap the raw source in a filter
   boost::shared_ptr<FilteredVideoSource<PointT> > source(
       buildFilteredSource(raw_source));
   // prepare the recorder
   boost::shared_ptr<VideoRecorder<PointT> > recorder(
       new VideoRecorder<PointT>());
+  // Set the recording mode
+  if(op.record_cloud & op.record_pose)
+    recorder->setMode(lepp::MODE_CLOUD_IMAGE_POSE);
+  else if(op.record_pose == false)
+    recorder->setMode(lepp::MODE_CLOUD_IMAGE);
+
   // attach the recorder to the video source
-  if(op.record_cloud)
+  if(op.record_cloud) {
     source->attachObserver(recorder);
+  }
 
   boost::shared_ptr<PoseService> pose_service(
     new PoseService("192.168.0.8", 53249));

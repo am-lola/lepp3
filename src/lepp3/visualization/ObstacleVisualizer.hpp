@@ -156,6 +156,7 @@ public:
         imshow( "RGB CAM", frame );
         cv::waitKey(30);
   }
+  void notifyNewFrame(int idx, const cv::Mat& image) {};
 
   /**
    * ObstacleAggregator interface implementation: processes detected obstacles.

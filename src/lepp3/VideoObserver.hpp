@@ -1,6 +1,8 @@
 #ifndef VIDEO_OBSERVER_H_
 #define VIDEO_OBSERVER_H_
 
+#include <opencv2/core/core.hpp>
+
 namespace lepp {
 
 /**
@@ -28,6 +30,13 @@ public:
   virtual void notifyNewFrame(
       int idx,
       const typename boost::shared_ptr<openni_wrapper::Image>& image) = 0;
+  /**
+   * Method that the observers need to implement in order to handle a new
+   * incoming RGB frame in OFFLINE mode. Each frame is represented by an integer
+   * identifier (representing the number of the frame in the sequence available
+   * in the directory) and the corresponding RGB image.
+   */
+  virtual void notifyNewFrame(int idx, const cv::Mat& image) = 0;
 };
 
 }  // namespace lepp
