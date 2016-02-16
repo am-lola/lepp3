@@ -1,1 +1,0 @@
-/home/irem/Desktop/Lola Joint/lepp3/build/CMakeFiles/detector.dir
