@@ -108,8 +108,7 @@ boost::shared_ptr<VideoSource<PointT> > GetVideoSource(int argc, char* argv[]) {
       true));
     return boost::shared_ptr<VideoSource<PointT> >(
         new GeneralGrabberVideoSource<PointT>(interface));
-  } else if (option == "--pcd_rgb") {
-    std::cout << "pcd and rgb" << std::endl;
+  } else if (option == "--pcd_rgb" || option == "--pcd_rgb_pose") {
     std::string const directory_path = argv[2];
     FileManager fm(directory_path);
     const std::vector<std::string> file_names = fm.getFileNames(".pcd");
@@ -117,7 +116,7 @@ boost::shared_ptr<VideoSource<PointT> > GetVideoSource(int argc, char* argv[]) {
       file_names,
       30.,
       true));
-    // create filename sequence for cv::VideoCapture
+    // create the filename sequence for cv::VideoCapture
     std::stringstream ss;
     ss << directory_path << "image_%04d.jpg";
     std::cout << "image dir: " << ss.str() << std::endl;
