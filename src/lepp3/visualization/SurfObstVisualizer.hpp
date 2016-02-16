@@ -266,7 +266,7 @@ void SurfObstVisualizer<PointT>::updateSurfaces(std::vector<SurfaceModelPtr> con
                           std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) {
     pcl::visualization::CloudViewer::VizCallable surface_visualization =
             boost::bind(&SurfObstVisualizer::drawSurfaces, this, surfaces, _1);
-   // viewer_.runOnVisualizationThread(surface_visualization);
+  //  viewer_.runOnVisualizationThread(surface_visualization);
 }
 
 //TODO There will be flickering in the surface visualization, as long as the surfaces

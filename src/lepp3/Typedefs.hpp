@@ -7,6 +7,7 @@ namespace lepp
 	typedef pcl::PointCloud<PointT> PointCloudT;
 	typedef typename PointCloudT::Ptr PointCloudPtr;
 	typedef typename PointCloudT::ConstPtr PointCloudConstPtr;
+	typedef int model_id_t;
 }
 
 #endif

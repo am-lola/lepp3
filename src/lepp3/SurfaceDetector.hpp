@@ -100,22 +100,12 @@ void SurfaceDetector<PointT>::update() {
   segmenter_->segment(cloud_,surfaces,cloudMinusSurfaces,surfaceCoefficients);
   t.stop();
   //std::cerr << "Surface segmentation took " << t.duration() << std::endl;
+  // create surface models
   std::vector<SurfaceModelPtr> surfaceModels;
   for(size_t i = 0; i < surfaces.size(); i++)
     surfaceModels.push_back(approximator_->approximate(surfaces[i],surfaceCoefficients->at(i)));
 
   notifySurfaces(surfaceModels,cloudMinusSurfaces,surfaceCoefficients);
-
-//  // Iteratively approximate the segments
-//  size_t segment_count = segments.size();
-//  std::vector<ObjectModelPtr> models;
-//  for (size_t i = 0; i < segment_count; ++i) {
-//    models.push_back(approximator_->approximate(segments[i]));
-//  }
-
-//  std::cerr << "Obstacle detection took " << t.duration() << std::endl;
-//
-//  notifyObstacles(models);
 }
 
 template<class PointT>

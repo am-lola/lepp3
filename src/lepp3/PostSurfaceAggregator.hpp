@@ -2,6 +2,7 @@
 #define lepp3_SMOOTH_SURFACE_AGGREGATOR_H__
 
 #include "lepp3/SurfaceAggregator.hpp"
+#include "lepp3/Typedefs.hpp"
 #include <pcl/surface/concave_hull.h>
 #include <pcl/surface/convex_hull.h>
 
@@ -54,22 +55,18 @@ template<class PointT>
 class PostSurfaceAggregator: public lepp::SurfaceAggregator<PointT> {
 
 public:
-
-	typedef int model_id_t;
-	typedef pcl::PointCloud<PointT> PointCloudT;
-	typedef typename PointCloudT::Ptr PointCloudPtr;
-	typedef typename PointCloudT::ConstPtr CloudConstPtr;
-
 	/**
 	 * Creates a new `PostSurfaceAggregator`.
 	 */
 	PostSurfaceAggregator();
+
 	/**
 	 * Attach a new `SurfaceAggregator` that will be notified of surfaces that
 	 * this instance generates.
 	 */
 	void attachSurfaceAggregator(
 			boost::shared_ptr<SurfaceAggregator<PointT> > aggreg);
+
 	/**
 	 * The member function that all concrete aggregators need to implement in
 	 * order to be able to process newly detected surfaces.
@@ -78,16 +75,8 @@ public:
                               PointCloudPtr &cloudMinusSurfaces, 
                               std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
 
-//	typedef typename pcl::PointCloud<PointT> PointCloudT;
-//	typedef typename PointCloudT::Ptr PointCloudPtr;
-//	typedef typename PointCloudT::ConstPtr CloudConstPtr;
-
-
 // Private types
-	/**
-	 * The type that represents model IDs. For convenience it aliases an int.
-	 */
-
+private:
 	// Private member functions
 	/**
 	 * Sends the given surfaces to all attached aggregators.
@@ -95,6 +84,7 @@ public:
 	void notifySurfaces(std::vector<SurfaceModelPtr> const& surfaces,
 		    			PointCloudPtr &cloudMinusSurfaces, 
     					std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
+
 	/**
 	 * Computes the matching of the new surfaces to the surfaces that are being
 	 * tracked already.
@@ -106,9 +96,8 @@ public:
 	 * `tracked_models_`) to the index of this surface in the `new_surfaces`
 	 * list.
 	 */
-
-
 	std::map<int, size_t> matchToPrevious(std::vector<SurfaceModelPtr> const& new_surfaces);
+
 	/**
 	 * Goes through all the tracked models, which are also detected in the new detection
 	 * to recalculate necessary differences -like a small shift in the center of the surface
@@ -116,6 +105,7 @@ public:
 	 */
 	void adaptTracked(std::map< int, size_t> const& correspondence,
 			std::vector<SurfaceModelPtr> const& new_surfaces);
+
 	/**
 	 * Updates the internal `frames_found_` and `frames_lost_` counters for each
 	 * mode, based on the given new matches description, i.e. increments the
@@ -131,13 +121,16 @@ public:
 	 * ids of materialized models. They keep the track of sequential information.
 	 * Those lists stand between "being dropped" and "being materialized".
 	 */
+
 	void updateLostAndFound(std::map<int,size_t> const& new_matches);
+
 	/**
 	 * Drops any surface that has been lost too many frames in a row.
 	 * This means that the surface is removed from tracked surface, as well as no
 	 * longer returned as a "real" (materialized) surface.
 	 */
 	void dropLostSurface();
+
 	/**
 	 * Materializes any surface that has been seen enough frames in a row.
 	 * This means that tracked surfaces that seem to be stable are "graduated up"
@@ -145,24 +138,14 @@ public:
 	 * aggregator. Those surfaces are removed from frames_found list as well.
 	 */
 	void materializeFoundSurfaces();
-	/**
-	 * Convenience function that copies the list of materialized surfaces to a list
-	 * that can then be given to the underlying aggregator.
-	 */
-	std::vector<SurfaceModelPtr> copyMaterialized();
 
-	/*
-	 * The function to calculate convex hull for each materialized surface.
-	 * */
-	//void getConvexHull(std::vector<PointCloudPtr> const &surfaceList);
-	/* The function to calculate concave hull for each materialized surface.
-	 * */
-	//void getConcaveHull(std::vector<PointCloudPtr> const &surfaceList);
+
 	/**
 	 * The function returns the next available model ID. It makes sure that no
 	 * models are ever assigned the same ID.
 	 */
 	 model_id_t nextModelId();
+
 	/**
 	 * Returns the ID of a model tracked that matches the given model.
 	 *
@@ -180,36 +163,29 @@ public:
 	 * A list of aggregators to which this one will pass its own list of surfaces
 	 */
 	std::vector<boost::shared_ptr<SurfaceAggregator<PointT> > > aggregators_;
+
 	/**
 	 * Keeps track of which model ID is the next one that can be assigned.
 	 */
 	model_id_t next_model_id_;
+
 	/**
 	 * A mapping of model IDs to their `SurfaceModel` representation.
 	 */
-		std::map<model_id_t, boost::shared_ptr<SurfaceModel> > tracked_models_;
-
-		//template <typename model_id_t ,boost::shared_ptr<SurfaceModel>>
-		//using tracked_models_=std::map<model_id_t,boost::shared_ptr<SurfaceModel>>;
-
-//?????????????
-
+	std::map<model_id_t, boost::shared_ptr<SurfaceModel> > tracked_models_;
 
 	/**
 	 * A mapping of the model ID to the number of subsequent frames that the model
 	 * was found in.
 	 */
 	std::map<model_id_t, int> frames_found_;
-		//template <typename model_id_t ,int>
-	//using frames_found_=std::map<model_id_t,int>
 
 	/**
 	 * A mapping of the model ID to the number of subsequent frames that the model
 	 * was no longer found in.
 	 */
 	std::map<model_id_t, int> frames_lost_;
-//		template <typename model_id_t, int>
-//	using frames_lost_=std::map<model_id_t,int>
+
 	/**
 	 * Contains those models that are currently considered "real", i.e. not simply
 	 * perceived in one frame, but with sufficient certainty in many frames that
@@ -218,6 +194,7 @@ public:
 	 * without copying elements or (importantly) invalidating iterators.
 	 */
 	std::list<SurfaceModelPtr> materialized_models_;
+
 	/**
 	 * Maps the model to their position in the linked list so as to allow removing
 	 * surfaces efficiently.
@@ -227,15 +204,11 @@ public:
 	 * O(1).
 	 */
 	std::map<model_id_t, std::list<SurfaceModelPtr>::iterator> model_idx_in_list_;
-	//	template <typename model_id_t, std::list<SurfaceModelPtr>::iterator>
-	//	using model_idx_in_list_=std::map <model_id_t,std::list<SurfaceModelPtr>::iterator>;
 
 	/**
 	 * Current count of the number of frames processed by the aggregator.
 	 */
 	int frame_cnt_;
-
-	//std::vector<PointCloudPtr>  surfaceContourList;
 };
 
 template<class PointT>
@@ -250,13 +223,13 @@ void PostSurfaceAggregator<PointT>::attachSurfaceAggregator(
 }
 
 template<class PointT>
-typename PostSurfaceAggregator<PointT>::model_id_t PostSurfaceAggregator<PointT>::nextModelId() {
+model_id_t PostSurfaceAggregator<PointT>::nextModelId() {
 	return next_model_id_++;
 }
 
 /*!!!!!min_dist definition, should be checked !!!! */
 template<class PointT>
-typename PostSurfaceAggregator<PointT>::model_id_t PostSurfaceAggregator<PointT>::getMatchByDistance(
+model_id_t PostSurfaceAggregator<PointT>::getMatchByDistance(
 		SurfaceModelPtr surfacemodel) {
 
 	Coordinate const query_point = surfacemodel->centerpoint();
@@ -266,8 +239,8 @@ typename PostSurfaceAggregator<PointT>::model_id_t PostSurfaceAggregator<PointT>
 
 	model_id_t match = 0;
 
-		for(std::map<model_id_t,SurfaceModelPtr>::const_iterator it = tracked_models_.begin(); it!=tracked_models_.end(); ++it)
-	 {
+	for(std::map<model_id_t,SurfaceModelPtr>::const_iterator it = tracked_models_.begin(); it!=tracked_models_.end(); ++it)
+	{
 		/*Iterate through tracked models for the same surface check. Now the only criteria for the check is the center point
 		 * distance error.
 		 * This has to be extended to inclination and area criteria
@@ -360,7 +333,6 @@ std::map<int, size_t> PostSurfaceAggregator<PointT>::matchToPrevious(std::vector
 
 		// We assign an ID to our newly appeared surface in our frame here too!
 		new_surfaces[corresp]->set_id(model_id);
-
 	}
 
 	return correspondence;
@@ -399,6 +371,7 @@ void PostSurfaceAggregator<PointT>::adaptTracked(
 		//////////////////////////////////////////////////////////////////////
 	}
 }
+
 template <class PointT>
 void PostSurfaceAggregator<PointT>::updateLostAndFound(std::map<int, size_t> const& new_matches) {
 
@@ -428,6 +401,7 @@ void PostSurfaceAggregator<PointT>::updateLostAndFound(std::map<int, size_t> con
 		}
 	}
 }
+
 template<class PointT>
 void PostSurfaceAggregator<PointT>::dropLostSurface() {
 	// Drop surfaces that haven't been seen in a while
@@ -502,15 +476,8 @@ void PostSurfaceAggregator<PointT>::materializeFoundSurfaces() {
 			++it;
 		}
 	}
+}
 
-}
-template<class PointT>
-std::vector<SurfaceModelPtr> PostSurfaceAggregator<PointT>::copyMaterialized() {
-	std::vector < SurfaceModelPtr
-			> smooth_surfaces(materialized_models_.begin(),
-					materialized_models_.end());
-	return smooth_surfaces;
-}
 
 template<class PointT>
 void PostSurfaceAggregator<PointT>::notifySurfaces(std::vector<SurfaceModelPtr> const& surfaces,
@@ -531,25 +498,16 @@ void PostSurfaceAggregator<PointT>::updateSurfaces(std::vector<SurfaceModelPtr> 
 {
 //	++frame_cnt_;
 	//std::cout << "#new surface number= " << surfaces.size() << std::endl;
-	std::map<int, size_t> correspondence =matchToPrevious(surfaces);
+	std::map<int, size_t> correspondence = matchToPrevious(surfaces);
     updateLostAndFound(correspondence);
 	adaptTracked(correspondence, surfaces);
 	dropLostSurface();
     materializeFoundSurfaces();
-    std::vector<SurfaceModelPtr> smooth_surfaces(copyMaterialized());
-
-    //TODO -Smoothed surfaces are the result of tracking of the last 10 frames!!.
-    //Smoothed_surfaces are the tracked surfaces. Their point cloud is not sorted, stored or
-    //represented in anywhere. The surfaces vector is just the most recent clustered surface
-    //point cloud passed to the tracking. What is materialized in tracking is what has been seen
-    //in the last 10 frames and those point clouds are not saved in anywhere yet. That information is stored in
-    // a materialized list above.
-
-    //std::cout << "Tracking verified surfaces in the last 10 frames= " << smooth_surfaces.size()<< std::endl;
-
-	notifySurfaces(surfaces,cloudMinusSurfaces,surfaceCoefficients);
+    // copy materialized
+    std::vector<SurfaceModelPtr> smooth_surfaces(materialized_models_.begin(),
+					materialized_models_.end());
+	notifySurfaces(smooth_surfaces,cloudMinusSurfaces,surfaceCoefficients);
 }
-
 
 }// namespace lepp
 
