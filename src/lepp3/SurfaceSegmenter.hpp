@@ -22,7 +22,7 @@ public:
 	virtual void segment(const PointCloudConstPtr& cloud,
 			std::vector<PointCloudConstPtr> &surfaces,
 			PointCloudPtr &cloudMinusSurfaces,
-			std::vector<pcl::ModelCoefficients> *&m_coefficients);
+			std::vector<pcl::ModelCoefficients> *&surfCoeff);
 private:
 	// Private helper member functions
 	/**
@@ -109,15 +109,15 @@ private:
 	std::vector<PointCloudConstPtr> vec_segments;
 
 
-	/* List of plane coefficients [normal_x normal_y normal_z hessian_component_d]
-	 *
+	/**
+	 * List of plane coefficients [normal_x normal_y normal_z hessian_component_d]
 	 */
 	std::vector<pcl::ModelCoefficients> m_coefficients;
 
 	/**
 	* List of plane coefficients for 'final' (clustered) surfaces.
 	*/
-	//std::vector<pcl::ModelCoefficients> surfaceCoefficients;
+	std::vector<pcl::ModelCoefficients> surfaceCoefficients;
 
 	/*Segmentation ratio*/
 	double const min_filter_percentage_;
@@ -158,7 +158,7 @@ void SurfaceSegmenter<PointT>::findSurfaces(PointCloudPtr const& cloud_filtered)
 	vec_surface.clear();
     cloud_surfaces_->clear();
 	vec_segments.clear();
-	//surfaceCoefficients.clear();
+	surfaceCoefficients.clear();
 
 	// Instance that will be used to perform the elimination of unwanted points
 	// from the point cloud.
@@ -302,7 +302,7 @@ void SurfaceSegmenter<PointT>::clustersToPointClouds(int cloudIndex,
 			current->push_back(vec_surface.at(cloudIndex)->at(curr_indices[j]));
 		}
         vec_cloud_surfaces_.push_back(current);
-        //surfaceCoefficients.push_back(m_coefficients[cloudIndex]);
+        surfaceCoefficients.push_back(m_coefficients[cloudIndex]);
 	}
     //std::cout << "surfaces number:" << vec_cloud_surfaces_.size() << std::endl;
 }
@@ -319,7 +319,7 @@ void SurfaceSegmenter<PointT>::segment(
     findSurfaces(cloudMinusSurfaces);
     cluster();
     surfaces = vec_cloud_surfaces_;
-    surfCoeff = &m_coefficients;
+    surfCoeff = &surfaceCoefficients;
 }
 
 } // namespace lepp
