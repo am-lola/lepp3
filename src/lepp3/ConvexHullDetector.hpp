@@ -262,7 +262,7 @@ void ConvexHullDetector::updateSurfaces(std::vector<SurfaceModelPtr> const& surf
 
 	for (int i = 0; i < surfaces.size(); i++)
 	{
-		detectConvexHull(surfaces[i]->getCloud(), convexHulls[i], (*surfaceCoefficients)[i]);
+		detectConvexHull(surfaces[i]->get_cloud(), convexHulls[i], (*surfaceCoefficients)[i]);
 		reduceConvHullPoints(convexHulls[i], 8);
 	}
 	// cast to const pointers

@@ -24,8 +24,8 @@ class PlaneModel;
 //TODO remove the point cloud. The new visualizer does not need it.
 class SurfaceModel {
 public:
-	SurfaceModel() :
-			id_(0) {
+	SurfaceModel(PointCloudConstPtr &cloud) :
+			id_(0), cloud_(cloud) {
 	}
 
 	virtual Coordinate centerpoint() const = 0;
@@ -35,7 +35,6 @@ public:
 	virtual ~SurfaceModel() {
 	}
 
-	virtual PointCloudConstPtr getCloud() = 0;
 	/**
 	 * Returns the ID associated with the surface. If the ID is 0, it means that
 	 * no meaningful ID was associated.
@@ -46,16 +45,33 @@ public:
 		return id_;
 	}
 	/**
+	* Return point cloud representing the surface.
+	*/
+	PointCloudConstPtr get_cloud() 
+	{
+		return cloud_;
+	}
+
+	/**
 	 * Sets the object's ID.
 	 */
 	void set_id(int id) {
 		id_ = id;
 	}
 
+	/**
+	* Set cloud attribute to given cloud.
+	*/
+	void set_cloud(PointCloudConstPtr &new_cloud)
+	{
+		cloud_ = new_cloud;
+	}
+
 	friend std::ostream& operator<<(std::ostream& out,
 			SurfaceModel const& model);
 private:
 	int id_;
+	PointCloudConstPtr cloud_;
 };
 
 typedef boost::shared_ptr<SurfaceModel> SurfaceModelPtr;
@@ -79,43 +95,49 @@ public:
 	 * an std::vector.
 	 */
 	//void accept(ModelVisitor& visitor) { visitor.visitSphere(*this); }
-	double area() const {
+	double area() const 
+	{
 		return area_;
 	}
-	double heigth() const {
+	double heigth() const 
+	{
 		return heigth_;
 	}
-	double width() const {
+	double width() const 
+	{
 		return width_;
 	}
 	double inclination()const
 	{
 		return inclination_;
 	}
-	Coordinate centerpoint() const {
+	Coordinate centerpoint() const 
+	{
 		return center_;
 	}
 
-	PointCloudConstPtr getCloud() {
-		return cloud_;
-	}
-
-	void set_area(double approx_area) {
+	void set_area(double approx_area) 
+	{
 		area_ = approx_area;
 	}
-	void set_width(double approx_width) {
+	void set_width(double approx_width) 
+	{
 		width_ = approx_width;
 	}
-	void set_heigth(double approx_height) {
+	void set_heigth(double approx_height) 
+	{
 		heigth_ = approx_height;
 	}
-	void set_center(Coordinate const& center) {
+	void set_center(Coordinate const& center) 
+	{
 		center_ = center;
 	}
-	void set_inclination(double inc_amount) {
+	void set_inclination(double inc_amount) 
+	{
 		inclination_ = inc_amount;
 	}
-	void accept(PlaneVisitor & visitor) {
+	void accept(PlaneVisitor & visitor) 
+	{
 		visitor.visitPlane(*this);
 	}
 
@@ -127,13 +149,11 @@ private:
 	double width_;
 	Coordinate center_;
 	double inclination_;
-	PointCloudConstPtr cloud_;
-
 };
 
 inline PlaneModel::PlaneModel(double area, Coordinate const& center,
 		double inclination, PointCloudConstPtr &cloud) :
-		area_(area), center_(center), inclination_(inclination), cloud_(cloud) {
+		SurfaceModel(cloud), area_(area), center_(center), inclination_(inclination) {
 }
 
 

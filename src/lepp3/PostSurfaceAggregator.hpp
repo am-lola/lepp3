@@ -21,15 +21,22 @@ public:
 	 * Create a new `BlendVisitor` that will translate surface by the given
 	 * vector.
 	 */
-	BlendVisitors(Coordinate translation_vec) :
-			translation_vec_(translation_vec) {
+	BlendVisitors(Coordinate translation_vec, PointCloudConstPtr cloud) :
+			translation_vec_(translation_vec), cloud_(cloud) {
 	}
-	void visitPlane(PlaneModel & plane) {
+	void visitPlane(PlaneModel &plane) 
+	{
+		// update center point
 		plane.set_center(plane.centerpoint() + translation_vec_);
+		// update point cloud
+		if (translation_vec_.square_norm() > UPDATE_DIST)
+			plane.set_cloud(cloud_);		
 	}
 
 private:
 	Coordinate const translation_vec_;
+	PointCloudConstPtr cloud_;
+	static const double UPDATE_DIST = 0.001;
 };
 
 /**
@@ -209,6 +216,9 @@ private:
 	 * Current count of the number of frames processed by the aggregator.
 	 */
 	int frame_cnt_;
+
+	static const int LOST_LIMIT = 10;
+	static const int FOUND_LIMIT = 5;
 };
 
 template<class PointT>
@@ -353,7 +363,7 @@ void PostSurfaceAggregator<PointT>::adaptTracked(
 		Coordinate const translation_vec = (new_surfaces[i]->centerpoint()
 				- tracked_models_[model_id]->centerpoint()) / 2;
 
-		BlendVisitors blender(translation_vec);
+		BlendVisitors blender(translation_vec, new_surfaces[i]->get_cloud());
 		tracked_models_[model_id]->accept(blender);
 
 //		/////////////////////////////////////////////////////////////////////
@@ -408,7 +418,6 @@ void PostSurfaceAggregator<PointT>::dropLostSurface() {
 
 	//cout<<"DropLostSurface..."<<std::endl;
 	std::map<model_id_t, int>::iterator it = frames_lost_.begin();
-	int const LOST_LIMIT = 10; //5
 
 	while (it != frames_lost_.end()) {
 		if (it->second >= LOST_LIMIT) {
@@ -446,7 +455,6 @@ void PostSurfaceAggregator<PointT>::dropLostSurface() {
 template<class PointT>
 void PostSurfaceAggregator<PointT>::materializeFoundSurfaces() {
 	//std::cout<<"Materialize Surfaces"<<std::endl;
-	int const FOUND_LIMIT = 5;
 	std::map<model_id_t, int>::iterator it = frames_found_.begin();
 	while (it != frames_found_.end()) {
 		// Deconstruct the iterator pair for convenience
