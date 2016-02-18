@@ -155,6 +155,17 @@ public:
 	// list of aggregators that are connected to the ConvHullAggregator
 	std::vector<boost::shared_ptr<ConvexHullAggregator<PointT> > > aggregators;
 
+	/**
+	* Return true if points are in counterclockwise order, otherwise return false;
+	*/
+	bool ccw(PointT &p1, PointT &p2, PointT &p3);
+
+	/**
+	* Order the points of the given convex hull such that the points in the point cloud are given in clockwise order.
+	* Since there are only a few points in the convex hull, use gift wrapping algorithm.
+	*/
+	void orderHullPoints(PointCloudPtr &hull);
+
 private:
 	static const int NUM_HULL_POINTS = 8;
 };
@@ -256,6 +267,45 @@ void ConvexHullDetector::reduceConvHullPoints(PointCloudPtr &hull, int numPoints
 }
 
 
+/**
+* Return true if points are in counterclockwise order, otherwise return false;
+*/
+bool ConvexHullDetector::ccw(PointT &p1, PointT &p2, PointT &p3)
+{
+	if ((p2.x - p1.x) *(p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x) > 0)
+		return true;
+	return false;
+}
+
+
+/**
+* Order the points of the given convex hull such that the points in the point cloud are given in clockwise order.
+* Since there are only a few points in the convex hull, use gift wrapping algorithm.
+*/
+void ConvexHullDetector::orderHullPoints(PointCloudPtr &hull)
+{
+	PointCloudPtr newHull = boost::shared_ptr<PointCloudT>(new PointCloudT());
+	size_t numPoints = hull->size();
+	newHull->push_back(*(hull->begin()));
+	hull->erase(hull->begin());
+
+	for (int j = 1; j < numPoints; j++)
+	{
+		PointCloudT::iterator last = newHull->end()-1;
+		PointCloudT::iterator current = hull->begin();
+		for (PointCloudT::iterator it = hull->begin()+1; it != hull->end(); it++)
+		{
+			if (!ccw(*last, *current, *it))
+				current = it;
+		}
+		newHull->push_back(*current);
+		hull->erase(current);
+	}
+	hull = newHull;
+}
+
+
+
 // this function is called because a ConvexHullDetector is also a SurfaceAggregator.
 void ConvexHullDetector::updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
                               PointCloudPtr &cloudMinusSurfaces, 
@@ -272,6 +322,26 @@ void ConvexHullDetector::updateSurfaces(std::vector<SurfaceModelPtr> const& surf
 		{
 			detectConvexHull(surfaces[i]->get_cloud(), convexHulls[i], (*surfaceCoefficients)[i]);
 			reduceConvHullPoints(convexHulls[i], NUM_HULL_POINTS);
+
+/*
+			if ((surfaces.size() >= 1) && (i == 0))
+			{
+				PointCloudConstPtr cloud = surfaces[0]->get_cloud();
+				PointCloudPtr hull = boost::shared_ptr<PointCloudT>(new PointCloudT());
+				hull->push_back(cloud->at(0));
+				hull->push_back(cloud->at(3));
+				hull->push_back(cloud->at(2));
+				hull->push_back(cloud->at(4));
+				hull->push_back(cloud->at(1));
+				hull->push_back(cloud->at(7));
+				hull->push_back(cloud->at(6));
+				hull->push_back(cloud->at(5));
+				surfaces[0]->set_cloud(hull);
+			}*/
+
+			// order points in convex hull
+			orderHullPoints(convexHulls[i]);
+
 			// cast to const pointer
 			convexHullsConst.push_back(convexHulls[i]);
 			surfaces[i]->set_cloud(convexHulls[i]);
@@ -284,6 +354,7 @@ void ConvexHullDetector::updateSurfaces(std::vector<SurfaceModelPtr> const& surf
 			convexHullsConst.push_back(surfaces[i]->get_cloud());
 		}
 	}
+
 
 	// notify aggregators of ConvexHullDetector
 	notifyAggregators(convexHullsConst);

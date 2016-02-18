@@ -40,7 +40,7 @@ public:
 private:
 	Coordinate const translation_vec_;
 	PointCloudConstPtr cloud_;
-	static const double UPDATE_DIST = 0.002;
+	static const double UPDATE_DIST = 0.001;
 };
 
 /**
@@ -221,7 +221,7 @@ private:
 	 */
 	int frame_cnt_;
 
-	static const int LOST_LIMIT = 10;
+	static const int LOST_LIMIT = 8;
 	static const int FOUND_LIMIT = 5;
 };
 
@@ -518,6 +518,7 @@ void PostSurfaceAggregator<PointT>::updateSurfaces(std::vector<SurfaceModelPtr> 
     // copy materialized
     std::vector<SurfaceModelPtr> smooth_surfaces(materialized_models_.begin(),
 					materialized_models_.end());
+
 	notifySurfaces(smooth_surfaces,cloudMinusSurfaces,surfaceCoefficients);
 }
 
