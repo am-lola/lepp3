@@ -154,6 +154,9 @@ public:
 	
 	// list of aggregators that are connected to the ConvHullAggregator
 	std::vector<boost::shared_ptr<ConvexHullAggregator<PointT> > > aggregators;
+
+private:
+	static const int NUM_HULL_POINTS = 8;
 };
 
 
@@ -259,16 +262,28 @@ void ConvexHullDetector::updateSurfaces(std::vector<SurfaceModelPtr> const& surf
                               std::vector<pcl::ModelCoefficients> *&surfaceCoefficients)
 {
 	std::vector<PointCloudPtr> convexHulls(surfaces.size());
+	std::vector<PointCloudConstPtr> convexHullsConst;
 
 	for (int i = 0; i < surfaces.size(); i++)
 	{
-		detectConvexHull(surfaces[i]->get_cloud(), convexHulls[i], (*surfaceCoefficients)[i]);
-		reduceConvHullPoints(convexHulls[i], 8);
+
+		// only compute convex hull if the point cloud was changed
+		if (surfaces[i]->updateHull())
+		{
+			detectConvexHull(surfaces[i]->get_cloud(), convexHulls[i], (*surfaceCoefficients)[i]);
+			reduceConvHullPoints(convexHulls[i], NUM_HULL_POINTS);
+			// cast to const pointer
+			convexHullsConst.push_back(convexHulls[i]);
+			surfaces[i]->set_cloud(convexHulls[i]);
+
+			surfaces[i]->set_updateHull(false);
+		}
+		else
+		{
+			// use existing convex hull without re-computing
+			convexHullsConst.push_back(surfaces[i]->get_cloud());
+		}
 	}
-	// cast to const pointers
-	std::vector<PointCloudConstPtr> convexHullsConst;
-	for (int i = 0; i < convexHulls.size(); i++)
-		convexHullsConst.push_back(convexHulls[i]);
 
 	// notify aggregators of ConvexHullDetector
 	notifyAggregators(convexHullsConst);

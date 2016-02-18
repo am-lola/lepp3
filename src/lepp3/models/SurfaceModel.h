@@ -25,7 +25,7 @@ class PlaneModel;
 class SurfaceModel {
 public:
 	SurfaceModel(PointCloudConstPtr &cloud) :
-			id_(0), cloud_(cloud) {
+			id_(0), cloud_(cloud), updateHull_(true) {
 	}
 
 	virtual Coordinate centerpoint() const = 0;
@@ -52,6 +52,12 @@ public:
 		return cloud_;
 	}
 
+
+	bool updateHull() const
+	{
+		return updateHull_;
+	}
+
 	/**
 	 * Sets the object's ID.
 	 */
@@ -66,12 +72,22 @@ public:
 	{
 		cloud_ = new_cloud;
 	}
+	void set_cloud(PointCloudPtr &new_cloud)
+	{
+		cloud_ = new_cloud;
+	}
+
+	void set_updateHull(bool b)
+	{
+		updateHull_ = b;
+	}
 
 	friend std::ostream& operator<<(std::ostream& out,
 			SurfaceModel const& model);
 private:
 	int id_;
 	PointCloudConstPtr cloud_;
+	bool updateHull_;
 };
 
 typedef boost::shared_ptr<SurfaceModel> SurfaceModelPtr;
@@ -140,7 +156,6 @@ public:
 	{
 		visitor.visitPlane(*this);
 	}
-
 	friend std::ostream& operator<<(std::ostream& out, PlaneModel const& plane);
 
 private:
@@ -153,7 +168,7 @@ private:
 
 inline PlaneModel::PlaneModel(double area, Coordinate const& center,
 		double inclination, PointCloudConstPtr &cloud) :
-		SurfaceModel(cloud), area_(area), center_(center), inclination_(inclination) {
+		SurfaceModel(cloud), area_(area), center_(center), inclination_(inclination){
 }
 
 

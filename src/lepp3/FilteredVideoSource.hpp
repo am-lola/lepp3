@@ -158,6 +158,11 @@ private:
   * a defined value.
   */
   void removeGround(PointCloudPtr &cloud);
+
+  /**
+  * Remove all points from the given point cloud that are too far away from Lola.
+  */
+  void removeBackground(PointCloudPtr &cloudPtr);
 };
 
 template<class PointT>
@@ -213,6 +218,31 @@ void FilteredVideoSource<PointT>::removeGround(PointCloudPtr &cloudPtr)
 }
 
 
+
+/**
+* Remove all points from the given point cloud that are too far away from Lola.
+*/
+template<class PointT>
+void FilteredVideoSource<PointT>::removeBackground(PointCloudPtr &cloudPtr)
+{
+  pcl::ExtractIndices<PointT> extract;
+  pcl::PointIndices::Ptr currentPlaneIndices(new pcl::PointIndices);
+
+  int i = 0;
+  for (PointCloudT::iterator it = cloudPtr->begin(); it != cloudPtr->end(); it++, i++)
+  {
+    if (it->y < -2.8)
+      currentPlaneIndices->indices.push_back(i);
+  }
+
+  extract.setInputCloud(cloudPtr);
+  extract.setIndices(currentPlaneIndices);
+  extract.setNegative(true);
+  extract.filter(*cloudPtr);
+}
+
+
+
 template<class PointT>
 void FilteredVideoSource<PointT>::notifyNewFrame(
     int idx,
@@ -266,6 +296,7 @@ void FilteredVideoSource<PointT>::notifyNewFrame(
   this->getFiltered(filtered);
   this->transformToWorldCoordinates(filtered); 
   //this->removeGround(cloud_filtered);
+  this->removeBackground(cloud_filtered);
 
   // ...and we're done!
   t.stop();
