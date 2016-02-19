@@ -9,6 +9,8 @@
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
 
+#include <cmath>
+
 namespace lepp {
 
 /**
@@ -172,6 +174,7 @@ void SurfaceSegmenter<PointT>::findSurfaces(PointCloudPtr const& cloud_filtered)
 	size_t const point_threshold = min_filter_percentage_ * original_cloud_size;
 
 	bool first=true;
+	cout << "new frame" << endl;
 	while (cloud_filtered->size() > point_threshold) {
 		// Try to obtain the next plane...
 		pcl::ModelCoefficients coefficients;
@@ -266,8 +269,12 @@ void SurfaceSegmenter<PointT>::classify(PointCloudPtr const& cloud_planar_surfac
 	for (int i = 0; i < size; i++) {
 		double angle = getAngle(coeffs, i);
 
-		if (angle < 3 || angle > 177) {
+		if ((angle < 3 || angle > 177) && (std::abs(coeffs.values[3] - m_coefficients.at(i).values[3]) < 0.01)) {
 			*vec_surface.at(i) += *cloud_planar_surface;
+			cout << abs(coeffs.values[3] - m_coefficients.at(i).values[3]) << endl;
+			cout << m_coefficients.at(i).values[3] << " existing plane" << endl;
+			cout << coeffs.values[3] << " new plane" << endl;
+
 			return;
 		}
 	}
