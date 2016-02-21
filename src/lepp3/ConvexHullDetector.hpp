@@ -10,7 +10,6 @@
 #include <set>
 #include <algorithm>
 
-
 /*
 * Triangle class that is needed to reduce the number of points of the convex hull to 8 points. 
 */
@@ -138,7 +137,7 @@ public:
 	// inherited from the SurfaceAggregator interface
 	virtual void updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
                               PointCloudPtr &cloudMinusSurfaces, 
-                              std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
+                              std::vector<pcl::ModelCoefficients> &surfaceCoefficients);
 
 	// other classes can be connected to the output of the ConvexHullAggregator as aggregators.
 	// Thus, the ConvHullAggregator is a SurfaceAggregator itself, and is also a subject for
@@ -197,7 +196,7 @@ void ConvexHullDetector::detectConvexHull(PointCloudConstPtr surface, PointCloud
 	// detect convex hull
 	hull = boost::shared_ptr<PointCloudT>(new PointCloudT());
 	pcl::ConvexHull<PointT> chull;
-	chull.setInputCloud (surface);
+	chull.setInputCloud (tmp);
 	chull.reconstruct (*hull);
 }
 
@@ -309,7 +308,7 @@ void ConvexHullDetector::orderHullPoints(PointCloudPtr &hull)
 // this function is called because a ConvexHullDetector is also a SurfaceAggregator.
 void ConvexHullDetector::updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
                               PointCloudPtr &cloudMinusSurfaces, 
-                              std::vector<pcl::ModelCoefficients> *&surfaceCoefficients)
+                              std::vector<pcl::ModelCoefficients> &surfaceCoefficients)
 {
 	std::vector<PointCloudPtr> convexHulls(surfaces.size());
 	std::vector<PointCloudConstPtr> convexHullsConst;
@@ -320,7 +319,7 @@ void ConvexHullDetector::updateSurfaces(std::vector<SurfaceModelPtr> const& surf
 		// only compute convex hull if the point cloud was changed
 		if (surfaces[i]->updateHull())
 		{
-			detectConvexHull(surfaces[i]->get_cloud(), convexHulls[i], (*surfaceCoefficients)[i]);
+			detectConvexHull(surfaces[i]->get_cloud(), convexHulls[i], surfaceCoefficients[i]);
 			reduceConvHullPoints(convexHulls[i], NUM_HULL_POINTS);
 
 /*
@@ -355,8 +354,6 @@ void ConvexHullDetector::updateSurfaces(std::vector<SurfaceModelPtr> const& surf
 		}
 	}
 
-
-	// notify aggregators of ConvexHullDetector
 	notifyAggregators(convexHullsConst);
 }
 

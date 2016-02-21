@@ -46,10 +46,9 @@ class SurfaceDetector : public lepp::VideoObserver<PointT> {
      * Notifies any observers about newly detected surfaces.
      */
     void notifySurfaces(std::vector<SurfaceModelPtr> const& surfaces,
-      PointCloudPtr &cloudMinusSurfaces, std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
+      PointCloudPtr &cloudMinusSurfaces, std::vector<pcl::ModelCoefficients> &surfaceCoefficients);
 
   private:
-
     PointCloudConstPtr cloud_;
 
     /**
@@ -76,14 +75,20 @@ SurfaceDetector<PointT>::SurfaceDetector()
       segmenter_(new SurfaceSegmenter<PointT>()) {
 }
 
+
+
 template<class PointT>
-void SurfaceDetector<PointT>::notifyNewFrame(
-    int id,
+void SurfaceDetector<PointT>::notifyNewFrame(int id,
     const PointCloudConstPtr& point_cloud) {
+  
+  cout << "FRAME" << endl;
+  
   cloud_ = point_cloud;
-  try {
+  try 
+  {
     update();
-  } catch (...) {
+  } catch (...) 
+  {
    // std::cerr << "SurfaceDetector: Surface detection failed ..." << std::endl;
   }
 }
@@ -93,19 +98,15 @@ void SurfaceDetector<PointT>::update() {
 
   PointCloudPtr cloudMinusSurfaces(new PointCloudT());
   std::vector<PointCloudConstPtr> surfaces;
-  std::vector<pcl::ModelCoefficients> *surfaceCoefficients;
+  std::vector<pcl::ModelCoefficients> surfaceCoefficients;
+  segmenter_->segment(cloud_, surfaces, cloudMinusSurfaces, surfaceCoefficients);
 
-  Timer t;
-  t.start();
-  segmenter_->segment(cloud_,surfaces,cloudMinusSurfaces,surfaceCoefficients);
-  t.stop();
-  //std::cerr << "Surface segmentation took " << t.duration() << std::endl;
-  // create surface models
+  // create surface models of out surfaces and their coefficients
   std::vector<SurfaceModelPtr> surfaceModels;
   for(size_t i = 0; i < surfaces.size(); i++)
-    surfaceModels.push_back(approximator_->approximate(surfaces[i],surfaceCoefficients->at(i)));
+    surfaceModels.push_back(approximator_->approximate(surfaces[i],surfaceCoefficients.at(i)));
 
-  notifySurfaces(surfaceModels,cloudMinusSurfaces,surfaceCoefficients);
+  notifySurfaces(surfaceModels, cloudMinusSurfaces, surfaceCoefficients);
 }
 
 template<class PointT>
@@ -116,10 +117,10 @@ void SurfaceDetector<PointT>::attachSurfaceAggregator(
 
 template<class PointT>
 void SurfaceDetector<PointT>::notifySurfaces(std::vector<SurfaceModelPtr> const& surfaces,
-  PointCloudPtr &cloudMinusSurfaces, std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) {
+  PointCloudPtr &cloudMinusSurfaces, std::vector<pcl::ModelCoefficients> &surfaceCoefficients) {
   size_t sz = aggregators.size();
   for (size_t i = 0; i < sz; ++i) {
-    aggregators[i]->updateSurfaces(surfaces,cloudMinusSurfaces,surfaceCoefficients);
+    aggregators[i]->updateSurfaces(surfaces, cloudMinusSurfaces, surfaceCoefficients);
   }
 }
 

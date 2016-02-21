@@ -9,6 +9,12 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
+
+# compile with -g flag for debugging information needed for profiling
+SET(GCC_COVERAGE_COMPILE_FLAGS "-g")
+add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
+
+
 option(LEPP_BUILD_EXAMPLES "Build LEPP examples" FALSE)
 option(LEPP_BUILD_DETECTOR "Build an obstacle detector" TRUE)
 option(LEPP_BUILD_LOLA "Build an obstacle detector for LOLA" FALSE)

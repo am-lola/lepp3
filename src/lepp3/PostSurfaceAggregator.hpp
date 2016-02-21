@@ -84,7 +84,7 @@ public:
 	 */
 	virtual void updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
                               PointCloudPtr &cloudMinusSurfaces, 
-                              std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
+                              std::vector<pcl::ModelCoefficients> &surfaceCoefficients);
 
 // Private types
 private:
@@ -94,7 +94,7 @@ private:
 	 */
 	void notifySurfaces(std::vector<SurfaceModelPtr> const& surfaces,
 		    			PointCloudPtr &cloudMinusSurfaces, 
-    					std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
+    					std::vector<pcl::ModelCoefficients> &surfaceCoefficients);
 
 	/**
 	 * Computes the matching of the new surfaces to the surfaces that are being
@@ -494,11 +494,11 @@ void PostSurfaceAggregator<PointT>::materializeFoundSurfaces() {
 template<class PointT>
 void PostSurfaceAggregator<PointT>::notifySurfaces(std::vector<SurfaceModelPtr> const& surfaces,
 										PointCloudPtr &cloudMinusSurfaces, 
-    									std::vector<pcl::ModelCoefficients> *&surfaceCoefficients)
+    									std::vector<pcl::ModelCoefficients> &surfaceCoefficients)
 {
   size_t sz = aggregators_.size();
   for (size_t i = 0; i < sz; ++i) {
-    aggregators_[i]->updateSurfaces(surfaces,cloudMinusSurfaces,surfaceCoefficients);
+    aggregators_[i]->updateSurfaces(surfaces, cloudMinusSurfaces, surfaceCoefficients);
   }
 }
 
@@ -506,10 +506,8 @@ void PostSurfaceAggregator<PointT>::notifySurfaces(std::vector<SurfaceModelPtr> 
 template<class PointT>
 void PostSurfaceAggregator<PointT>::updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
 										PointCloudPtr &cloudMinusSurfaces, 
-    									std::vector<pcl::ModelCoefficients> *&surfaceCoefficients)
+    									std::vector<pcl::ModelCoefficients> &surfaceCoefficients)
 {
-//	++frame_cnt_;
-	//std::cout << "#new surface number= " << surfaces.size() << std::endl;
 	std::map<int, size_t> correspondence = matchToPrevious(surfaces);
     updateLostAndFound(correspondence);
 	adaptTracked(correspondence, surfaces);
@@ -518,8 +516,8 @@ void PostSurfaceAggregator<PointT>::updateSurfaces(std::vector<SurfaceModelPtr> 
     // copy materialized
     std::vector<SurfaceModelPtr> smooth_surfaces(materialized_models_.begin(),
 					materialized_models_.end());
-
-	notifySurfaces(smooth_surfaces,cloudMinusSurfaces,surfaceCoefficients);
+    
+	notifySurfaces(smooth_surfaces, cloudMinusSurfaces, surfaceCoefficients);
 }
 
 }// namespace lepp

@@ -26,7 +26,7 @@ public:
       const PointCloudConstPtr& cloud,
       std::vector<PointCloudConstPtr> &segments,
       PointCloudPtr &cloudMinusSurfaces,
-      std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
+      std::vector<pcl::ModelCoefficients> &surfaceCoefficients);
 private:
   // Private helper member functions
 
@@ -171,7 +171,7 @@ void EuclideanPlaneSegmenter<PointT>::segment(
     const PointCloudConstPtr& cloud,
     std::vector<PointCloudConstPtr> &segments,
     PointCloudPtr &cloudMinusSurfaces,
-    std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) {
+    std::vector<pcl::ModelCoefficients> &surfaceCoefficients) {
   removePlanes(cloudMinusSurfaces);
   std::vector<pcl::PointIndices> cluster_indices = getClusters(cloudMinusSurfaces);
   segments = clustersToPointClouds(cloudMinusSurfaces, cluster_indices);

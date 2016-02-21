@@ -28,7 +28,7 @@ public:
       const PointCloudConstPtr& cloud,
       std::vector<PointCloudConstPtr> &surfaces,
       PointCloudPtr &cloudMinusSurfaces,
-      std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) = 0;
+      std::vector<pcl::ModelCoefficients> &surfaceCoefficients) = 0;
 };
 
 } // namespace lepp

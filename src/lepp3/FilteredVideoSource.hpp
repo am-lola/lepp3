@@ -184,7 +184,8 @@ void FilteredVideoSource<PointT>::transformToWorldCoordinates(PointCloudT &cloud
   Eigen::Affine3f transform_2 = Eigen::Affine3f::Identity();
   
   transform_2.rotate (Eigen::AngleAxisf (theta, Eigen::Vector3f::UnitX()));
-  transform_2.translation() << 0.0, 0.0, -1.78;
+  //transform_2.translation() << 0.0, 0.0, -1.78;
+  transform_2.translation() << 0.0, 0.0, -1.4;
 
   PointCloudPtr transformed_cloud (new PointCloudT());
   // You can either apply transform_1 or transform_2; they are the same

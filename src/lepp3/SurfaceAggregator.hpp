@@ -25,7 +25,7 @@ public:
    */
     virtual void updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
 								PointCloudPtr &cloudMinusSurfaces, 
-    							std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) = 0;
+    							std::vector<pcl::ModelCoefficients> &surfaceCoefficients) = 0;
 };
 
 } // namespace lepp

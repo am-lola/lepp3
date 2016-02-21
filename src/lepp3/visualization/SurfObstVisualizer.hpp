@@ -153,7 +153,7 @@ public:
   */
   virtual void updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
                 PointCloudPtr &cloudMinusSurfaces, 
-                  std::vector<pcl::ModelCoefficients> *&surfaceCoefficients);
+                  std::vector<pcl::ModelCoefficients> &surfaceCoefficients);
 
 
   /**
@@ -263,7 +263,7 @@ void SurfObstVisualizer<PointT>::drawSurfaces(
 template<class PointT>
 void SurfObstVisualizer<PointT>::updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
                           PointCloudPtr &cloudMinusSurfaces, 
-                          std::vector<pcl::ModelCoefficients> *&surfaceCoefficients) {
+                          std::vector<pcl::ModelCoefficients> &surfaceCoefficients) {
     pcl::visualization::CloudViewer::VizCallable surface_visualization =
             boost::bind(&SurfObstVisualizer::drawSurfaces, this, surfaces, _1);
   //  viewer_.runOnVisualizationThread(surface_visualization);
