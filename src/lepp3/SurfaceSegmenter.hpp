@@ -8,6 +8,7 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/crop_box.h>
 
 #include <cmath>
 
@@ -90,6 +91,18 @@ private:
     * size does not influence the quality of the surface clustering.
     */
     void downSample(PointCloudPtr &cloud);
+
+    /**
+    * Filter out all the points from the cloud that are close to the surface.
+    */
+	void filterInvalidObstacles(std::vector<PointCloudConstPtr> &surfaces, 
+		PointCloudPtr &cloud);
+
+
+	/**
+	* Return average z-coordinate of all points in given point cloud.
+	*/
+	double getAverageHeight(const PointCloudT &cloud);
 
 	/**
 	* Instance used to extract the planes from the input cloud.
@@ -287,6 +300,55 @@ void SurfaceSegmenter<PointT>::downSample(PointCloudPtr &cloud)
 }
 
 
+
+template<class PointT>
+double SurfaceSegmenter<PointT>::getAverageHeight(const PointCloudT &cloud)
+{
+	double avgHeight = 0;
+	for (int i = 0; i < cloud.size(); i++)
+		avgHeight += cloud[i].z;
+
+	avgHeight /= cloud.size();
+	return avgHeight;
+}
+
+
+template<class PointT>
+void SurfaceSegmenter<PointT>::filterInvalidObstacles(
+	std::vector<PointCloudConstPtr> &surfaces, 
+	PointCloudPtr &cloud)
+{
+	for (size_t i = 0; i < surfaces.size(); i++)
+	{
+		double avgHeight = getAverageHeight(*surfaces[i]);
+
+		// surface is not the ground
+		if (avgHeight < -0.1) // TODO fine tune parameter
+		{
+			PointT minPoint;
+			PointT maxPoint;
+			// get max x,y,z coordinates of points in surfaces[i]
+			pcl::getMinMax3D(*surfaces[i], minPoint, maxPoint);
+
+			// enlarge the box in X and Y direction. Use average height for Z-coordinate.
+			const double delta = 0.02;
+			Eigen::Vector4f minVec(minPoint.x - delta, minPoint.y - delta, avgHeight - 2*delta, 0);
+			Eigen::Vector4f maxVec(maxPoint.x + delta, maxPoint.y + delta, avgHeight + 2*delta, 0);
+
+			// filter out all points in the box spanned by minVec and maxVec
+			pcl::CropBox<PointT> cropFilter;
+			cropFilter.setInputCloud(cloud);
+			cropFilter.setMin(minVec);
+			cropFilter.setMax(maxVec);
+			cropFilter.setNegative(true);
+			PointCloudPtr cloudFiltered(new PointCloudT());
+			cropFilter.filter(*cloudFiltered);
+			cloud = cloudFiltered;
+		}
+	}
+}
+
+
 template<class PointT>
 void SurfaceSegmenter<PointT>::segment(
 		const PointCloudConstPtr& cloud,
@@ -306,6 +368,9 @@ void SurfaceSegmenter<PointT>::segment(
 
     // cluster planes into seperate surfaces
     cluster(planes, planeCoefficients, surfaces, surfaceCoefficients);
+
+    // filter out points that are close to stairs
+    filterInvalidObstacles(surfaces, cloudMinusSurfaces);
 }
 
 } // namespace lepp
