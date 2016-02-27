@@ -28,19 +28,13 @@ public:
 	{
 		// update center point
 		plane.set_center(plane.centerpoint() + translation_vec_);
-
-		// update point cloud
-		if (translation_vec_.square_norm() > UPDATE_DIST)
-		{
-			plane.set_cloud(cloud_);		
-			plane.set_updateHull(true);
-		}
+		// update point cloud of plane
+		plane.set_cloud(cloud_);		
 	}
 
 private:
 	Coordinate const translation_vec_;
 	PointCloudConstPtr cloud_;
-	static const double UPDATE_DIST = 0.001;
 };
 
 /**

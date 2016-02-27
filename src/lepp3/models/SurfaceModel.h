@@ -19,13 +19,11 @@ namespace lepp {
 class PlaneVisitor;
 class PlaneModel;
 
-/*Base class for a plane representation*/
-
 //TODO remove the point cloud. The new visualizer does not need it.
 class SurfaceModel {
 public:
 	SurfaceModel(PointCloudConstPtr &cloud) :
-			id_(0), cloud_(cloud), updateHull_(true) {
+			id_(0), cloud_(cloud), hull_(new PointCloudT()) { 
 	}
 
 	virtual Coordinate centerpoint() const = 0;
@@ -44,6 +42,7 @@ public:
 	int id() const {
 		return id_;
 	}
+	
 	/**
 	* Return point cloud representing the surface.
 	*/
@@ -52,10 +51,12 @@ public:
 		return cloud_;
 	}
 
-
-	bool updateHull() const
+	/**
+	* Return point cloud representing the convex hull of the surfaces.
+	*/
+	PointCloudConstPtr get_hull() 
 	{
-		return updateHull_;
+		return hull_;
 	}
 
 	/**
@@ -77,9 +78,9 @@ public:
 		cloud_ = new_cloud;
 	}
 
-	void set_updateHull(bool b)
+	void set_hull(PointCloudPtr &new_hull)
 	{
-		updateHull_ = b;
+		hull_ = new_hull;
 	}
 
 	friend std::ostream& operator<<(std::ostream& out,
@@ -87,7 +88,7 @@ public:
 private:
 	int id_;
 	PointCloudConstPtr cloud_;
-	bool updateHull_;
+	PointCloudConstPtr hull_;
 };
 
 typedef boost::shared_ptr<SurfaceModel> SurfaceModelPtr;

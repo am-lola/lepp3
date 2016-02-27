@@ -22,6 +22,9 @@ using namespace lepp;
 
 #include "lepp3/debug/timer.hpp"
 
+//int FRAME_COUNT = 0;
+
+
 template<class PointT>
 class SurfaceDetector : public lepp::VideoObserver<PointT> {
 
@@ -82,6 +85,9 @@ void SurfaceDetector<PointT>::notifyNewFrame(int id,
     const PointCloudConstPtr& point_cloud) {
   
   cout << "FRAME" << endl;
+  //FRAME_COUNT++;
+  //if (FRAME_COUNT == 10)
+  //  exit(0);
   
   cloud_ = point_cloud;
   try 
