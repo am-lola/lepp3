@@ -2,3 +2,4 @@ build
 *~
 *.oni
 *.txt.user
+.idea/*
