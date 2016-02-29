@@ -5,7 +5,6 @@
 #include "lepp3/Typedefs.hpp"
 #include "lepp3/SurfaceAggregator.hpp"
 #include "lepp3/ConvexHullAggregator.hpp"
-#include <pcl/filters/project_inliers.h>
 #include <pcl/surface/convex_hull.h>
 #include <set>
 #include <algorithm>
@@ -177,19 +176,9 @@ void ConvexHullDetector::notifyAggregators(std::vector<PointCloudConstPtr> &conv
 // use PCl to detect the convex hull of the given point cloud
 void ConvexHullDetector::detectConvexHull(PointCloudConstPtr surface, pcl::ModelCoefficients &surfaceCoefficients, PointCloudPtr &hull)
 {
-	// project point cloud to a surface
-	pcl::ProjectInliers<PointT> proj;
-	proj.setModelType (pcl::SACMODEL_PLANE);
-	proj.setInputCloud (surface);
-	pcl::ModelCoefficients::Ptr coeffPtr = boost::shared_ptr<pcl::ModelCoefficients>(new pcl::ModelCoefficients(surfaceCoefficients));
-	proj.setModelCoefficients (coeffPtr);
-	PointCloudPtr tmp(new PointCloudT());
-	proj.filter (*tmp);
-
-	// detect convex hull
 	hull = boost::shared_ptr<PointCloudT>(new PointCloudT());
 	pcl::ConvexHull<PointT> chull;
-	chull.setInputCloud (tmp);
+	chull.setInputCloud (surface);
 	chull.reconstruct (*hull);
 }
 

@@ -22,7 +22,7 @@ using namespace lepp;
 
 #include "lepp3/debug/timer.hpp"
 
-//int FRAME_COUNT = 0;
+int FRAME_COUNT = 0;
 
 
 template<class PointT>
@@ -84,8 +84,8 @@ template<class PointT>
 void SurfaceDetector<PointT>::notifyNewFrame(int id,
     const PointCloudConstPtr& point_cloud) {
   
-  cout << "FRAME" << endl;
-  //FRAME_COUNT++;
+  FRAME_COUNT++;
+  cout << "FRAME " << FRAME_COUNT << endl;
   //if (FRAME_COUNT == 10)
   //  exit(0);
   

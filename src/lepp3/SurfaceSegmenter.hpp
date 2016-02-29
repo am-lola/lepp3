@@ -9,6 +9,7 @@
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/crop_box.h>
+#include <pcl/filters/project_inliers.h>
 
 #include <cmath>
 
@@ -96,13 +97,22 @@ private:
     * Filter out all the points from the cloud that are close to the surface.
     */
 	void filterInvalidObstacles(std::vector<PointCloudConstPtr> &surfaces, 
-		PointCloudPtr &cloud);
+		PointCloudPtr &cloudMinusSurfaces);
 
 
 	/**
 	* Return average z-coordinate of all points in given point cloud.
 	*/
 	double getAverageHeight(const PointCloudT &cloud);
+
+
+	/**
+	* Project given surfaces on plane specified by the corresponding plane coefficients.
+	*/
+	void projectOnPlane(
+		std::vector<PointCloudConstPtr> &surfaces,
+		std::vector<pcl::ModelCoefficients> &surfaceCoefficients);
+
 
 	/**
 	* Instance used to extract the planes from the input cloud.
@@ -230,6 +240,17 @@ void SurfaceSegmenter<PointT>::findPlanes(
 }
 
 
+template<class PointT>
+void SurfaceSegmenter<PointT>::downSample(PointCloudPtr &cloud)
+{
+  PointCloudPtr cloud_filtered(new PointCloudT());
+  pcl::VoxelGrid<PointT> sor;
+  sor.setInputCloud (cloud);
+  sor.setLeafSize (0.01, 0.01, 0.01);
+  sor.filter (*cloud_filtered);
+  cloud = cloud_filtered;
+}
+
 
 template<class PointT>
 void SurfaceSegmenter<PointT>::getSurfaceClusters(
@@ -237,7 +258,7 @@ void SurfaceSegmenter<PointT>::getSurfaceClusters(
 	// Extract the clusters from such a filtered cloud.
 	int max_size=cloud->points.size();
 	clusterizer_.setClusterTolerance(0.03);
-	clusterizer_.setMinClusterSize(1800);
+	clusterizer_.setMinClusterSize(2300);
 	clusterizer_.setMaxClusterSize(max_size);
 	pcl::search::KdTree<pcl::PointXYZ>::Ptr kd_tree_(
 			new pcl::search::KdTree<pcl::PointXYZ>);
@@ -246,7 +267,6 @@ void SurfaceSegmenter<PointT>::getSurfaceClusters(
 	clusterizer_.setInputCloud(cloud);
 	clusterizer_.extract(cluster_indices);
 }
-
 
 
 template<class PointT>
@@ -289,16 +309,23 @@ void SurfaceSegmenter<PointT>::cluster(
 
 
 template<class PointT>
-void SurfaceSegmenter<PointT>::downSample(PointCloudPtr &cloud)
+void SurfaceSegmenter<PointT>::projectOnPlane(
+	std::vector<PointCloudConstPtr> &surfaces,
+	std::vector<pcl::ModelCoefficients> &surfaceCoefficients)
 {
-  PointCloudPtr cloud_filtered(new PointCloudT());
-  pcl::VoxelGrid<PointT> sor;
-  sor.setInputCloud (cloud);
-  sor.setLeafSize (0.01, 0.01, 0.01);
-  sor.filter (*cloud_filtered);
-  cloud = cloud_filtered;
+	for (int i = 0; i < surfaces.size(); i++)
+	{
+		// project surfaces on corresponding plane
+		pcl::ProjectInliers<PointT> proj;
+		proj.setModelType (pcl::SACMODEL_PLANE);
+		proj.setInputCloud (surfaces[i]);
+		pcl::ModelCoefficients::Ptr coeffPtr = boost::shared_ptr<pcl::ModelCoefficients>(new pcl::ModelCoefficients(surfaceCoefficients[i]));
+		proj.setModelCoefficients (coeffPtr);
+		PointCloudPtr tmp(new PointCloudT());
+		proj.filter (*tmp);
+		surfaces[i] = tmp;
+	}
 }
-
 
 
 template<class PointT>
@@ -316,7 +343,7 @@ double SurfaceSegmenter<PointT>::getAverageHeight(const PointCloudT &cloud)
 template<class PointT>
 void SurfaceSegmenter<PointT>::filterInvalidObstacles(
 	std::vector<PointCloudConstPtr> &surfaces, 
-	PointCloudPtr &cloud)
+	PointCloudPtr &cloudMinusSurfaces)
 {
 	for (size_t i = 0; i < surfaces.size(); i++)
 	{
@@ -331,19 +358,19 @@ void SurfaceSegmenter<PointT>::filterInvalidObstacles(
 			pcl::getMinMax3D(*surfaces[i], minPoint, maxPoint);
 
 			// enlarge the box in X and Y direction. Use average height for Z-coordinate.
-			const double delta = 0.02;
-			Eigen::Vector4f minVec(minPoint.x - delta, minPoint.y - delta, avgHeight - 2*delta, 0);
-			Eigen::Vector4f maxVec(maxPoint.x + delta, maxPoint.y + delta, avgHeight + 2*delta, 0);
+			const double delta = 0.03;
+			Eigen::Vector4f minVec(minPoint.x - delta, minPoint.y - delta, avgHeight - 3*delta, 0);
+			Eigen::Vector4f maxVec(maxPoint.x + delta, maxPoint.y + delta, avgHeight + 3*delta, 0);
 
 			// filter out all points in the box spanned by minVec and maxVec
 			pcl::CropBox<PointT> cropFilter;
-			cropFilter.setInputCloud(cloud);
+			cropFilter.setInputCloud(cloudMinusSurfaces);
 			cropFilter.setMin(minVec);
 			cropFilter.setMax(maxVec);
 			cropFilter.setNegative(true);
 			PointCloudPtr cloudFiltered(new PointCloudT());
 			cropFilter.filter(*cloudFiltered);
-			cloud = cloudFiltered;
+			cloudMinusSurfaces = cloudFiltered;
 		}
 	}
 }
@@ -368,6 +395,9 @@ void SurfaceSegmenter<PointT>::segment(
 
     // cluster planes into seperate surfaces
     cluster(planes, planeCoefficients, surfaces, surfaceCoefficients);
+
+    // project the found surfaces on corresponding plane
+   	projectOnPlane(surfaces, surfaceCoefficients);
 
     // filter out points that are close to stairs
     filterInvalidObstacles(surfaces, cloudMinusSurfaces);
