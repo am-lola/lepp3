@@ -3,8 +3,7 @@
 
 #include <vector>
 #include "lepp3/Typedefs.hpp"
-#include "lepp3/SurfaceAggregator.hpp"
-#include "lepp3/ConvexHullAggregator.hpp"
+#include "lepp3/FrameDataObserver.hpp"
 #include <pcl/surface/convex_hull.h>
 #include <set>
 #include <algorithm>
@@ -115,19 +114,17 @@ public:
 * For each surface then it is computing the convex hull, and in a second step reduces the number of points
 * of the convex hull to a user defined number.
 */
-class ConvexHullDetector : public SurfaceAggregator<PointT>
+class ConvexHullDetector : public FrameDataObserver
 {
 public:
 	// inherited from the SurfaceAggregator interface
-	virtual void updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
-                              PointCloudPtr &cloudMinusSurfaces, 
-                              std::vector<pcl::ModelCoefficients> &surfaceCoefficients);
+	virtual void updateFrame(boost::shared_ptr<FrameData> frameData);
 
 	// other classes can be connected to the output of the ConvexHullAggregator as aggregators.
 	// Thus, the ConvHullAggregator is a SurfaceAggregator itself, and is also a subject for
 	// ConvexHullAggregators.
-	void attachConvexHullAggregator(boost::shared_ptr<ConvexHullAggregator<PointT> > aggregator);
-	void notifyAggregators(std::vector<PointCloudConstPtr> &convexHulls);
+	void attachObserver(boost::shared_ptr<FrameDataObserver> observer);
+	void notifyObservers(boost::shared_ptr<FrameData> frameData);
 
 private:
 	static const int NUM_HULL_POINTS = 8;
@@ -135,7 +132,7 @@ private:
 	static const double MERGE_UPDATE_PERCENTAGE = 0.5;
 
 	// list of aggregators that are connected to the ConvHullAggregator
-	std::vector<boost::shared_ptr<ConvexHullAggregator<PointT> > > aggregators;
+	std::vector<boost::shared_ptr<FrameDataObserver> > observers;
 
 	// reduce the number of points in the given hull to 'numPoints'
 	void reduceConvHullPoints(PointCloudPtr &hull, int numPoints);
@@ -162,15 +159,15 @@ private:
 };
 
 
-void ConvexHullDetector::attachConvexHullAggregator(boost::shared_ptr<ConvexHullAggregator<PointT> > newAggregator)
+void ConvexHullDetector::attachObserver(boost::shared_ptr<FrameDataObserver> observer)
 {
-	aggregators.push_back(newAggregator);
+	observers.push_back(observer);
 }
 
-void ConvexHullDetector::notifyAggregators(std::vector<PointCloudConstPtr> &convexHulls)
+void ConvexHullDetector::notifyObservers(boost::shared_ptr<FrameData> frameData)
 {
-	for (int i = 0; i < aggregators.size(); i++)
-		aggregators[i]->updateHulls(convexHulls);
+	for (int i = 0; i < observers.size(); i++)
+		observers[i]->updateFrame(frameData);
 }
 
 // use PCl to detect the convex hull of the given point cloud
@@ -304,27 +301,22 @@ void ConvexHullDetector::mergeConvexHulls(PointCloudConstPtr oldHull, PointCloud
 	newHull = mergeHull;
 }
 
-void ConvexHullDetector::updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
-                              PointCloudPtr &cloudMinusSurfaces, 
-                              std::vector<pcl::ModelCoefficients> &surfaceCoefficients)
+void ConvexHullDetector::updateFrame(boost::shared_ptr<FrameData> frameData)
 {
-	std::vector<PointCloudPtr> convexHulls(surfaces.size());
-	std::vector<PointCloudConstPtr> convexHullsConst;
+	frameData->hulls.resize(frameData->surfaces.size());
 
-	for (int i = 0; i < surfaces.size(); i++)
+	for (int i = 0; i < frameData->surfaces.size(); i++)
 	{
 		// detect new convex gull
-		detectConvexHull(surfaces[i]->get_cloud(), surfaceCoefficients[i], convexHulls[i]);
-		reduceConvHullPoints(convexHulls[i], NUM_HULL_POINTS);
+		detectConvexHull(frameData->surfaces[i]->get_cloud(), frameData->surfaceCoefficients[i], frameData->hulls[i]);
+		reduceConvHullPoints(frameData->hulls[i], NUM_HULL_POINTS);
 
 		// merge convex hull with old convex hull of same surface
-		mergeConvexHulls(surfaces[i]->get_hull(), convexHulls[i], MERGE_UPDATE_PERCENTAGE);
-		surfaces[i]->set_hull(convexHulls[i]);
-
-		// push back merged convex hull to vector that is passed to visualizer
-		convexHullsConst.push_back(convexHulls[i]);
+		mergeConvexHulls(frameData->surfaces[i]->get_hull(), frameData->hulls[i], MERGE_UPDATE_PERCENTAGE);
+		frameData->surfaces[i]->set_hull(frameData->hulls[i]);
 	}
-	notifyAggregators(convexHullsConst);
+
+	notifyObservers(frameData);
 }
 
 #endif

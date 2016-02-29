@@ -14,7 +14,7 @@
 #include "lepp3/ObjectApproximator.hpp"
 #include "lepp3/MomentOfInertiaApproximator.hpp"
 #include "lepp3/SplitApproximator.hpp"
-#include "lepp3/SurfaceAggregator.hpp"
+#include "lepp3/FrameDataObserver.hpp"
 
 #include "deps/easylogging++.h"
 
@@ -64,7 +64,7 @@ private:
  */
 template<class PointT>
 class BaseObstacleDetector : public IObstacleDetector,
-                             public SurfaceAggregator<PointT>{
+                             public FrameDataObserver{
 public:
   /**
    * Creates a new `BaseObstacleDetector` that will use the given
@@ -75,9 +75,7 @@ public:
   virtual ~BaseObstacleDetector() {}
 
 
-  virtual void updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
-                              PointCloudPtr &cloudMinusSurfaces, 
-                              std::vector<pcl::ModelCoefficients> &surfaceCoefficients);
+  virtual void updateFrame(boost::shared_ptr<FrameData> frameData);
 
 private:
   PointCloudPtr cloud_;
@@ -102,10 +100,8 @@ BaseObstacleDetector<PointT>::BaseObstacleDetector(
 
 
 template<class PointT>
-void BaseObstacleDetector<PointT>::updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
-                              PointCloudPtr &cloudMinusSurfaces, 
-                              std::vector<pcl::ModelCoefficients> &surfaceCoefficients) {
-  cloud_ = cloudMinusSurfaces;
+void BaseObstacleDetector<PointT>::updateFrame(boost::shared_ptr<FrameData> frameData) {
+  cloud_ = frameData->cloudMinusSurfaces;
   try {
     update();
   } catch (...) {

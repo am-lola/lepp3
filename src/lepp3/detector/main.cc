@@ -150,13 +150,13 @@ int main(int argc, char* argv[]) {
   boost::shared_ptr<PostSurfaceAggregator<PointT> > post_surface_processor(
           new PostSurfaceAggregator<PointT>);
 
-  surfaceDetector->attachSurfaceAggregator(post_surface_processor);
+  surfaceDetector->attachObserver(post_surface_processor);
 
 
     // add the surface convex hull detector
   boost::shared_ptr<ConvexHullDetector> convHullDetector(
     new ConvexHullDetector());
-  post_surface_processor->attachSurfaceAggregator(convHullDetector);
+  post_surface_processor->attachObserver(convHullDetector);
 
 //~~~~~~~~~~~~~~~~~~~~~~~Obstacles~~~~~~~~~~~~~~~~~~~~~~~~
 // Prepare the approximator that the detector is to use.
@@ -178,7 +178,7 @@ int main(int argc, char* argv[]) {
       new BaseObstacleDetector<PointT>(obstacleApprox));
   // Attaching the detector to the source: process the point clouds obtained
   // by the source.
-  surfaceDetector->attachSurfaceAggregator(obstacleDetector);
+  surfaceDetector->attachObserver(obstacleDetector);
 
   // The visualizer is additionally decorated by the "smoothener" to smooth out
   // the output...
@@ -194,8 +194,8 @@ int main(int argc, char* argv[]) {
 
   // Attaching the visualizer to the source: allow it to display the original point cloud.
   source->attachObserver(surfObstVisualizer);
-  post_surface_processor->attachSurfaceAggregator(surfObstVisualizer);
-  convHullDetector->attachConvexHullAggregator(surfObstVisualizer);
+  post_surface_processor->attachObserver(surfObstVisualizer);
+  convHullDetector->attachObserver(surfObstVisualizer);
   smooth_decorator->attachObstacleAggregator(surfObstVisualizer);
   
   // Starts capturing new frames and forwarding them to attached observers.

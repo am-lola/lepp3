@@ -10,12 +10,10 @@
 #include <string>
 
 #include "lepp3/Typedefs.hpp"
-#include "lepp3/VideoObserver.hpp"
 #include "lepp3/ObstacleAggregator.hpp"
 #include "lepp3/models/ObjectModel.h"
-#include "lepp3/SurfaceAggregator.hpp"
 #include "lepp3/ConvexHullDetector.hpp"
-#include "lepp3/ConvexHullAggregator.hpp"
+#include "lepp3/FrameDataObserver.hpp"
 
 namespace lepp {
 
@@ -130,18 +128,9 @@ void ModelDrawer::visitCapsule(lepp::CapsuleModel& capsule) {
  * Implements the VideoObserver and ObstacleAggregator interfaces.
  */
 template<class PointT>
-class SurfObstVisualizer : public VideoObserver<PointT>, public ObstacleAggregator, public SurfaceAggregator<PointT>, public ConvexHullAggregator<PointT> {
+class SurfObstVisualizer : public ObstacleAggregator, public FrameDataObserver {
 public:
   SurfObstVisualizer() : viewer_("SurfObstVisualizer") {}
-
-  /**
-   * VideoObserver interface implementation: processes the current point cloud.
-   */
-  virtual void notifyNewFrame(
-      int idx,
-      const PointCloudConstPtr& pointCloud) {
-    //viewer_.showCloud(pointCloud);
-  }
 
   /**
    * ObstacleAggregator interface implementation: processes detected obstacles.
@@ -149,17 +138,9 @@ public:
   virtual void updateObstacles(std::vector<ObjectModelPtr> const& obstacles);
 
   /**
-   * SurfaceAggregator interface implementation: processes detected surfaces.
-  */
-  virtual void updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
-                PointCloudPtr &cloudMinusSurfaces, 
-                  std::vector<pcl::ModelCoefficients> &surfaceCoefficients);
-
-
-  /**
   * Convex Hull Aggregator interface implementation: process detected convex hulls.
   */
-  virtual void updateHulls(std::vector<PointCloudConstPtr> &hulls);
+  virtual void updateFrame(boost::shared_ptr<FrameData> frameData);
 
   
 private:
@@ -209,68 +190,6 @@ void SurfObstVisualizer<PointT>::updateObstacles(
   viewer_.runOnVisualizationThreadOnce(obstacle_visualization);
 }
 
-
-template<class PointT>
-void SurfObstVisualizer<PointT>::drawSurfaces(
-        std::vector<SurfaceModelPtr> const& surfaces,
-    pcl::visualization::PCLVisualizer& pclViz) {
-  pclViz.removePointCloud("SUR1",0);
-  pclViz.removePointCloud("SUR2",0);
-  pclViz.removePointCloud("SUR3",0);
-  pclViz.removePointCloud("SUR4",0);
-
-  size_t const sz = surfaces.size();
-  for (size_t i = 0; i < sz; ++i) {
-
-     if (i ==0) {
-            if (!pclViz.updatePointCloud(surfaces[i]->get_cloud(), "SUR1"))
-                pclViz.addPointCloud(surfaces[i]->get_cloud(), "SUR1");                       //RED
-      pclViz.setPointCloudRenderingProperties(
-          pcl::visualization::PCL_VISUALIZER_COLOR, 1.0, 0, 0,
-                    "SUR1");
-    }
-    else if (i == 1) {
-            if (!pclViz.updatePointCloud(surfaces[i]->get_cloud(), "SUR2"))                  //GREEN
-                pclViz.addPointCloud(surfaces[i]->get_cloud(), "SUR2");
-      pclViz.setPointCloudRenderingProperties(
-          pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1.0, 0,
-                    "SUR2");
-    }
-    else if (i == 2) {
-            if (!pclViz.updatePointCloud(surfaces[i]->get_cloud(), "SUR3"))                  //BLUE
-                pclViz.addPointCloud(surfaces[i]->get_cloud(), "SUR3");
-      pclViz.setPointCloudRenderingProperties(
-          pcl::visualization::PCL_VISUALIZER_COLOR, 0, 0, 1.0,
-                    "SUR3");
-    }
-    else if (i == 3) {
-            if (!pclViz.updatePointCloud(surfaces[i]->get_cloud(), "SUR4"))
-                pclViz.addPointCloud(surfaces[i]->get_cloud(), "SUR4");                       //PURPLE
-      pclViz.setPointCloudRenderingProperties(
-          pcl::visualization::PCL_VISUALIZER_COLOR, 0.580392, 0,
-                    0.827451, "SUR4");
-    }
-//    else if (i == 5) {
-//      if (!pclViz.updatePointCloud(surfaces[i], "SUR5"))
-//        pclViz.addPointCloud(surfaces[i], "SUR5");                      //YELLOW
-//      pclViz.setPointCloudRenderingProperties(
-//          pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0.843137, 0,
-//          "SUR5");
-//    }
-  }
-}
-
-template<class PointT>
-void SurfObstVisualizer<PointT>::updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
-                          PointCloudPtr &cloudMinusSurfaces, 
-                          std::vector<pcl::ModelCoefficients> &surfaceCoefficients) {
-    pcl::visualization::CloudViewer::VizCallable surface_visualization =
-            boost::bind(&SurfObstVisualizer::drawSurfaces, this, surfaces, _1);
-  //  viewer_.runOnVisualizationThread(surface_visualization);
-}
-
-//TODO There will be flickering in the surface visualization, as long as the surfaces
-//are not visualized with the colors according to their IDs.
 template<class PointT>
 void SurfObstVisualizer<PointT>::drawConvexHulls(
     std::vector<PointCloudConstPtr> &hulls,
@@ -294,13 +213,15 @@ void SurfObstVisualizer<PointT>::drawConvexHulls(
   }   
 }
 
-
-
 template<class PointT>
-void SurfObstVisualizer<PointT>::updateHulls(std::vector<PointCloudConstPtr> &hulls)
+void SurfObstVisualizer<PointT>::updateFrame(boost::shared_ptr<FrameData> frameData)
 {
+  std::vector<PointCloudConstPtr> hullsConst;
+  for (size_t i = 0; i < frameData->hulls.size(); i++)
+    hullsConst.push_back(frameData->hulls.at(i));
+
   pcl::visualization::CloudViewer::VizCallable hull_visualization =
-            boost::bind(&SurfObstVisualizer::drawConvexHulls, this, hulls, _1);
+            boost::bind(&SurfObstVisualizer::drawConvexHulls, this, hullsConst, _1);
 
   viewer_.runOnVisualizationThread(hull_visualization);
 

@@ -2,6 +2,7 @@
 #define GRABBER_VIDEO_SOURCE_H_
 
 #include "lepp3/Typedefs.hpp"
+#include "lepp3/FrameData.hpp"
 #include "BaseVideoSource.hpp"
 #include <pcl/io/openni_grabber.h>
 
@@ -59,7 +60,9 @@ GeneralGrabberVideoSource<PointT>::~GeneralGrabberVideoSource() {
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::cloud_cb_(
     const PointCloudConstPtr& cloud) {
-  this->setNextFrame(cloud);
+  boost::shared_ptr<FrameData> frameData(new FrameData());
+  frameData->cloud = cloud;
+  this->setNextFrame(frameData);
 }
 
 template<class PointT>

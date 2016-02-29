@@ -2,6 +2,7 @@
 #define VIDEO_OBSERVER_H_
 
 #include "lepp3/Typedefs.hpp"
+#include "lepp3/FrameData.hpp"
 
 namespace lepp {
 
@@ -19,8 +20,7 @@ public:
    * and the point cloud extracted from that frame.
    */
   virtual void notifyNewFrame(
-      int idx,
-      const PointCloudConstPtr& pointCloud) = 0;
+      boost::shared_ptr<FrameData> frameData) = 0;
 };
 
 }  // namespace lepp

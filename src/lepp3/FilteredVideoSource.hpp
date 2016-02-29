@@ -4,6 +4,7 @@
 #include "lepp3/BaseVideoSource.hpp"
 #include "lepp3/VideoObserver.hpp"
 #include "lepp3/filter/PointFilter.hpp"
+#include "lepp3/FrameDataObserver.hpp"
 
 #include <algorithm>
 #include <numeric>
@@ -77,7 +78,7 @@ size_t hash_value(MapPoint const& pt) {
 template<class PointT>
 class FilteredVideoSource
     : public VideoSource<PointT>,
-      public VideoObserver<PointT>,
+      public FrameDataObserver,
       public boost::enable_shared_from_this<FilteredVideoSource<PointT> > {
 public:
   /**
@@ -97,9 +98,7 @@ public:
   /**
    * Implementation of the VideoObserver interface.
    */
-  virtual void notifyNewFrame(
-      int idx,
-      const PointCloudConstPtr& cloud);
+  virtual void updateFrame(boost::shared_ptr<FrameData> frameData);
 
   /**
    * Add a filter that will be applied to individual points before the entire
@@ -244,9 +243,8 @@ void FilteredVideoSource<PointT>::removeBackground(PointCloudPtr &cloudPtr)
 
 
 template<class PointT>
-void FilteredVideoSource<PointT>::notifyNewFrame(
-    int idx,
-    const PointCloudConstPtr& cloud) {
+void FilteredVideoSource<PointT>::updateFrame(
+    boost::shared_ptr<FrameData> frameData) {
   Timer t;
   t.start();
 
@@ -265,12 +263,12 @@ void FilteredVideoSource<PointT>::notifyNewFrame(
   PointCloudPtr cloud_filtered(new PointCloudT());
   PointCloudT& filtered = *cloud_filtered;
   cloud_filtered->is_dense = true;
-  cloud_filtered->sensor_origin_ = cloud->sensor_origin_;
+  cloud_filtered->sensor_origin_ = frameData->cloud->sensor_origin_;
 
   // Apply point-wise filters to each received point and then pass it to the
   // concrete implementation to figure out how to filter the entire cloud.
-  for (typename PointCloudT::const_iterator it = cloud->begin();
-        it != cloud->end();
+  for (typename PointCloudT::const_iterator it = frameData->cloud->begin();
+        it != frameData->cloud->end();
         ++it) {
     PointT p = *it;
     // Filter out NaN points already, since we're already iterating through the
@@ -304,7 +302,8 @@ void FilteredVideoSource<PointT>::notifyNewFrame(
   //LTRACE << "Total included points " << cloud_filtered->size();
   //PINFO << "Filtering took " << t.duration();
   // Finally, the cloud that is emitted by this instance is the filtered cloud.
-  this->setNextFrame(cloud_filtered);
+  frameData->cloud = cloud_filtered;
+  this->setNextFrame(frameData);
   //cout << filtered.size() << "   " << cloud_filtered->size() << endl;
 }
 

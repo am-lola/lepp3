@@ -8,6 +8,7 @@
 #include <pcl/io/openni_grabber.h>
 #include <pcl/visualization/cloud_viewer.h>
 
+#include "lepp3/FrameData.hpp"
 #include "lepp3/Typedefs.hpp"
 #include "VideoObserver.hpp"
 
@@ -28,11 +29,6 @@ namespace lepp {
 template<class PointT>
 class VideoSource {
 public:
-  /**
-   * Convenience type for defining observers for a particular VideoSource.
-   */
-  typedef VideoObserver<PointT> ObserverType;
-
   VideoSource() : frame_counter_(0) {}
   virtual ~VideoSource();
 
@@ -45,7 +41,7 @@ public:
    * Each observer will get notified once the VideoSource has received a new
    * frame and converted it into a point cloud.
    */
-  virtual void attachObserver(boost::shared_ptr<ObserverType> observer);
+  virtual void attachObserver(boost::shared_ptr<FrameDataObserver> observer);
 
 protected:
   /**
@@ -54,19 +50,17 @@ protected:
    * point cloud as the most recent one, as well as to notify all source
    * observers.
    */
-  virtual void setNextFrame(const PointCloudConstPtr& cloud);
+  virtual void setNextFrame(boost::shared_ptr<FrameData> frameData);
 private:
   /**
    * Private helper method.  Notifies all known observers that a new point cloud
    * has been received.
    */
-  void notifyObservers(
-      int idx,
-      const PointCloudConstPtr& cloud) const;
+  void notifyObservers(boost::shared_ptr<FrameData> frameData) const;
   /**
    * Keeps track of all observers that are attached to the source.
    */
-  std::vector<boost::shared_ptr<ObserverType> > observers_;
+  std::vector<boost::shared_ptr<FrameDataObserver> > observers_;
   /**
    * Counts how many frames have been seen by the video source.
    */
@@ -79,25 +73,25 @@ VideoSource<PointT>::~VideoSource() {
 }
 
 template<class PointT>
-void VideoSource<PointT>::notifyObservers(
-    int idx,
-    const PointCloudConstPtr& cloud) const {
+void VideoSource<PointT>::notifyObservers(boost::shared_ptr<FrameData> frameData) const
+{
   size_t const sz = observers_.size();
-  for (size_t i = 0; i < sz; ++i) {
-    observers_[i]->notifyNewFrame(idx, cloud);
+  for (size_t i = 0; i < sz; ++i)
+  {
+    observers_[i]->updateFrame(frameData);
   }
 }
 
 template<class PointT>
 void VideoSource<PointT>::setNextFrame(
-    const PointCloudConstPtr& cloud) {
+    boost::shared_ptr<FrameData> frameData) {
   ++frame_counter_;
-  notifyObservers(frame_counter_, cloud);
+  notifyObservers(frameData);
 }
 
 template<class PointT>
 void VideoSource<PointT>::attachObserver(
-    boost::shared_ptr<ObserverType> observer) {
+    boost::shared_ptr<FrameDataObserver> observer) {
   observers_.push_back(observer);
 }
 

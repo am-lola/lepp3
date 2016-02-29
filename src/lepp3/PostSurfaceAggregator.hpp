@@ -1,7 +1,7 @@
 #ifndef lepp3_SMOOTH_SURFACE_AGGREGATOR_H__
 #define lepp3_SMOOTH_SURFACE_AGGREGATOR_H__
 
-#include "lepp3/SurfaceAggregator.hpp"
+#include "lepp3/FrameDataObserver.hpp"
 #include "lepp3/Typedefs.hpp"
 #include <pcl/surface/concave_hull.h>
 #include <pcl/surface/convex_hull.h>
@@ -57,7 +57,7 @@ private:
  * aggregators that are attached to it.
  */
 template<class PointT>
-class PostSurfaceAggregator: public lepp::SurfaceAggregator<PointT> {
+class PostSurfaceAggregator: public FrameDataObserver {
 
 public:
 	/**
@@ -69,16 +69,13 @@ public:
 	 * Attach a new `SurfaceAggregator` that will be notified of surfaces that
 	 * this instance generates.
 	 */
-	void attachSurfaceAggregator(
-			boost::shared_ptr<SurfaceAggregator<PointT> > aggreg);
+	void attachObserver(boost::shared_ptr<FrameDataObserver> observer);
 
 	/**
 	 * The member function that all concrete aggregators need to implement in
 	 * order to be able to process newly detected surfaces.
 	 */
-	virtual void updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
-                              PointCloudPtr &cloudMinusSurfaces, 
-                              std::vector<pcl::ModelCoefficients> &surfaceCoefficients);
+	virtual void updateFrame(boost::shared_ptr<FrameData> frameData);
 
 // Private types
 private:
@@ -86,9 +83,7 @@ private:
 	/**
 	 * Sends the given surfaces to all attached aggregators.
 	 */
-	void notifySurfaces(std::vector<SurfaceModelPtr> const& surfaces,
-		    			PointCloudPtr &cloudMinusSurfaces, 
-    					std::vector<pcl::ModelCoefficients> &surfaceCoefficients);
+	void notifyObservers(boost::shared_ptr<FrameData> frameData);
 
 	/**
 	 * Computes the matching of the new surfaces to the surfaces that are being
@@ -167,7 +162,7 @@ private:
 	/**
 	 * A list of aggregators to which this one will pass its own list of surfaces
 	 */
-	std::vector<boost::shared_ptr<SurfaceAggregator<PointT> > > aggregators_;
+	std::vector<boost::shared_ptr<FrameDataObserver> > observers_;
 
 	/**
 	 * Keeps track of which model ID is the next one that can be assigned.
@@ -225,9 +220,9 @@ PostSurfaceAggregator<PointT>::PostSurfaceAggregator() :
 }
 
 template<class PointT>
-void PostSurfaceAggregator<PointT>::attachSurfaceAggregator(
-		boost::shared_ptr<SurfaceAggregator<PointT> > aggregator) {
-	aggregators_.push_back(aggregator);
+void PostSurfaceAggregator<PointT>::attachObserver(
+		boost::shared_ptr<FrameDataObserver> observer) {
+	observers_.push_back(observer);
 }
 
 template<class PointT>
@@ -486,32 +481,30 @@ void PostSurfaceAggregator<PointT>::materializeFoundSurfaces() {
 
 
 template<class PointT>
-void PostSurfaceAggregator<PointT>::notifySurfaces(std::vector<SurfaceModelPtr> const& surfaces,
-										PointCloudPtr &cloudMinusSurfaces, 
-    									std::vector<pcl::ModelCoefficients> &surfaceCoefficients)
+void PostSurfaceAggregator<PointT>::notifyObservers(boost::shared_ptr<FrameData> frameData)
 {
-  size_t sz = aggregators_.size();
+  size_t sz = observers_.size();
   for (size_t i = 0; i < sz; ++i) {
-    aggregators_[i]->updateSurfaces(surfaces, cloudMinusSurfaces, surfaceCoefficients);
+    observers_[i]->updateFrame(frameData);
   }
 }
 
 
 template<class PointT>
-void PostSurfaceAggregator<PointT>::updateSurfaces(std::vector<SurfaceModelPtr> const& surfaces,
-										PointCloudPtr &cloudMinusSurfaces, 
-    									std::vector<pcl::ModelCoefficients> &surfaceCoefficients)
+void PostSurfaceAggregator<PointT>::updateFrame(boost::shared_ptr<FrameData> frameData)
 {
-	std::map<int, size_t> correspondence = matchToPrevious(surfaces);
+	std::map<int, size_t> correspondence = matchToPrevious(frameData->surfaces);
     updateLostAndFound(correspondence);
-	adaptTracked(correspondence, surfaces);
+	adaptTracked(correspondence, frameData->surfaces);
 	dropLostSurface();
     materializeFoundSurfaces();
     // copy materialized
     std::vector<SurfaceModelPtr> smooth_surfaces(materialized_models_.begin(),
 					materialized_models_.end());
     
-	notifySurfaces(smooth_surfaces, cloudMinusSurfaces, surfaceCoefficients);
+    frameData->surfaces = smooth_surfaces;
+
+	notifyObservers(frameData);
 }
 
 }// namespace lepp
