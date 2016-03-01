@@ -189,14 +189,14 @@ int main(int argc, char* argv[]) {
 
 //~~~~~~~~~~~~~~~~~~~~~~~Visualizer~~~~~~~~~~~~~~~~~~~~~~~~
   // Prepare the result visualizer...
-  boost::shared_ptr<Visualizer<PointT> > Visualizer(
+  boost::shared_ptr<Visualizer<PointT> > pclVisualizer(
     new Visualizer<PointT>());
 
   // Attaching the visualizer to the source: allow it to display the original point cloud.
-  source->attachObserver(Visualizer);
-  post_surface_processor->attachObserver(Visualizer);
-  convHullDetector->attachObserver(Visualizer);
-  smooth_decorator->attachObstacleAggregator(Visualizer);
+  source->attachObserver(pclVisualizer);
+  post_surface_processor->attachObserver(pclVisualizer);
+  convHullDetector->attachObserver(pclVisualizer);
+  smooth_decorator->attachObstacleAggregator(pclVisualizer);
   
   // Starts capturing new frames and forwarding them to attached observers.
   source->open();
