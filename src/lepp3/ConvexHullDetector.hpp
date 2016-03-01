@@ -1,13 +1,13 @@
 #ifndef LEPP3_CONVEX_HULL_DETECTOR_H__
 #define LEPP3_CONVEX_HULL_DETECTOR_H__
 
-#include <vector>
 #include "lepp3/Typedefs.hpp"
 #include "lepp3/FrameDataObserver.hpp"
 #include <pcl/surface/convex_hull.h>
 #include <set>
 #include <algorithm>
 #include <limits>
+#include <vector>
 
 /*
 * Triangle class that is needed to reduce the number of points of the convex hull to 8 points. 
@@ -128,8 +128,7 @@ public:
 
 private:
 	static const int NUM_HULL_POINTS = 8;
-
-	static const double MERGE_UPDATE_PERCENTAGE = 0.5;
+	static const double MERGE_UPDATE_PERCENTAGE = 0.8;
 
 	// list of aggregators that are connected to the ConvHullAggregator
 	std::vector<boost::shared_ptr<FrameDataObserver> > observers;
@@ -138,7 +137,7 @@ private:
 	void reduceConvHullPoints(PointCloudPtr &hull, int numPoints);
 
 	// uses the pcl function to compute the convex hull of the given point cloud.
-	void detectConvexHull(PointCloudConstPtr surface, pcl::ModelCoefficients &surfaceCoefficients, PointCloudPtr &hull);
+	void detectConvexHull(PointCloudConstPtr surface, PointCloudPtr &hull);
 
 	/**
 	* Projects the point p onto line segment seg1-seg2, and stores the vector from p to its projection in 'projVec'.
@@ -156,7 +155,16 @@ private:
 	* Return squared euclidean length of given vector.
 	*/
 	double getVecLengthSquared(const PointT &p);
+
+	/**
+	* Project the given point cloud onto the surface specified by the surfaceCoefficients.
+	*/
+	void projectOnPlane(PointCloudConstPtr cloud,
+		const pcl::ModelCoefficients &surfaceCoefficients,
+		PointCloudPtr &projCloud);
 };
+
+
 
 
 void ConvexHullDetector::attachObserver(boost::shared_ptr<FrameDataObserver> observer)
@@ -171,7 +179,7 @@ void ConvexHullDetector::notifyObservers(boost::shared_ptr<FrameData> frameData)
 }
 
 // use PCl to detect the convex hull of the given point cloud
-void ConvexHullDetector::detectConvexHull(PointCloudConstPtr surface, pcl::ModelCoefficients &surfaceCoefficients, PointCloudPtr &hull)
+void ConvexHullDetector::detectConvexHull(PointCloudConstPtr surface, PointCloudPtr &hull)
 {
 	hull = boost::shared_ptr<PointCloudT>(new PointCloudT());
 	pcl::ConvexHull<PointT> chull;
@@ -265,6 +273,21 @@ void ConvexHullDetector::getProjection(const PointT &seg1, const PointT &seg2, c
 	projVec.z = seg1.z + t * segment.z - p.z;
 }
 
+
+void ConvexHullDetector::projectOnPlane(
+	PointCloudConstPtr cloud,
+	const pcl::ModelCoefficients &surfaceCoefficients,
+	PointCloudPtr &projCloud)
+{
+	pcl::ProjectInliers<PointT> proj;
+	proj.setModelType(pcl::SACMODEL_PLANE);
+	proj.setInputCloud(cloud);
+	pcl::ModelCoefficients::Ptr coeffPtr = boost::shared_ptr<pcl::ModelCoefficients>(new pcl::ModelCoefficients(surfaceCoefficients));
+	proj.setModelCoefficients(coeffPtr);
+	proj.filter(*projCloud);
+}
+
+
 void ConvexHullDetector::mergeConvexHulls(PointCloudConstPtr oldHull, PointCloudPtr &newHull, double updateFactor)
 {
 	PointCloudPtr mergeHull(new PointCloudT());
@@ -274,7 +297,7 @@ void ConvexHullDetector::mergeConvexHulls(PointCloudConstPtr oldHull, PointCloud
 		double shortestDist = std::numeric_limits<double>::max();
 		PointT &currentPoint = newHull->at(i);
 
-		// find shortest distance between point of new hull and old Hull
+		// find shortest distance between point of new hull and boundary of old Hull
 		// iterate over all line segments of old hulls
 		for (int j = 0; j < oldHull->size(); j++)
 		{
@@ -291,31 +314,43 @@ void ConvexHullDetector::mergeConvexHulls(PointCloudConstPtr oldHull, PointCloud
 			}
 		}
 
-		// go from point of new hull 'updateFactor' percent in direction of projection of new hull point onto old hull
-		PointT updatedPoint;
-		updatedPoint.x = currentPoint.x + updateFactor * shortestProjVec.x;
-		updatedPoint.y = currentPoint.y + updateFactor * shortestProjVec.y;
-		updatedPoint.z = currentPoint.z + updateFactor * shortestProjVec.z;
-		mergeHull->push_back(updatedPoint);
+		if (oldHull->size() != 0)
+		{
+			// go from point of new hull 'updateFactor' percent in direction of projection of new hull point onto old hull
+			PointT updatedPoint;
+			updatedPoint.x = currentPoint.x + updateFactor * shortestProjVec.x;
+			updatedPoint.y = currentPoint.y + updateFactor * shortestProjVec.y;
+			updatedPoint.z = currentPoint.z + updateFactor * shortestProjVec.z;
+			mergeHull->push_back(updatedPoint);
+		}
+		else
+		{
+			mergeHull->push_back(currentPoint);
+		}
 	}
 	newHull = mergeHull;
 }
 
 void ConvexHullDetector::updateFrame(boost::shared_ptr<FrameData> frameData)
 {
-	frameData->hulls.resize(frameData->surfaces.size());
-
 	for (int i = 0; i < frameData->surfaces.size(); i++)
 	{
 		// detect new convex gull
-		detectConvexHull(frameData->surfaces[i]->get_cloud(), frameData->surfaceCoefficients[i], frameData->hulls[i]);
-		reduceConvHullPoints(frameData->hulls[i], NUM_HULL_POINTS);
+		PointCloudPtr newHull(new PointCloudT());
+		detectConvexHull(frameData->surfaces[i]->get_cloud(), newHull);
+		reduceConvHullPoints(newHull, NUM_HULL_POINTS);
 
-		// merge convex hull with old convex hull of same surface
-		mergeConvexHulls(frameData->surfaces[i]->get_hull(), frameData->hulls[i], MERGE_UPDATE_PERCENTAGE);
-		frameData->surfaces[i]->set_hull(frameData->hulls[i]);
+		// project old and new hull onto the same surface
+		PointCloudPtr projNewHull(new PointCloudT());
+		PointCloudPtr projOldHull(new PointCloudT());
+		projectOnPlane(PointCloudConstPtr(newHull), frameData->surfaces[i]->get_planeCoefficients(), projNewHull);
+		projectOnPlane(frameData->surfaces[i]->get_cloud(), frameData->surfaces[i]->get_planeCoefficients(), projOldHull);
+
+		// merge convex hull with old convex hull of same surface. If the surface is detected for the first time,
+		// simply take the new cloud.
+		mergeConvexHulls(projOldHull, projNewHull, MERGE_UPDATE_PERCENTAGE);
+		frameData->surfaces[i]->set_hull(projNewHull);
 	}
-
 	notifyObservers(frameData);
 }
 

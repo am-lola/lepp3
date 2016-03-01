@@ -11,13 +11,15 @@ namespace lepp
 
 struct FrameData
 {
-//	FrameData() : cloud(new PointCloudT()), cloudMinusSurfaces(new PointCloudT()) {}
-	PointCloudConstPtr						cloud;
-	PointCloudPtr							cloudMinusSurfaces;
-	std::vector<SurfaceModelPtr>			surfaces;
-	std::vector<pcl::ModelCoefficients> 	surfaceCoefficients;
-	std::vector<PointCloudPtr> 				hulls;
-	std::vector<ObjectModelPtr> 			obstacles;
+	FrameData(int num) : frameNum(num), cloudMinusSurfaces(new PointCloudT()) 
+	{
+		cout << "Frame " << frameNum << endl;
+	}
+	long 							frameNum;
+	PointCloudConstPtr				cloud;
+	PointCloudPtr					cloudMinusSurfaces;
+	std::vector<SurfaceModelPtr>	surfaces;
+	std::vector<ObjectModelPtr> 	obstacles;
 };
 
 }

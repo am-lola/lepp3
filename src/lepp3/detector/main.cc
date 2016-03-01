@@ -8,18 +8,18 @@
 #include <pcl/io/pcd_grabber.h>
 
 #include "lepp3/Typedefs.hpp"
-#include "lepp3/BaseObstacleDetector.hpp"
+#include "lepp3/ObstacleDetector.hpp"
 #include "lepp3/SurfaceDetector.hpp"
 #include "lepp3/GrabberVideoSource.hpp"
-#include "lepp3/BaseVideoSource.hpp"
+#include "lepp3/VideoSource.hpp"
 #include "lepp3/VideoObserver.hpp"
 #include "lepp3/FilteredVideoSource.hpp"
 #include "lepp3/SmoothObstacleAggregator.hpp"
 #include "lepp3/ConvexHullDetector.hpp"
-#include "lepp3/PostSurfaceAggregator.hpp"
+#include "lepp3/SurfaceTracking.hpp"
 
 #include "lepp3/visualization/EchoObserver.hpp"
-#include "lepp3/visualization/SurfObstVisualizer.hpp"
+#include "lepp3/visualization/Visualizer.hpp"
 
 #include "lepp3/filter/TruncateFilter.hpp"
 #include "lepp3/filter/SensorCalibrationFilter.hpp"
@@ -147,8 +147,8 @@ int main(int argc, char* argv[]) {
   source->attachObserver(surfaceDetector);
 
   // Surface Post Processing
-  boost::shared_ptr<PostSurfaceAggregator<PointT> > post_surface_processor(
-          new PostSurfaceAggregator<PointT>);
+  boost::shared_ptr<SurfaceTracking<PointT> > post_surface_processor(
+          new SurfaceTracking<PointT>);
 
   surfaceDetector->attachObserver(post_surface_processor);
 
@@ -174,8 +174,8 @@ int main(int argc, char* argv[]) {
   boost::shared_ptr<ObjectApproximator<PointT> > obstacleApprox(
       new SplitObjectApproximator<PointT>(obstacle_simple_approx, obstacleSplitter));
   // Prepare the detector
-  boost::shared_ptr<BaseObstacleDetector<PointT> > obstacleDetector(
-      new BaseObstacleDetector<PointT>(obstacleApprox));
+  boost::shared_ptr<ObstacleDetector<PointT> > obstacleDetector(
+      new ObstacleDetector<PointT>(obstacleApprox));
   // Attaching the detector to the source: process the point clouds obtained
   // by the source.
   surfaceDetector->attachObserver(obstacleDetector);
@@ -189,14 +189,14 @@ int main(int argc, char* argv[]) {
 
 //~~~~~~~~~~~~~~~~~~~~~~~Visualizer~~~~~~~~~~~~~~~~~~~~~~~~
   // Prepare the result visualizer...
-  boost::shared_ptr<SurfObstVisualizer<PointT> > surfObstVisualizer(
-    new SurfObstVisualizer<PointT>());
+  boost::shared_ptr<Visualizer<PointT> > Visualizer(
+    new Visualizer<PointT>());
 
   // Attaching the visualizer to the source: allow it to display the original point cloud.
-  source->attachObserver(surfObstVisualizer);
-  post_surface_processor->attachObserver(surfObstVisualizer);
-  convHullDetector->attachObserver(surfObstVisualizer);
-  smooth_decorator->attachObstacleAggregator(surfObstVisualizer);
+  source->attachObserver(Visualizer);
+  post_surface_processor->attachObserver(Visualizer);
+  convHullDetector->attachObserver(Visualizer);
+  smooth_decorator->attachObstacleAggregator(Visualizer);
   
   // Starts capturing new frames and forwarding them to attached observers.
   source->open();

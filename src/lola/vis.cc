@@ -12,16 +12,16 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "lepp3/BaseObstacleDetector.hpp"
+#include "lepp3/ObstacleDetector.hpp"
 #include "lepp3/GrabberVideoSource.hpp"
-#include "lepp3/BaseVideoSource.hpp"
+#include "lepp3/VideoSource.hpp"
 #include "lepp3/VideoObserver.hpp"
 #include "lepp3/FilteredVideoSource.hpp"
 #include "lepp3/SmoothObstacleAggregator.hpp"
 #include "lepp3/SplitApproximator.hpp"
 
 #include "lepp3/visualization/EchoObserver.hpp"
-#include "lepp3/visualization/SurfObstVisualizer.hpp"
+#include "lepp3/visualization/Visualizer.hpp"
 
 #include "lepp3/filter/TruncateFilter.hpp"
 #include "lepp3/filter/SensorCalibrationFilter.hpp"
@@ -199,7 +199,7 @@ protected:
 
   boost::shared_ptr<IObstacleDetector> detector_;
 
-  boost::shared_ptr<SurfObstVisualizer<PointT> > visualizer_;
+  boost::shared_ptr<Visualizer<PointT> > visualizer_;
 };
 
 /**
@@ -286,7 +286,7 @@ protected:
     boost::shared_ptr<ObjectApproximator<PointT> > approx(
         new SplitObjectApproximator<PointT>(simple_approx, splitter));
     // Prepare the base detector...
-    base_detector_.reset(new BaseObstacleDetector<PointT>(approx));
+    base_detector_.reset(new ObstacleDetector<PointT>(approx));
 
     this->source()->attachObserver(base_detector_);
     // Smooth out the basic detector by applying a smooth detector to it
@@ -312,7 +312,7 @@ protected:
     // Factor out to a member ...
     bool visualization = true;
     if (visualization) {
-      this->visualizer_.reset(new SurfObstVisualizer<PointT>());
+      this->visualizer_.reset(new Visualizer<PointT>());
       // Attach the visualizer to both the point cloud source...
       this->source()->attachObserver(this->visualizer_);
       // ...as well as to the obstacle detector
@@ -384,7 +384,7 @@ private:
    * reference to it to make sure it doesn't get destroyed, although it is
    * never exposed to any outside clients.
    */
-  boost::shared_ptr<BaseObstacleDetector<PointT> > base_detector_;
+  boost::shared_ptr<ObstacleDetector<PointT> > base_detector_;
 };
 
 /**
@@ -558,7 +558,7 @@ protected:
     boost::shared_ptr<ObjectApproximator<PointT> > approx(
         new SplitObjectApproximator<PointT>(simple_approx, splitter));
     // Prepare the base detector...
-    base_detector_.reset(new BaseObstacleDetector<PointT>(approx));
+    base_detector_.reset(new ObstacleDetector<PointT>(approx));
     this->source()->attachObserver(base_detector_);
     // Smooth out the basic detector by applying a smooth detector to it
     boost::shared_ptr<SmoothObstacleAggregator> smooth_detector(
@@ -583,7 +583,7 @@ protected:
     bool visualization = enabled == "true";
     if (visualization) {
       //this->visualizer_.reset(new ObstacleVisualizer<PointT>());
-      this->visualizer_.reset(new SurfObstVisualizer<PointT>());
+      this->visualizer_.reset(new Visualizer<PointT>());
       // Attach the visualizer to both the point cloud source...
       this->source()->attachObserver(this->visualizer_);
       // ...as well as to the obstacle detector
@@ -788,7 +788,7 @@ private:
    * reference to it to make sure it doesn't get destroyed, although it is
    * never exposed to any outside clients.
    */
-  boost::shared_ptr<BaseObstacleDetector<PointT> > base_detector_;
+  boost::shared_ptr<ObstacleDetector<PointT> > base_detector_;
 };
 
 int main(int argc, char* argv[]) {

@@ -5,7 +5,7 @@
 #include <list>
 #include <map>
 
-#include "lepp3/BaseObstacleDetector.hpp"
+#include "lepp3/ObstacleDetector.hpp"
 
 #include "deps/easylogging++.h"
 

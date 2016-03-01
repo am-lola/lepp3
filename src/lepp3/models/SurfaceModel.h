@@ -1,222 +1,90 @@
-/*
- * SUrfaceModel.h
- *
- *  Created on: Oct 14, 2015
- *      Author: iuygur
- */
+#ifndef SurfaceModel_H_
+#define SurfaceModel_H_
 
-#ifndef SURFACEMODEL_H_
-#define SURFACEMODEL_H_
-#include <iostream>
-#include <pcl/common/pca.h>
-#include <pcl/common/common.h>
-#include "lepp3/models/ObjectModel.h"
 #include "lepp3/Typedefs.hpp"
 
 namespace lepp {
 
-//// Forward declarations.
-class PlaneVisitor;
-class PlaneModel;
-
-//TODO remove the point cloud. The new visualizer does not need it.
-class SurfaceModel {
-public:
-	SurfaceModel(PointCloudConstPtr &cloud) :
-			id_(0), cloud_(cloud), hull_(new PointCloudT()) { 
-	}
-
-	virtual Coordinate centerpoint() const = 0;
-
-	virtual void accept(PlaneVisitor& visitor) = 0;
-
-	virtual ~SurfaceModel() {
-	}
-
-	/**
-	 * Returns the ID associated with the surface. If the ID is 0, it means that
-	 * no meaningful ID was associated.
-	 *
-	 * Therefore, 0 is the default value returned, unless `set_id` is called.
-	 */
-	int id() const {
-		return id_;
-	}
-	
-	/**
-	* Return point cloud representing the surface.
-	*/
-	PointCloudConstPtr get_cloud() 
-	{
-		return cloud_;
-	}
-
-	/**
-	* Return point cloud representing the convex hull of the surfaces.
-	*/
-	PointCloudConstPtr get_hull() 
-	{
-		return hull_;
-	}
-
-	/**
-	 * Sets the object's ID.
-	 */
-	void set_id(int id) {
-		id_ = id;
-	}
-
-	/**
-	* Set cloud attribute to given cloud.
-	*/
-	void set_cloud(PointCloudConstPtr &new_cloud)
-	{
-		cloud_ = new_cloud;
-	}
-	void set_cloud(PointCloudPtr &new_cloud)
-	{
-		cloud_ = new_cloud;
-	}
-
-	void set_hull(PointCloudPtr &new_hull)
-	{
-		hull_ = new_hull;
-	}
-
-	friend std::ostream& operator<<(std::ostream& out,
-			SurfaceModel const& model);
-private:
-	int id_;
-	PointCloudConstPtr cloud_;
-	PointCloudConstPtr hull_;
-};
-
-typedef boost::shared_ptr<SurfaceModel> SurfaceModelPtr;
+// forward declaration needed for PlaneVisitor
+class SurfaceModel;
 
 class PlaneVisitor {
 public:
-	virtual void visitPlane(PlaneModel& plane) = 0;
+	virtual void visitPlane(SurfaceModel &plane) = 0;
 	virtual ~PlaneVisitor() {
 	}
 };
 
-/*Plane model for detected surfaces*/
-
-class PlaneModel: public SurfaceModel {
+class SurfaceModel {
 public:
-	PlaneModel(double approx_area,
-			Coordinate const& center, double inclination,
-			PointCloudConstPtr &cloud);
-	/**
-	 * Returns a model-specific representation of its coefficients packed into
-	 * an std::vector.
-	 */
-	//void accept(ModelVisitor& visitor) { visitor.visitSphere(*this); }
-	double area() const 
+	SurfaceModel(PointCloudConstPtr surfaceCloud, pcl::ModelCoefficients planeCoefficients) : 
+		cloud(surfaceCloud), 
+		planeCoefficients(planeCoefficients), 
+		hull(new PointCloudT()),
+		id_(0) 
 	{
-		return area_;
-	}
-	double heigth() const 
-	{
-		return heigth_;
-	}
-	double width() const 
-	{
-		return width_;
-	}
-	double inclination()const
-	{
-		return inclination_;
-	}
-	Coordinate centerpoint() const 
-	{
-		return center_;
+		computeCenterpoint();
 	}
 
-	void set_area(double approx_area) 
-	{
-		area_ = approx_area;
-	}
-	void set_width(double approx_width) 
-	{
-		width_ = approx_width;
-	}
-	void set_heigth(double approx_height) 
-	{
-		heigth_ = approx_height;
-	}
-	void set_center(Coordinate const& center) 
-	{
-		center_ = center;
-	}
-	void set_inclination(double inc_amount) 
-	{
-		inclination_ = inc_amount;
-	}
 	void accept(PlaneVisitor & visitor) 
 	{
 		visitor.visitPlane(*this);
 	}
-	friend std::ostream& operator<<(std::ostream& out, PlaneModel const& plane);
 
-private:
-	double area_;
-	double heigth_;
-	double width_;
-	Coordinate center_;
-	double inclination_;
-};
-
-inline PlaneModel::PlaneModel(double area, Coordinate const& center,
-		double inclination, PointCloudConstPtr &cloud) :
-		SurfaceModel(cloud), area_(area), center_(center), inclination_(inclination){
-}
-
-
-inline std::ostream& operator<<(std::ostream& out, PlaneModel const& plane) {
-	out << "[plane; " << "area = " << plane.area_ << "; " << "center = "
-			<< plane.center_ << ";" << "inclination = " << plane.inclination_
-			<< " ]";
-
-	return out;
-}
-
-class FlattenPlaneVisitor: public PlaneVisitor {
-public:
-	void visitPlane(PlaneModel& plane) {
-		planes_.push_back(&plane);
-	}
-	std::vector<SurfaceModel*> const& getPlanes() const {
-		return planes_;
-	}
-private:
-	std::vector<SurfaceModel*> planes_;
-};
-
-class PrintPlaneVisitor: public PlaneVisitor {
-public:
 	/**
-	 * Create a new `PrintVisitor` that will output in the given `std::ostream`.
-	 */
-	PrintPlaneVisitor(std::ostream& out) :
-			out_(out) {
-	}
+	* Getters for class variables.
+	*/
+	Coordinate centerpoint() const {return center;}
+	int id() const {return id_;}
+	PointCloudConstPtr get_cloud() const {return cloud;}
+	PointCloudConstPtr get_hull() const {return hull;}
+	const pcl::ModelCoefficients& get_planeCoefficients() const {return planeCoefficients;}
 
-	void visitPlane(PlaneModel& plane) {
-		out_ << plane;
-	}
+	/**
+	* Setters for class variables.
+	*/
+	void set_cloud(PointCloudConstPtr &new_cloud) {cloud = new_cloud;}
+	void set_cloud(PointCloudPtr &new_cloud) {cloud = new_cloud;}
+	void set_hull(PointCloudPtr &new_hull) {hull = new_hull;}
+	void set_id(int id) {id_ = id;}
+	void set_planeCoefficients(pcl::ModelCoefficients &new_coefficients) {planeCoefficients = new_coefficients;}
+
+	/**
+	* Translate center point by given coordinate.
+	*/ 
+	void translateCenterPoint(const Coordinate &tranlateVec);
+
 private:
-	std::ostream& out_;
+	int id_;
+	PointCloudConstPtr cloud;
+	pcl::ModelCoefficients planeCoefficients;
+	PointCloudConstPtr hull;
+	Coordinate center;
+	PointT minPoint;
+	PointT maxPoint;
+
+	/**
+	* Computer the centerpoint of the current surface cloud.
+	*/
+	void computeCenterpoint();
 };
 
-inline std::ostream& operator<<(std::ostream& out,
-		SurfaceModel const& plane_model) {
-	PrintPlaneVisitor printer(out);
-	const_cast<SurfaceModel&>(plane_model).accept(printer);
+typedef boost::shared_ptr<SurfaceModel> SurfaceModelPtr;
 
-	return out;
+void SurfaceModel::computeCenterpoint()
+{
+	pcl::getMinMax3D(*cloud, minPoint, maxPoint);
+	center.x = (minPoint.x + maxPoint.x) / 2;
+	center.y = (minPoint.y + maxPoint.y) / 2;
+	center.z = (minPoint.z + maxPoint.z) / 2;
+}
+
+
+void SurfaceModel::translateCenterPoint(const Coordinate &tranlateVec)
+{
+	center = center + tranlateVec;
 }
 
 }  // namespace lepp
 
-#endif /* SURFACEMODEL_H_ */
+#endif /* SurfaceModel_H_ */

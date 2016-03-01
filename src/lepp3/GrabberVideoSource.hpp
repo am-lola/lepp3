@@ -3,7 +3,7 @@
 
 #include "lepp3/Typedefs.hpp"
 #include "lepp3/FrameData.hpp"
-#include "BaseVideoSource.hpp"
+#include "VideoSource.hpp"
 #include <pcl/io/openni_grabber.h>
 
 #include <opencv2/core/core.hpp>
@@ -29,10 +29,12 @@ public:
    */
   GeneralGrabberVideoSource(boost::shared_ptr<pcl::Grabber> interface)
       : interface_(interface),
-        rgb_viewer_enabled_(false) {}
+        rgb_viewer_enabled_(false),
+        frameCount(0) {}
   GeneralGrabberVideoSource(boost::shared_ptr<pcl::Grabber> interface, bool rgb_enabled)
       : interface_(interface),
-        rgb_viewer_enabled_(rgb_enabled) {}
+        rgb_viewer_enabled_(rgb_enabled),
+        frameCount(0) {}
   virtual ~GeneralGrabberVideoSource();
   virtual void open();
   bool rgb_viewer_enabled_;
@@ -49,6 +51,8 @@ private:
    */
   void cloud_cb_(const PointCloudConstPtr& cloud);
   void image_cb_ (const boost::shared_ptr<openni_wrapper::Image>& rgb);
+
+  long frameCount;
 };
 
 template<class PointT>
@@ -60,7 +64,7 @@ GeneralGrabberVideoSource<PointT>::~GeneralGrabberVideoSource() {
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::cloud_cb_(
     const PointCloudConstPtr& cloud) {
-  boost::shared_ptr<FrameData> frameData(new FrameData());
+  boost::shared_ptr<FrameData> frameData(new FrameData(++frameCount));
   frameData->cloud = cloud;
   this->setNextFrame(frameData);
 }

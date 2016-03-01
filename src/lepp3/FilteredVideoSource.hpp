@@ -1,7 +1,7 @@
 #ifndef LEPP3_FILTERED_VIDEO_SOURCE_H__
 #define LEPP3_FILTERED_VIDEO_SOURCE_H__
 
-#include "lepp3/BaseVideoSource.hpp"
+#include "lepp3/VideoSource.hpp"
 #include "lepp3/VideoObserver.hpp"
 #include "lepp3/filter/PointFilter.hpp"
 #include "lepp3/FrameDataObserver.hpp"

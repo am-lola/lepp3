@@ -63,16 +63,16 @@ private:
  * of each of them by the given `ObjectApproximator` instance.
  */
 template<class PointT>
-class BaseObstacleDetector : public IObstacleDetector,
+class ObstacleDetector : public IObstacleDetector,
                              public FrameDataObserver{
 public:
   /**
-   * Creates a new `BaseObstacleDetector` that will use the given
+   * Creates a new `ObstacleDetector` that will use the given
    * `ObjectApproximator` instance for generating approximations for detected
    * obstacles.
    */
-  BaseObstacleDetector(boost::shared_ptr<ObjectApproximator<PointT> > approx);
-  virtual ~BaseObstacleDetector() {}
+  ObstacleDetector(boost::shared_ptr<ObjectApproximator<PointT> > approx);
+  virtual ~ObstacleDetector() {}
 
 
   virtual void updateFrame(boost::shared_ptr<FrameData> frameData);
@@ -91,7 +91,7 @@ private:
 };
 
 template<class PointT>
-BaseObstacleDetector<PointT>::BaseObstacleDetector(
+ObstacleDetector<PointT>::ObstacleDetector(
     boost::shared_ptr<ObjectApproximator<PointT> > approx)
       : approximator_(approx),
         segmenter_(new EuclideanPlaneSegmenter<PointT>()) {
@@ -100,7 +100,7 @@ BaseObstacleDetector<PointT>::BaseObstacleDetector(
 
 
 template<class PointT>
-void BaseObstacleDetector<PointT>::updateFrame(boost::shared_ptr<FrameData> frameData) {
+void ObstacleDetector<PointT>::updateFrame(boost::shared_ptr<FrameData> frameData) {
   cloud_ = frameData->cloudMinusSurfaces;
   try {
     update();
@@ -110,7 +110,7 @@ void BaseObstacleDetector<PointT>::updateFrame(boost::shared_ptr<FrameData> fram
 }
 
 template<class PointT>
-void BaseObstacleDetector<PointT>::update() {
+void ObstacleDetector<PointT>::update() {
   Timer t;
   t.start();
   PointCloudConstPtr dummyCloud(new PointCloudT());

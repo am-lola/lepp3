@@ -14,15 +14,12 @@
 #include "lepp3/ObjectApproximator.hpp"
 #include "lepp3/MomentOfInertiaApproximator.hpp"
 #include "lepp3/SplitApproximator.hpp"
-#include "lepp3/SurfaceApproximator.hpp"
-#include "lepp3/SurfaceFeatureEstimator.hpp"
+#include "lepp3/models/SurfaceModel.h"
 #include "lepp3/FrameDataObserver.hpp"
 
 using namespace lepp;
 
 #include "lepp3/debug/timer.hpp"
-
-int FRAME_COUNT = 0;
 
 
 template<class PointT>
@@ -58,31 +55,23 @@ class SurfaceDetector : public FrameDataObserver {
     std::vector<boost::shared_ptr<FrameDataObserver> > observers;
 
     boost::shared_ptr<BaseSegmenter<PointT> > segmenter_;
-    boost::shared_ptr<SurfaceApproximator<PointT> > approximator_;
-
 };
 
 template<class PointT>
 SurfaceDetector<PointT>::SurfaceDetector()
-    : approximator_(
-      boost::shared_ptr<SurfaceApproximator<PointT> >(
-        new SurfaceFeatureEstimator<PointT>)),
-      segmenter_(new SurfaceSegmenter<PointT>()) {
+    : segmenter_(new SurfaceSegmenter<PointT>()) {
 }
 
 
 template<class PointT>
-void SurfaceDetector<PointT>::updateFrame(boost::shared_ptr<FrameData> frameData) {
-
-  cout << "frame " << ++FRAME_COUNT << endl;
-
-  frameData->cloudMinusSurfaces = PointCloudPtr(new PointCloudT());
+void SurfaceDetector<PointT>::updateFrame(boost::shared_ptr<FrameData> frameData) 
+{
   std::vector<PointCloudConstPtr> surfaces;
-  segmenter_->segment(frameData->cloud, surfaces, frameData->cloudMinusSurfaces, frameData->surfaceCoefficients);
+  std::vector<pcl::ModelCoefficients> surfaceCoefficients;
+  segmenter_->segment(frameData->cloud, surfaces, frameData->cloudMinusSurfaces, surfaceCoefficients);
 
-  // create surface models of out surfaces and their coefficients
   for(size_t i = 0; i < surfaces.size(); i++)
-    frameData->surfaces.push_back(approximator_->approximate(surfaces[i],frameData->surfaceCoefficients.at(i)));
+    frameData->surfaces.push_back(SurfaceModelPtr(new SurfaceModel(surfaces.at(i), surfaceCoefficients.at(i))));
 
   notifyObservers(frameData);
 }

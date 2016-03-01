@@ -128,9 +128,9 @@ void ModelDrawer::visitCapsule(lepp::CapsuleModel& capsule) {
  * Implements the VideoObserver and ObstacleAggregator interfaces.
  */
 template<class PointT>
-class SurfObstVisualizer : public ObstacleAggregator, public FrameDataObserver {
+class Visualizer : public ObstacleAggregator, public FrameDataObserver {
 public:
-  SurfObstVisualizer() : viewer_("SurfObstVisualizer") {}
+  Visualizer() : viewer_("Visualizer") {}
 
   /**
    * ObstacleAggregator interface implementation: processes detected obstacles.
@@ -167,7 +167,7 @@ private:
 };
 
 template<class PointT>
-void SurfObstVisualizer<PointT>::drawShapes(
+void Visualizer<PointT>::drawShapes(
     std::vector<ObjectModelPtr> obstacles,
     pcl::visualization::PCLVisualizer& viewer) {
   // Remove all old shapes...
@@ -182,16 +182,16 @@ void SurfObstVisualizer<PointT>::drawShapes(
 }
 
 template<class PointT>
-void SurfObstVisualizer<PointT>::updateObstacles(
+void Visualizer<PointT>::updateObstacles(
     std::vector<ObjectModelPtr> const& obstacles) {
   pcl::visualization::CloudViewer::VizCallable obstacle_visualization =
-      boost::bind(&SurfObstVisualizer::drawShapes,
+      boost::bind(&Visualizer::drawShapes,
                   this, obstacles, _1);
   viewer_.runOnVisualizationThreadOnce(obstacle_visualization);
 }
 
 template<class PointT>
-void SurfObstVisualizer<PointT>::drawConvexHulls(
+void Visualizer<PointT>::drawConvexHulls(
     std::vector<PointCloudConstPtr> &hulls,
     pcl::visualization::PCLVisualizer& pclViz) {
 
@@ -214,14 +214,14 @@ void SurfObstVisualizer<PointT>::drawConvexHulls(
 }
 
 template<class PointT>
-void SurfObstVisualizer<PointT>::updateFrame(boost::shared_ptr<FrameData> frameData)
+void Visualizer<PointT>::updateFrame(boost::shared_ptr<FrameData> frameData)
 {
   std::vector<PointCloudConstPtr> hullsConst;
-  for (size_t i = 0; i < frameData->hulls.size(); i++)
-    hullsConst.push_back(frameData->hulls.at(i));
+  for (size_t i = 0; i < frameData->surfaces.size(); i++)
+    hullsConst.push_back(frameData->surfaces[i]->get_hull());
 
   pcl::visualization::CloudViewer::VizCallable hull_visualization =
-            boost::bind(&SurfObstVisualizer::drawConvexHulls, this, hullsConst, _1);
+            boost::bind(&Visualizer::drawConvexHulls, this, hullsConst, _1);
 
   viewer_.runOnVisualizationThread(hull_visualization);
 

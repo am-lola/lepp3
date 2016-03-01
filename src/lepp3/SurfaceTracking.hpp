@@ -6,7 +6,7 @@
 #include <pcl/surface/concave_hull.h>
 #include <pcl/surface/convex_hull.h>
 
-#include <list>
+#include <vector>
 #include <map>
 
 namespace lepp {
@@ -15,26 +15,34 @@ namespace lepp {
  * A visitor implementation that will perform a translation of models that it
  * visits by the given translation vector.
  */
-class BlendVisitors: public PlaneVisitor {
+class BlendVisitors : public PlaneVisitor {
 public:
 	/**
 	 * Create a new `BlendVisitor` that will translate surface by the given
 	 * vector.
 	 */
-	BlendVisitors(Coordinate translation_vec, PointCloudConstPtr cloud) :
-			translation_vec_(translation_vec), cloud_(cloud) {
+	BlendVisitors(Coordinate translation_vec, PointCloudConstPtr cloud, pcl::ModelCoefficients coefficients) :
+			translation_vec_(translation_vec), cloud_(cloud), newCoefficients(coefficients) {
 	}
-	void visitPlane(PlaneModel &plane) 
+	void visitPlane(SurfaceModel &plane) 
 	{
 		// update center point
-		plane.set_center(plane.centerpoint() + translation_vec_);
+		plane.translateCenterPoint(translation_vec_);
+
 		// update point cloud of plane
-		plane.set_cloud(cloud_);		
+		plane.set_cloud(cloud_);	
+
+		// Merge plane coefficients of old and new frame. Simply take average of every single coefficient.
+		const pcl::ModelCoefficients &oldCoefficients = plane.get_planeCoefficients();				
+		for (int i = 0; i < 4; i++)
+			newCoefficients.values[i] = 0.5 * (oldCoefficients.values[i] + newCoefficients.values[i]);		
+		plane.set_planeCoefficients(newCoefficients);
 	}
 
 private:
 	Coordinate const translation_vec_;
 	PointCloudConstPtr cloud_;
+	pcl::ModelCoefficients newCoefficients;
 };
 
 /**
@@ -57,13 +65,13 @@ private:
  * aggregators that are attached to it.
  */
 template<class PointT>
-class PostSurfaceAggregator: public FrameDataObserver {
+class SurfaceTracking: public FrameDataObserver {
 
 public:
 	/**
-	 * Creates a new `PostSurfaceAggregator`.
+	 * Creates a new `SurfaceTracking`.
 	 */
-	PostSurfaceAggregator();
+	SurfaceTracking();
 
 	/**
 	 * Attach a new `SurfaceAggregator` that will be notified of surfaces that
@@ -193,7 +201,7 @@ private:
 	 * We use a linked-list for this purpose since we need efficient removals
 	 * without copying elements or (importantly) invalidating iterators.
 	 */
-	std::list<SurfaceModelPtr> materialized_models_;
+	std::vector<SurfaceModelPtr> materialized_models_;
 
 	/**
 	 * Maps the model to their position in the linked list so as to allow removing
@@ -203,7 +211,7 @@ private:
 	 * the number of surfaces will always be extremely small, it may as well be
 	 * O(1).
 	 */
-	std::map<model_id_t, std::list<SurfaceModelPtr>::iterator> model_idx_in_list_;
+	std::map<model_id_t, std::vector<SurfaceModelPtr>::iterator> model_idx_in_list_;
 
 	/**
 	 * Current count of the number of frames processed by the aggregator.
@@ -215,27 +223,27 @@ private:
 };
 
 template<class PointT>
-PostSurfaceAggregator<PointT>::PostSurfaceAggregator() :
+SurfaceTracking<PointT>::SurfaceTracking() :
 		next_model_id_(0), frame_cnt_(0) {
 }
 
 template<class PointT>
-void PostSurfaceAggregator<PointT>::attachObserver(
+void SurfaceTracking<PointT>::attachObserver(
 		boost::shared_ptr<FrameDataObserver> observer) {
 	observers_.push_back(observer);
 }
 
 template<class PointT>
-model_id_t PostSurfaceAggregator<PointT>::nextModelId() {
+model_id_t SurfaceTracking<PointT>::nextModelId() {
 	return next_model_id_++;
 }
 
 /*!!!!!min_dist definition, should be checked !!!! */
 template<class PointT>
-model_id_t PostSurfaceAggregator<PointT>::getMatchByDistance(
-		SurfaceModelPtr surfacemodel) {
+model_id_t SurfaceTracking<PointT>::getMatchByDistance(
+		SurfaceModelPtr SurfaceModel) {
 
-	Coordinate const query_point = surfacemodel->centerpoint();
+	Coordinate const query_point = SurfaceModel->centerpoint();
 
 	bool found = false;
 	double min_dist = 1e10;
@@ -278,7 +286,7 @@ model_id_t PostSurfaceAggregator<PointT>::getMatchByDistance(
 }
 
 template<class PointT>
-std::map<int, size_t> PostSurfaceAggregator<PointT>::matchToPrevious(std::vector<SurfaceModelPtr> const& new_surfaces) {
+std::map<int, size_t> SurfaceTracking<PointT>::matchToPrevious(std::vector<SurfaceModelPtr> const& new_surfaces) {
 
 	// Maps the ID of the model to its index in the new list of surfaces.
 	// This lets us know the new approximation of each currently tracked surface.
@@ -343,7 +351,7 @@ std::map<int, size_t> PostSurfaceAggregator<PointT>::matchToPrevious(std::vector
 
 
 template<class PointT>
-void PostSurfaceAggregator<PointT>::adaptTracked(
+void SurfaceTracking<PointT>::adaptTracked(
 		std::map<int, size_t> const& correspondence,
 		std::vector<SurfaceModelPtr> const& new_surfaces) {
 
@@ -356,15 +364,15 @@ void PostSurfaceAggregator<PointT>::adaptTracked(
 		Coordinate const translation_vec = (new_surfaces[i]->centerpoint()
 				- tracked_models_[model_id]->centerpoint()) / 2;
 
-		BlendVisitors blender(translation_vec, new_surfaces[i]->get_cloud());
+		BlendVisitors blender(translation_vec, new_surfaces[i]->get_cloud(), new_surfaces[i]->get_planeCoefficients());
 		tracked_models_[model_id]->accept(blender);
 
 //		/////////////////////////////////////////////////////////////////////
 //		if (frame_cnt_ % 30 == 0) {
-//			PlaneModel* tracked =
-//					dynamic_cast<PlaneModel*>(&*tracked_models_[model_id]);
-//			PlaneModel* new_model =
-//					dynamic_cast<PlaneModel*>(&*new_surfaces[i]);
+//			SurfaceModel* tracked =
+//					dynamic_cast<SurfaceModel*>(&*tracked_models_[model_id]);
+//			SurfaceModel* new_model =
+//					dynamic_cast<SurfaceModel*>(&*new_surfaces[i]);
 //
 //			if (tracked && new_model) {
 //				tracked->set_models(new_model->models());
@@ -376,7 +384,7 @@ void PostSurfaceAggregator<PointT>::adaptTracked(
 }
 
 template <class PointT>
-void PostSurfaceAggregator<PointT>::updateLostAndFound(std::map<int, size_t> const& new_matches) {
+void SurfaceTracking<PointT>::updateLostAndFound(std::map<int, size_t> const& new_matches) {
 
 	for (std::map<model_id_t, boost::shared_ptr<SurfaceModel> >::const_iterator it =
 			tracked_models_.begin(); it != tracked_models_.end(); ++it) {
@@ -406,7 +414,7 @@ void PostSurfaceAggregator<PointT>::updateLostAndFound(std::map<int, size_t> con
 }
 
 template<class PointT>
-void PostSurfaceAggregator<PointT>::dropLostSurface() {
+void SurfaceTracking<PointT>::dropLostSurface() {
 	// Drop surfaces that haven't been seen in a while
 
 	//cout<<"DropLostSurface..."<<std::endl;
@@ -446,7 +454,7 @@ void PostSurfaceAggregator<PointT>::dropLostSurface() {
 	}
 }
 template<class PointT>
-void PostSurfaceAggregator<PointT>::materializeFoundSurfaces() {
+void SurfaceTracking<PointT>::materializeFoundSurfaces() {
 	//std::cout<<"Materialize Surfaces"<<std::endl;
 	std::map<model_id_t, int>::iterator it = frames_found_.begin();
 	while (it != frames_found_.end()) {
@@ -462,7 +470,7 @@ void PostSurfaceAggregator<PointT>::materializeFoundSurfaces() {
 			// Materialize it...
 			materialized_models_.push_back(model);
 			// ...and make sure we know where in the list it got inserted.
-			std::list<SurfaceModelPtr>::iterator pos =
+			std::vector<SurfaceModelPtr>::iterator pos =
 					materialized_models_.end();
 			--pos;
 			model_idx_in_list_[model_id] = pos;
@@ -481,7 +489,7 @@ void PostSurfaceAggregator<PointT>::materializeFoundSurfaces() {
 
 
 template<class PointT>
-void PostSurfaceAggregator<PointT>::notifyObservers(boost::shared_ptr<FrameData> frameData)
+void SurfaceTracking<PointT>::notifyObservers(boost::shared_ptr<FrameData> frameData)
 {
   size_t sz = observers_.size();
   for (size_t i = 0; i < sz; ++i) {
@@ -491,7 +499,7 @@ void PostSurfaceAggregator<PointT>::notifyObservers(boost::shared_ptr<FrameData>
 
 
 template<class PointT>
-void PostSurfaceAggregator<PointT>::updateFrame(boost::shared_ptr<FrameData> frameData)
+void SurfaceTracking<PointT>::updateFrame(boost::shared_ptr<FrameData> frameData)
 {
 	std::map<int, size_t> correspondence = matchToPrevious(frameData->surfaces);
     updateLostAndFound(correspondence);
@@ -499,10 +507,10 @@ void PostSurfaceAggregator<PointT>::updateFrame(boost::shared_ptr<FrameData> fra
 	dropLostSurface();
     materializeFoundSurfaces();
     // copy materialized
-    std::vector<SurfaceModelPtr> smooth_surfaces(materialized_models_.begin(),
-					materialized_models_.end());
+    //std::vector<SurfaceModelPtr> smooth_surfaces(materialized_models_.begin(),
+	//				materialized_models_.end());
     
-    frameData->surfaces = smooth_surfaces;
+    frameData->surfaces = materialized_models_;
 
 	notifyObservers(frameData);
 }

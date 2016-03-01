@@ -29,7 +29,7 @@ namespace lepp {
 template<class PointT>
 class VideoSource {
 public:
-  VideoSource() : frame_counter_(0) {}
+  VideoSource() {}
   virtual ~VideoSource();
 
   /**
@@ -61,10 +61,6 @@ private:
    * Keeps track of all observers that are attached to the source.
    */
   std::vector<boost::shared_ptr<FrameDataObserver> > observers_;
-  /**
-   * Counts how many frames have been seen by the video source.
-   */
-  int frame_counter_;
 };
 
 template<class PointT>
@@ -84,14 +80,15 @@ void VideoSource<PointT>::notifyObservers(boost::shared_ptr<FrameData> frameData
 
 template<class PointT>
 void VideoSource<PointT>::setNextFrame(
-    boost::shared_ptr<FrameData> frameData) {
-  ++frame_counter_;
+    boost::shared_ptr<FrameData> frameData) 
+{
   notifyObservers(frameData);
 }
 
 template<class PointT>
 void VideoSource<PointT>::attachObserver(
-    boost::shared_ptr<FrameDataObserver> observer) {
+    boost::shared_ptr<FrameDataObserver> observer) 
+{
   observers_.push_back(observer);
 }
 
