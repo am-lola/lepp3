@@ -75,7 +75,7 @@ public:
   virtual ~ObstacleDetector() {}
 
 
-  virtual void updateFrame(boost::shared_ptr<FrameData> frameData);
+  virtual void updateFrame(FrameDataPtr frameData);
 
 private:
   PointCloudPtr cloud_;
@@ -100,7 +100,7 @@ ObstacleDetector<PointT>::ObstacleDetector(
 
 
 template<class PointT>
-void ObstacleDetector<PointT>::updateFrame(boost::shared_ptr<FrameData> frameData) {
+void ObstacleDetector<PointT>::updateFrame(FrameDataPtr frameData) {
   cloud_ = frameData->cloudMinusSurfaces;
   try {
     update();

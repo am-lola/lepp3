@@ -16,7 +16,7 @@
 #include "lepp3/FilteredVideoSource.hpp"
 #include "lepp3/SmoothObstacleAggregator.hpp"
 #include "lepp3/ConvexHullDetector.hpp"
-#include "lepp3/SurfaceTracking.hpp"
+#include "lepp3/SurfaceTracker.hpp"
 
 #include "lepp3/visualization/EchoObserver.hpp"
 #include "lepp3/visualization/Visualizer.hpp"
@@ -147,8 +147,8 @@ int main(int argc, char* argv[]) {
   source->attachObserver(surfaceDetector);
 
   // Surface Post Processing
-  boost::shared_ptr<SurfaceTracking<PointT> > post_surface_processor(
-          new SurfaceTracking<PointT>);
+  boost::shared_ptr<SurfaceTracker<PointT> > post_surface_processor(
+          new SurfaceTracker<PointT>);
 
   surfaceDetector->attachObserver(post_surface_processor);
 

@@ -98,7 +98,7 @@ public:
   /**
    * Implementation of the VideoObserver interface.
    */
-  virtual void updateFrame(boost::shared_ptr<FrameData> frameData);
+  virtual void updateFrame(FrameDataPtr frameData);
 
   /**
    * Add a filter that will be applied to individual points before the entire
@@ -244,7 +244,7 @@ void FilteredVideoSource<PointT>::removeBackground(PointCloudPtr &cloudPtr)
 
 template<class PointT>
 void FilteredVideoSource<PointT>::updateFrame(
-    boost::shared_ptr<FrameData> frameData) {
+    FrameDataPtr frameData) {
   Timer t;
   t.start();
 

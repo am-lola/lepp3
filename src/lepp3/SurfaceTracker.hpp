@@ -65,13 +65,13 @@ private:
  * aggregators that are attached to it.
  */
 template<class PointT>
-class SurfaceTracking: public FrameDataObserver {
+class SurfaceTracker: public FrameDataObserver {
 
 public:
 	/**
-	 * Creates a new `SurfaceTracking`.
+	 * Creates a new `SurfaceTracker`.
 	 */
-	SurfaceTracking();
+	SurfaceTracker();
 
 	/**
 	 * Attach a new `SurfaceAggregator` that will be notified of surfaces that
@@ -83,7 +83,7 @@ public:
 	 * The member function that all concrete aggregators need to implement in
 	 * order to be able to process newly detected surfaces.
 	 */
-	virtual void updateFrame(boost::shared_ptr<FrameData> frameData);
+	virtual void updateFrame(FrameDataPtr frameData);
 
 // Private types
 private:
@@ -91,7 +91,7 @@ private:
 	/**
 	 * Sends the given surfaces to all attached aggregators.
 	 */
-	void notifyObservers(boost::shared_ptr<FrameData> frameData);
+	void notifyObservers(FrameDataPtr frameData);
 
 	/**
 	 * Computes the matching of the new surfaces to the surfaces that are being
@@ -223,24 +223,24 @@ private:
 };
 
 template<class PointT>
-SurfaceTracking<PointT>::SurfaceTracking() :
+SurfaceTracker<PointT>::SurfaceTracker() :
 		next_model_id_(0), frame_cnt_(0) {
 }
 
 template<class PointT>
-void SurfaceTracking<PointT>::attachObserver(
+void SurfaceTracker<PointT>::attachObserver(
 		boost::shared_ptr<FrameDataObserver> observer) {
 	observers_.push_back(observer);
 }
 
 template<class PointT>
-model_id_t SurfaceTracking<PointT>::nextModelId() {
+model_id_t SurfaceTracker<PointT>::nextModelId() {
 	return next_model_id_++;
 }
 
 /*!!!!!min_dist definition, should be checked !!!! */
 template<class PointT>
-model_id_t SurfaceTracking<PointT>::getMatchByDistance(
+model_id_t SurfaceTracker<PointT>::getMatchByDistance(
 		SurfaceModelPtr SurfaceModel) {
 
 	Coordinate const query_point = SurfaceModel->centerpoint();
@@ -286,7 +286,7 @@ model_id_t SurfaceTracking<PointT>::getMatchByDistance(
 }
 
 template<class PointT>
-std::map<int, size_t> SurfaceTracking<PointT>::matchToPrevious(std::vector<SurfaceModelPtr> const& new_surfaces) {
+std::map<int, size_t> SurfaceTracker<PointT>::matchToPrevious(std::vector<SurfaceModelPtr> const& new_surfaces) {
 
 	// Maps the ID of the model to its index in the new list of surfaces.
 	// This lets us know the new approximation of each currently tracked surface.
@@ -351,7 +351,7 @@ std::map<int, size_t> SurfaceTracking<PointT>::matchToPrevious(std::vector<Surfa
 
 
 template<class PointT>
-void SurfaceTracking<PointT>::adaptTracked(
+void SurfaceTracker<PointT>::adaptTracked(
 		std::map<int, size_t> const& correspondence,
 		std::vector<SurfaceModelPtr> const& new_surfaces) {
 
@@ -384,7 +384,7 @@ void SurfaceTracking<PointT>::adaptTracked(
 }
 
 template <class PointT>
-void SurfaceTracking<PointT>::updateLostAndFound(std::map<int, size_t> const& new_matches) {
+void SurfaceTracker<PointT>::updateLostAndFound(std::map<int, size_t> const& new_matches) {
 
 	for (std::map<model_id_t, boost::shared_ptr<SurfaceModel> >::const_iterator it =
 			tracked_models_.begin(); it != tracked_models_.end(); ++it) {
@@ -414,7 +414,7 @@ void SurfaceTracking<PointT>::updateLostAndFound(std::map<int, size_t> const& ne
 }
 
 template<class PointT>
-void SurfaceTracking<PointT>::dropLostSurface() {
+void SurfaceTracker<PointT>::dropLostSurface() {
 	// Drop surfaces that haven't been seen in a while
 
 	//cout<<"DropLostSurface..."<<std::endl;
@@ -454,7 +454,7 @@ void SurfaceTracking<PointT>::dropLostSurface() {
 	}
 }
 template<class PointT>
-void SurfaceTracking<PointT>::materializeFoundSurfaces() {
+void SurfaceTracker<PointT>::materializeFoundSurfaces() {
 	//std::cout<<"Materialize Surfaces"<<std::endl;
 	std::map<model_id_t, int>::iterator it = frames_found_.begin();
 	while (it != frames_found_.end()) {
@@ -489,7 +489,7 @@ void SurfaceTracking<PointT>::materializeFoundSurfaces() {
 
 
 template<class PointT>
-void SurfaceTracking<PointT>::notifyObservers(boost::shared_ptr<FrameData> frameData)
+void SurfaceTracker<PointT>::notifyObservers(FrameDataPtr frameData)
 {
   size_t sz = observers_.size();
   for (size_t i = 0; i < sz; ++i) {
@@ -499,17 +499,15 @@ void SurfaceTracking<PointT>::notifyObservers(boost::shared_ptr<FrameData> frame
 
 
 template<class PointT>
-void SurfaceTracking<PointT>::updateFrame(boost::shared_ptr<FrameData> frameData)
+void SurfaceTracker<PointT>::updateFrame(FrameDataPtr frameData)
 {
 	std::map<int, size_t> correspondence = matchToPrevious(frameData->surfaces);
     updateLostAndFound(correspondence);
 	adaptTracked(correspondence, frameData->surfaces);
 	dropLostSurface();
     materializeFoundSurfaces();
-    // copy materialized
-    //std::vector<SurfaceModelPtr> smooth_surfaces(materialized_models_.begin(),
-	//				materialized_models_.end());
-    
+
+    // copy materialized models    
     frameData->surfaces = materialized_models_;
 
 	notifyObservers(frameData);

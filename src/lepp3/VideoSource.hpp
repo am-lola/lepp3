@@ -50,13 +50,13 @@ protected:
    * point cloud as the most recent one, as well as to notify all source
    * observers.
    */
-  virtual void setNextFrame(boost::shared_ptr<FrameData> frameData);
+  virtual void setNextFrame(FrameDataPtr frameData);
 private:
   /**
    * Private helper method.  Notifies all known observers that a new point cloud
    * has been received.
    */
-  void notifyObservers(boost::shared_ptr<FrameData> frameData) const;
+  void notifyObservers(FrameDataPtr frameData) const;
   /**
    * Keeps track of all observers that are attached to the source.
    */
@@ -69,7 +69,7 @@ VideoSource<PointT>::~VideoSource() {
 }
 
 template<class PointT>
-void VideoSource<PointT>::notifyObservers(boost::shared_ptr<FrameData> frameData) const
+void VideoSource<PointT>::notifyObservers(FrameDataPtr frameData) const
 {
   size_t const sz = observers_.size();
   for (size_t i = 0; i < sz; ++i)
@@ -80,7 +80,7 @@ void VideoSource<PointT>::notifyObservers(boost::shared_ptr<FrameData> frameData
 
 template<class PointT>
 void VideoSource<PointT>::setNextFrame(
-    boost::shared_ptr<FrameData> frameData) 
+    FrameDataPtr frameData) 
 {
   notifyObservers(frameData);
 }

@@ -140,7 +140,7 @@ public:
   /**
   * Convex Hull Aggregator interface implementation: process detected convex hulls.
   */
-  virtual void updateFrame(boost::shared_ptr<FrameData> frameData);
+  virtual void updateFrame(FrameDataPtr frameData);
 
   
 private:
@@ -214,7 +214,7 @@ void Visualizer<PointT>::drawConvexHulls(
 }
 
 template<class PointT>
-void Visualizer<PointT>::updateFrame(boost::shared_ptr<FrameData> frameData)
+void Visualizer<PointT>::updateFrame(FrameDataPtr frameData)
 {
   std::vector<PointCloudConstPtr> hullsConst;
   for (size_t i = 0; i < frameData->surfaces.size(); i++)

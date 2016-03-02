@@ -64,7 +64,7 @@ GeneralGrabberVideoSource<PointT>::~GeneralGrabberVideoSource() {
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::cloud_cb_(
     const PointCloudConstPtr& cloud) {
-  boost::shared_ptr<FrameData> frameData(new FrameData(++frameCount));
+  FrameDataPtr frameData(new FrameData(++frameCount));
   frameData->cloud = cloud;
   this->setNextFrame(frameData);
 }

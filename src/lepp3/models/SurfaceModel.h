@@ -69,8 +69,6 @@ private:
 	void computeCenterpoint();
 };
 
-typedef boost::shared_ptr<SurfaceModel> SurfaceModelPtr;
-
 void SurfaceModel::computeCenterpoint()
 {
 	pcl::getMinMax3D(*cloud, minPoint, maxPoint);
@@ -78,7 +76,6 @@ void SurfaceModel::computeCenterpoint()
 	center.y = (minPoint.y + maxPoint.y) / 2;
 	center.z = (minPoint.z + maxPoint.z) / 2;
 }
-
 
 void SurfaceModel::translateCenterPoint(const Coordinate &tranlateVec)
 {

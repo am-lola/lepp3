@@ -7,7 +7,7 @@ namespace lepp {
 
 class FrameDataObserver {
 public:
-  virtual void updateFrame(boost::shared_ptr<FrameData> frameData) = 0;
+  virtual void updateFrame(FrameDataPtr frameData) = 0;
 };
 
 }  // namespace lepp

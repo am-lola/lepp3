@@ -32,7 +32,7 @@ class SurfaceDetector : public FrameDataObserver {
     /**
      * VideoObserver interface method implementation.
      */
-    virtual void updateFrame(boost::shared_ptr<FrameData> frameData);
+    virtual void updateFrame(FrameDataPtr frameData);
     /**
        * Attaches a new SurfaceAggregator, which will be notified of newly detected
        * surfaces by this detector.
@@ -43,7 +43,7 @@ class SurfaceDetector : public FrameDataObserver {
     /**
      * Notifies any observers about newly detected surfaces.
      */
-    void notifyObservers(boost::shared_ptr<FrameData> frameData);
+    void notifyObservers(FrameDataPtr frameData);
 
   private:
     PointCloudConstPtr cloud_;
@@ -64,7 +64,7 @@ SurfaceDetector<PointT>::SurfaceDetector()
 
 
 template<class PointT>
-void SurfaceDetector<PointT>::updateFrame(boost::shared_ptr<FrameData> frameData) 
+void SurfaceDetector<PointT>::updateFrame(FrameDataPtr frameData) 
 {
   std::vector<PointCloudConstPtr> surfaces;
   std::vector<pcl::ModelCoefficients> surfaceCoefficients;
@@ -83,7 +83,7 @@ void SurfaceDetector<PointT>::attachObserver(
 }
 
 template<class PointT>
-void SurfaceDetector<PointT>::notifyObservers(boost::shared_ptr<FrameData> frameData) {
+void SurfaceDetector<PointT>::notifyObservers(FrameDataPtr frameData) {
   size_t sz = observers.size();
   for (size_t i = 0; i < sz; ++i) {
     observers[i]->updateFrame(frameData);

@@ -20,7 +20,7 @@ public:
    * and the point cloud extracted from that frame.
    */
   virtual void notifyNewFrame(
-      boost::shared_ptr<FrameData> frameData) = 0;
+      FrameDataPtr frameData) = 0;
 };
 
 }  // namespace lepp
