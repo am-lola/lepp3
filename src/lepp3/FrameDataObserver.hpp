@@ -5,9 +5,10 @@
 
 namespace lepp {
 
-class FrameDataObserver {
+class FrameDataObserver 
+{
 public:
-  virtual void updateFrame(FrameDataPtr frameData) = 0;
+	virtual void updateFrame(FrameDataPtr frameData) = 0;
 };
 
 }  // namespace lepp

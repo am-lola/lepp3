@@ -2,6 +2,7 @@
 #define lepp3_SMOOTH_SURFACE_AGGREGATOR_H__
 
 #include "lepp3/FrameDataObserver.hpp"
+#include "lepp3/FrameDataSubject.hpp"
 #include "lepp3/Typedefs.hpp"
 #include <pcl/surface/concave_hull.h>
 #include <pcl/surface/convex_hull.h>
@@ -65,19 +66,13 @@ private:
  * aggregators that are attached to it.
  */
 template<class PointT>
-class SurfaceTracker: public FrameDataObserver {
+class SurfaceTracker: public FrameDataObserver, public FrameDataSubject {
 
 public:
 	/**
 	 * Creates a new `SurfaceTracker`.
 	 */
 	SurfaceTracker();
-
-	/**
-	 * Attach a new `SurfaceAggregator` that will be notified of surfaces that
-	 * this instance generates.
-	 */
-	void attachObserver(boost::shared_ptr<FrameDataObserver> observer);
 
 	/**
 	 * The member function that all concrete aggregators need to implement in
@@ -87,12 +82,6 @@ public:
 
 // Private types
 private:
-	// Private member functions
-	/**
-	 * Sends the given surfaces to all attached aggregators.
-	 */
-	void notifyObservers(FrameDataPtr frameData);
-
 	/**
 	 * Computes the matching of the new surfaces to the surfaces that are being
 	 * tracked already.
@@ -168,11 +157,6 @@ private:
 
 	// Private members
 	/**
-	 * A list of aggregators to which this one will pass its own list of surfaces
-	 */
-	std::vector<boost::shared_ptr<FrameDataObserver> > observers_;
-
-	/**
 	 * Keeps track of which model ID is the next one that can be assigned.
 	 */
 	model_id_t next_model_id_;
@@ -225,12 +209,6 @@ private:
 template<class PointT>
 SurfaceTracker<PointT>::SurfaceTracker() :
 		next_model_id_(0), frame_cnt_(0) {
-}
-
-template<class PointT>
-void SurfaceTracker<PointT>::attachObserver(
-		boost::shared_ptr<FrameDataObserver> observer) {
-	observers_.push_back(observer);
 }
 
 template<class PointT>
@@ -485,16 +463,6 @@ void SurfaceTracker<PointT>::materializeFoundSurfaces() {
 			++it;
 		}
 	}
-}
-
-
-template<class PointT>
-void SurfaceTracker<PointT>::notifyObservers(FrameDataPtr frameData)
-{
-  size_t sz = observers_.size();
-  for (size_t i = 0; i < sz; ++i) {
-    observers_[i]->updateFrame(frameData);
-  }
 }
 
 

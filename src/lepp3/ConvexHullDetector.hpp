@@ -3,8 +3,10 @@
 
 #include "lepp3/Typedefs.hpp"
 #include "lepp3/FrameDataObserver.hpp"
+#include "lepp3/FrameDataSubject.hpp"
 #include "lepp3/GnuplotWriter.hpp"
 #include <pcl/surface/convex_hull.h>
+#include <pcl/filters/project_inliers.h>
 #include <set>
 #include <algorithm>
 #include <limits>
@@ -117,24 +119,25 @@ public:
 * For each surface then it is computing the convex hull, and in a second step reduces the number of points
 * of the convex hull to a user defined number.
 */
-class ConvexHullDetector : public FrameDataObserver
+class ConvexHullDetector : public FrameDataObserver, public FrameDataSubject
 {
 public:
 	// inherited from the SurfaceAggregator interface
 	virtual void updateFrame(FrameDataPtr frameData);
 
-	// other classes can be connected to the output of the ConvexHullAggregator as aggregators.
-	// Thus, the ConvHullAggregator is a SurfaceAggregator itself, and is also a subject for
-	// ConvexHullAggregators.
-	void attachObserver(boost::shared_ptr<FrameDataObserver> observer);
-	void notifyObservers(FrameDataPtr frameData);
+	/**
+	* Return squared euclidean length of given vector.
+	*/
+	static double getVecLengthSquared(const PointT &p);
+
+	/**
+	* Projects the point p onto line segment seg1-seg2, and stores the vector from p to its projection in 'projVec'.
+	*/
+	static void projectPointOntoLineSegment(const PointT &seg1, const PointT &seg2, const PointT &p, PointT &projVec);
 
 private:
 	static const int NUM_HULL_POINTS = 8;
 	static const double MERGE_UPDATE_PERCENTAGE = 0.5;
-
-	// list of aggregators that are connected to the ConvHullAggregator
-	std::vector<boost::shared_ptr<FrameDataObserver> > observers;
 
 	// reduce the number of points in the given hull to 'numPoints'
 	void reduceConvHullPoints(PointCloudPtr &hull, int numPoints);
@@ -142,10 +145,7 @@ private:
 	// uses the pcl function to compute the convex hull of the given point cloud.
 	void detectConvexHull(PointCloudConstPtr surface, PointCloudPtr &hull);
 
-	/**
-	* Projects the point p onto line segment seg1-seg2, and stores the vector from p to its projection in 'projVec'.
-	*/
-	void projectPointOntoLineSegment(const PointT &seg1, const PointT &seg2, const PointT &p, PointT &projVec);
+
 
 	/**
 	* Function gets a point cloud and a convex hull. It projects each point of the given cloud onto the 
@@ -167,11 +167,6 @@ private:
 	void mergeConvexHulls(PointCloudConstPtr oldHull, PointCloudConstPtr newHull, PointCloudPtr &mergeHull);
 
 	/**
-	* Return squared euclidean length of given vector.
-	*/
-	double getVecLengthSquared(const PointT &p);
-
-	/**
 	* Project the given point cloud onto the surface specified by the surfaceCoefficients.
 	*/
 	void projectOnPlane(PointCloudConstPtr cloud,
@@ -180,18 +175,6 @@ private:
 };
 
 
-
-
-void ConvexHullDetector::attachObserver(boost::shared_ptr<FrameDataObserver> observer)
-{
-	observers.push_back(observer);
-}
-
-void ConvexHullDetector::notifyObservers(FrameDataPtr frameData)
-{
-	for (int i = 0; i < observers.size(); i++)
-		observers[i]->updateFrame(frameData);
-}
 
 // use PCl to detect the convex hull of the given point cloud
 void ConvexHullDetector::detectConvexHull(PointCloudConstPtr surface, PointCloudPtr &hull)
@@ -393,8 +376,8 @@ void ConvexHullDetector::updateFrame(FrameDataPtr frameData)
 		frameData->surfaces[i]->set_hull(mergeHull);
 
 		// write out files
-		GnuplotWriter::writeHulls(frameData->frameNum, i, PointCloudConstPtr(projOldHull), 
-			PointCloudConstPtr(projNewHull), frameData->surfaces[i]->get_hull());		
+		//GnuplotWriter::writeHulls(frameData->frameNum, i, PointCloudConstPtr(projOldHull), 
+		//	PointCloudConstPtr(projNewHull), frameData->surfaces[i]->get_hull());		
 	}
 	notifyObservers(frameData);
 }

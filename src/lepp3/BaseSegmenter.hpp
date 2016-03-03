@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "lepp3/Typedefs.hpp"
+#include "lepp3/FrameData.hpp"
 #include <pcl/common/projection_matrix.h>
 #include <pcl/ModelCoefficients.h>
 
@@ -24,11 +25,7 @@ public:
    * Returns a number of point clouds representing segments from the given
    * original point cloud.
    */
-  virtual void segment(
-      const PointCloudConstPtr& cloud,
-      std::vector<PointCloudConstPtr> &surfaces,
-      PointCloudPtr &cloudMinusSurfaces,
-      std::vector<pcl::ModelCoefficients> &surfaceCoefficients) = 0;
+  virtual void segment(FrameDataPtr frameData) = 0;
 };
 
 } // namespace lepp

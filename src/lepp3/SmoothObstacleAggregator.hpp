@@ -1,11 +1,13 @@
 #ifndef LEPP3_SMOOTH_OBSTACLE_AGGREGATOR_H__
 #define LEPP3_SMOOTH_OBSTACLE_AGGREGATOR_H__
 
-#include "lepp3/ObstacleAggregator.hpp"
-#include <list>
+#include <vector>
 #include <map>
 
 #include "lepp3/ObstacleDetector.hpp"
+#include "lepp3/FrameDataObserver.hpp"
+#include "lepp3/FrameDataSubject.hpp"
+#include "lepp3/ObstacleAggregator.hpp"
 
 #include "deps/easylogging++.h"
 
@@ -57,18 +59,19 @@ private:
  * as well as an `IObstacleDetector` (as it emits a new set of obstacles to
  * those aggregators that are attached to it).
  */
-class SmoothObstacleAggregator : public ObstacleAggregator,
-                                 public IObstacleDetector {
+class SmoothObstacleAggregator : public FrameDataObserver, public FrameDataSubject
+{
 public:
   /**
    * Creates a new `SmoothObstacleAggregator`.
    */
   SmoothObstacleAggregator();
+
   /**
    * The member function that all concrete aggregators need to implement in
    * order to be able to process newly detected obstacles.
    */
-  virtual void updateObstacles(std::vector<ObjectModelPtr> const& obstacles);
+  virtual void updateFrame(FrameDataPtr frameData);
 private:
   // Private types
   /**
@@ -168,7 +171,7 @@ private:
    * We use a linked-list for this purpose since we need efficient removals
    * without copying elements or (importantly) invalidating iterators.
    */
-  std::list<ObjectModelPtr> materialized_models_;
+  std::vector<ObjectModelPtr> materialized_models_;
   /**
    * Maps the model to their position in the linked list so as to allow removing
    * objects efficiently.
@@ -177,7 +180,7 @@ private:
    * the number of objects will always be extremely small, it may as well be
    * O(1).
    */
-  std::map<model_id_t, std::list<ObjectModelPtr>::iterator> model_idx_in_list_;
+  std::map<model_id_t, std::vector<ObjectModelPtr>::iterator> model_idx_in_list_;
   /**
    * Current count of the number of frames processed by the aggregator.
    */
@@ -349,7 +352,7 @@ void SmoothObstacleAggregator::materializeFoundObjects() {
       // Materialize it...
       materialized_models_.push_back(model);
       // ...and make sure we know where in the list it got inserted.
-      std::list<ObjectModelPtr>::iterator pos = materialized_models_.end();
+      std::vector<ObjectModelPtr>::iterator pos = materialized_models_.end();
       --pos;
       model_idx_in_list_[model_id] = pos;
       // Finally, make sure we remove it from the mapping so that we don't end
@@ -359,29 +362,18 @@ void SmoothObstacleAggregator::materializeFoundObjects() {
       ++it;
     }
   }
-
 }
 
-std::vector<ObjectModelPtr> SmoothObstacleAggregator::copyMaterialized() {
-  std::vector<ObjectModelPtr> smooth_obstacles(
-      materialized_models_.begin(), materialized_models_.end());
-  return smooth_obstacles;
-}
-
-void SmoothObstacleAggregator::updateObstacles(
-    std::vector<ObjectModelPtr> const& obstacles) {
-  ++frame_cnt_;
-  //LINFO << "SmoothAggregator: Initial objects in frame #" << frame_cnt_ << " == " << obstacles.size();
-
-  std::map<model_id_t, size_t> correspondence = matchToPrevious(obstacles);
+void SmoothObstacleAggregator::updateFrame(FrameDataPtr frameData) 
+{
+  std::map<model_id_t, size_t> correspondence = matchToPrevious(frameData->obstacles);
   updateLostAndFound(correspondence);
-  adaptTracked(correspondence, obstacles);
+  adaptTracked(correspondence, frameData->obstacles);
   dropLostObjects();
   materializeFoundObjects();
-  std::vector<ObjectModelPtr> smooth_obstacles(copyMaterialized());
-
-  //LINFO << "SmoothAggregator: Real objects in frame #" << frame_cnt_ << " == " << smooth_obstacles.size();
-  notifyObstacles(smooth_obstacles);
+   // copy materialized models    
+  frameData->obstacles = materialized_models_;
+  notifyObservers(frameData);
 }
 
 }  // namespace lepp

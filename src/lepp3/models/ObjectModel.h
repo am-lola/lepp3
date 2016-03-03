@@ -2,6 +2,7 @@
 #define LEPP3_MODELS_OBJECT_MODEL_H__
 
 #include "lepp3/models/Coordinate.h"
+#include "lepp3/Typedefs.hpp"
 
 namespace lepp {
 
@@ -38,8 +39,6 @@ public:
 private:
   int id_;
 };
-
-typedef boost::shared_ptr<ObjectModel> ObjectModelPtr;
 
 class ModelVisitor {
 public:

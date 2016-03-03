@@ -82,7 +82,7 @@ public:
   boost::shared_ptr<RobotService> robot_service() { return robot_service_; }
 
   /// The obstacle detector accessor
-  boost::shared_ptr<IObstacleDetector> detector() { return detector_; }
+  boost::shared_ptr<ObstacleDetector> detector() { return detector_; }
 
 protected:
   /**
@@ -197,7 +197,7 @@ protected:
   boost::shared_ptr<RobotService> robot_service_;
   boost::shared_ptr<Robot> robot_;
 
-  boost::shared_ptr<IObstacleDetector> detector_;
+  boost::shared_ptr<ObstacleDetector> detector_;
 
   boost::shared_ptr<Visualizer<PointT> > visualizer_;
 };

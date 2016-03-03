@@ -26,13 +26,13 @@ struct GnuplotWriter
 
 		std::stringstream sstrm;
 		
-		ofstream hullWriter;
+		std::ofstream hullWriter;
 		sstrm << "./build/GnuPlots/OldHull_" << frameNum << "_" << surfaceNum << ".dat";
 		hullWriter.open (sstrm.str().c_str());
 		for (size_t i = 0; i < oldHull->size()+1; i++)
 		{
 			PointT p = oldHull->at(i % oldHull->size());
-			hullWriter << p.x << " " << p.y << " " << p.z << endl;
+			hullWriter << p.x << " " << p.y << " " << p.z << std::endl;
 		}
 		hullWriter.close();
 
@@ -42,7 +42,7 @@ struct GnuplotWriter
 		for (size_t i = 0; i < newHull->size()+1; i++)
 		{
 			PointT p = newHull->at(i % newHull->size());
-			hullWriter << p.x << " " << p.y << " " << p.z << endl;
+			hullWriter << p.x << " " << p.y << " " << p.z << std::endl;
 		}
 		hullWriter.close();
 
@@ -52,7 +52,7 @@ struct GnuplotWriter
 		for (size_t i = 0; i < mergeHull->size()+1; i++)
 		{
 			PointT p = mergeHull->at(i % mergeHull->size());
-			hullWriter << p.x << " " << p.y << " " << p.z << endl;
+			hullWriter << p.x << " " << p.y << " " << p.z << std::endl;
 		}
 		hullWriter.close();
 	}

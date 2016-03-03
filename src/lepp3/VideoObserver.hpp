@@ -19,8 +19,7 @@ public:
    * (representing the number of the frame in the sequence of the source)
    * and the point cloud extracted from that frame.
    */
-  virtual void notifyNewFrame(
-      FrameDataPtr frameData) = 0;
+  virtual void notifyNewFrame(FrameDataPtr frameData) = 0;
 };
 
 }  // namespace lepp

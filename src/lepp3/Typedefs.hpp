@@ -4,8 +4,9 @@
 namespace lepp
 {
 	// forward declaration
-	class FrameData;
+	struct FrameData;
 	class SurfaceModel;
+	class ObjectModel;
 
 	// typedefs
 	typedef pcl::PointXYZ PointT;
@@ -15,6 +16,7 @@ namespace lepp
 	typedef int model_id_t;
 	typedef boost::shared_ptr<FrameData> FrameDataPtr;
 	typedef boost::shared_ptr<SurfaceModel> SurfaceModelPtr;
+	typedef boost::shared_ptr<ObjectModel> ObjectModelPtr;
 }
 
 #endif

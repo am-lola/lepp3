@@ -128,14 +128,14 @@ void ModelDrawer::visitCapsule(lepp::CapsuleModel& capsule) {
  * Implements the VideoObserver and ObstacleAggregator interfaces.
  */
 template<class PointT>
-class Visualizer : public ObstacleAggregator, public FrameDataObserver {
+class Visualizer : public FrameDataObserver {
 public:
   Visualizer() : viewer_("Visualizer") {}
 
   /**
    * ObstacleAggregator interface implementation: processes detected obstacles.
    */
-  virtual void updateObstacles(std::vector<ObjectModelPtr> const& obstacles);
+  void updateObstacles(std::vector<ObjectModelPtr> const& obstacles);
 
   /**
   * Convex Hull Aggregator interface implementation: process detected convex hulls.
@@ -183,12 +183,14 @@ void Visualizer<PointT>::drawShapes(
 
 template<class PointT>
 void Visualizer<PointT>::updateObstacles(
-    std::vector<ObjectModelPtr> const& obstacles) {
+    std::vector<ObjectModelPtr> const& obstacles) 
+{
   pcl::visualization::CloudViewer::VizCallable obstacle_visualization =
       boost::bind(&Visualizer::drawShapes,
                   this, obstacles, _1);
   viewer_.runOnVisualizationThreadOnce(obstacle_visualization);
 }
+
 
 template<class PointT>
 void Visualizer<PointT>::drawConvexHulls(
@@ -225,6 +227,7 @@ void Visualizer<PointT>::updateFrame(FrameDataPtr frameData)
 
   viewer_.runOnVisualizationThread(hull_visualization);
 
+  updateObstacles(frameData->obstacles);
 }
 
 

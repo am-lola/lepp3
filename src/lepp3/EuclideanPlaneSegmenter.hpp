@@ -22,11 +22,7 @@ class EuclideanPlaneSegmenter : public BaseSegmenter<PointT> {
 public:
   EuclideanPlaneSegmenter();
 
-  virtual void segment(
-      const PointCloudConstPtr& cloud,
-      std::vector<PointCloudConstPtr> &segments,
-      PointCloudPtr &cloudMinusSurfaces,
-      std::vector<pcl::ModelCoefficients> &surfaceCoefficients);
+  virtual void segment(FrameDataPtr frameData);
 private:
   // Private helper member functions
 
@@ -46,7 +42,7 @@ private:
    * by copying the corresponding points from the cloud to the corresponding
    * new point cloud.
    */
-  std::vector<PointCloudConstPtr> clustersToPointClouds(
+  std::vector<PointCloudPtr> clustersToPointClouds(
       PointCloudConstPtr const& cloud_filtered,
       std::vector<pcl::PointIndices> const& cluster_indices);
 
@@ -143,13 +139,13 @@ std::vector<pcl::PointIndices> EuclideanPlaneSegmenter<PointT>::getClusters(
 }
 
 template<class PointT>
-std::vector<PointCloudConstPtr>
+std::vector<PointCloudPtr>
 EuclideanPlaneSegmenter<PointT>::clustersToPointClouds(
     PointCloudConstPtr const& cloud_filtered,
     std::vector<pcl::PointIndices> const& cluster_indices) {
   // Now copy the points belonging to each cluster to a separate PointCloud
   // and finally return a vector of these point clouds.
-  std::vector<PointCloudConstPtr> ret;
+  std::vector<PointCloudPtr> ret;
   size_t const cluster_count = cluster_indices.size();
   for (size_t i = 0; i < cluster_count; ++i) {
     PointCloudPtr current(new PointCloudT());
@@ -167,14 +163,9 @@ EuclideanPlaneSegmenter<PointT>::clustersToPointClouds(
 }
 
 template<class PointT>
-void EuclideanPlaneSegmenter<PointT>::segment(
-    const PointCloudConstPtr& cloud,
-    std::vector<PointCloudConstPtr> &segments,
-    PointCloudPtr &cloudMinusSurfaces,
-    std::vector<pcl::ModelCoefficients> &surfaceCoefficients) {
-  removePlanes(cloudMinusSurfaces);
-  std::vector<pcl::PointIndices> cluster_indices = getClusters(cloudMinusSurfaces);
-  segments = clustersToPointClouds(cloudMinusSurfaces, cluster_indices);
+void EuclideanPlaneSegmenter<PointT>::segment(FrameDataPtr frameData) {
+  std::vector<pcl::PointIndices> cluster_indices = getClusters(frameData->cloudMinusSurfaces);
+  frameData->obstacleClouds = clustersToPointClouds(frameData->cloudMinusSurfaces, cluster_indices);
 }
 
 

@@ -2,6 +2,7 @@
 #define SurfaceModel_H_
 
 #include "lepp3/Typedefs.hpp"
+#include "lepp3/models/Coordinate.h"
 
 namespace lepp {
 

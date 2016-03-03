@@ -17,6 +17,8 @@
 #include "lepp3/SmoothObstacleAggregator.hpp"
 #include "lepp3/ConvexHullDetector.hpp"
 #include "lepp3/SurfaceTracker.hpp"
+#include "lepp3/SplitApproximator.hpp"
+#include "lepp3/MomentOfInertiaApproximator.hpp"
 
 #include "lepp3/visualization/EchoObserver.hpp"
 #include "lepp3/visualization/Visualizer.hpp"
@@ -146,12 +148,12 @@ int main(int argc, char* argv[]) {
       new SurfaceDetector<PointT>());
   source->attachObserver(surfaceDetector);
 
-  // Surface Post Processing
+
+  // Surface Tracking
   boost::shared_ptr<SurfaceTracker<PointT> > post_surface_processor(
           new SurfaceTracker<PointT>);
 
   surfaceDetector->attachObserver(post_surface_processor);
-
 
     // add the surface convex hull detector
   boost::shared_ptr<ConvexHullDetector> convHullDetector(
@@ -178,13 +180,13 @@ int main(int argc, char* argv[]) {
       new ObstacleDetector<PointT>(obstacleApprox));
   // Attaching the detector to the source: process the point clouds obtained
   // by the source.
-  surfaceDetector->attachObserver(obstacleDetector);
+  convHullDetector->attachObserver(obstacleDetector);
 
   // The visualizer is additionally decorated by the "smoothener" to smooth out
   // the output...
   boost::shared_ptr<SmoothObstacleAggregator> smooth_decorator(
       new SmoothObstacleAggregator);
-  obstacleDetector->attachObstacleAggregator(smooth_decorator);
+  obstacleDetector->attachObserver(smooth_decorator);
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~Visualizer~~~~~~~~~~~~~~~~~~~~~~~~
@@ -192,11 +194,8 @@ int main(int argc, char* argv[]) {
   boost::shared_ptr<Visualizer<PointT> > pclVisualizer(
     new Visualizer<PointT>());
 
-  // Attaching the visualizer to the source: allow it to display the original point cloud.
-  source->attachObserver(pclVisualizer);
-  post_surface_processor->attachObserver(pclVisualizer);
-  convHullDetector->attachObserver(pclVisualizer);
-  smooth_decorator->attachObstacleAggregator(pclVisualizer);
+  // attach smooth obstacle decerator to visualizer
+  smooth_decorator->attachObserver(pclVisualizer);
   
   // Starts capturing new frames and forwarding them to attached observers.
   source->open();

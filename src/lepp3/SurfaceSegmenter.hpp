@@ -25,10 +25,7 @@ public:
     * coefficients in 'surfaces' and 'surfaceCoefficients'. Subtract the found surfaces 
     * from the input cloud and store the remaining cloud in 'cloudMinusSurfaces'.
     */
-	virtual void segment(const PointCloudConstPtr& cloud,
-			std::vector<PointCloudConstPtr> &surfaces,
-			PointCloudPtr &cloudMinusSurfaces,
-			std::vector<pcl::ModelCoefficients> &surfaceCoefficients);
+	virtual void segment(FrameDataPtr frameData);
 
 private:
 	/**
@@ -75,10 +72,10 @@ private:
 	* to the same surface. Thus, the planes are clustered into seperate surfaces 
 	* in this function if necessary.
 	**/
-	void cluster(std::vector<PointCloudPtr> &planes, 
-		std::vector<pcl::ModelCoefficients> &planeCoefficients, 
-		std::vector<PointCloudConstPtr> &surfaces,
-		std::vector<pcl::ModelCoefficients> &surfaceCoefficients);
+	void cluster(
+		PointCloudPtr plane,
+		pcl::ModelCoefficients &planeCoefficients,
+		FrameDataPtr frameData);
 
 	/**
     * Downsample point cloud. Reduce the size of the given point cloud.
@@ -96,22 +93,20 @@ private:
     /**
     * Filter out all the points from the cloud that are close to the surface.
     */
-	void filterInvalidObstacles(std::vector<PointCloudConstPtr> &surfaces, 
-		PointCloudPtr &cloudMinusSurfaces);
+	//void filterInvalidObstacles(std::vector<PointCloudConstPtr> &surfaces, 
+	//	PointCloudPtr &cloudMinusSurfaces);
 
 
 	/**
 	* Return average z-coordinate of all points in given point cloud.
 	*/
-	double getAverageHeight(const PointCloudT &cloud);
+	//double getAverageHeight(const PointCloudT &cloud);
 
 
 	/**
 	* Project given surfaces on plane specified by the corresponding plane coefficients.
 	*/
-	void projectOnPlane(
-		std::vector<PointCloudConstPtr> &surfaces,
-		std::vector<pcl::ModelCoefficients> &surfaceCoefficients);
+	void projectOnPlane(SurfaceModelPtr surface);
 
 
 	/**
@@ -271,63 +266,53 @@ void SurfaceSegmenter<PointT>::getSurfaceClusters(
 
 template<class PointT>
 void SurfaceSegmenter<PointT>::cluster(
-	std::vector<PointCloudPtr> &planes,
-	std::vector<pcl::ModelCoefficients> &planeCoefficients,
-	std::vector<PointCloudConstPtr> &surfaces,
-	std::vector<pcl::ModelCoefficients> &surfaceCoefficients) {
+	PointCloudPtr plane,
+	pcl::ModelCoefficients &planeCoefficients,
+	FrameDataPtr frameData) 
+{
+	// A classified surface may consist of different clusters. 
+	// Get point indices of points belonging to the same cluster.
+    std::vector<pcl::PointIndices> cluster_indices;
+    getSurfaceClusters(plane, cluster_indices);
 
-	// iterate over all planes found so far
-	for (int i = 0; i < planes.size(); i++) 
-	{
-		// A classified surface may consist of different clusters. 
-		// Get point indices of points belonging to the same cluster.
-        std::vector<pcl::PointIndices> cluster_indices;
-        getSurfaceClusters(planes.at(i), cluster_indices);
+    // cluster the current plane into seperate surfaces
+    for (int j = 0; j < cluster_indices.size(); j++)
+    {
+    	// extract all points from the classified surface that 
+    	// belong to the same clauster
+    	pcl::ExtractIndices<PointT> extract;
+    	extract.setInputCloud(plane);
+    	// TODO: Optimization. ClusterIndices are copied beacuse
+    	// extract expects a PointIndices::Ptr when calling setIndices.
+    	pcl::PointIndices::Ptr currentClusterIndices(
+    		new pcl::PointIndices(cluster_indices[j]));
+		extract.setIndices(currentClusterIndices);
+		extract.setNegative(false);
+		PointCloudPtr current(new PointCloudT());
+		extract.filter(*current);
 
-        // cluster the current plane into seperate surfaces
-        for (int j = 0; j < cluster_indices.size(); j++)
-        {
-        	// extract all points from the classified surface that 
-        	// belong to the same clauster
-        	pcl::ExtractIndices<PointT> extract;
-        	extract.setInputCloud(planes[i]);
-        	// TODO: Optimization. ClusterIndices are copied beacuse
-        	// extract expects a PointIndices::Ptr when calling setIndices.
-        	pcl::PointIndices::Ptr currentClusterIndices(
-        		new pcl::PointIndices(cluster_indices[j]));
-			extract.setIndices(currentClusterIndices);
-			extract.setNegative(false);
-			PointCloudPtr current(new PointCloudT());
-			extract.filter(*current);
-
-			// add the extracted cluster to the surface array
-			surfaces.push_back(current);
-			surfaceCoefficients.push_back(planeCoefficients[i]);
-        }
-	}
+		// create new surface model for current plane
+		frameData->surfaces.push_back(SurfaceModelPtr(new SurfaceModel(current, planeCoefficients)));
+    }
 }
 
 
 template<class PointT>
-void SurfaceSegmenter<PointT>::projectOnPlane(
-	std::vector<PointCloudConstPtr> &surfaces,
-	std::vector<pcl::ModelCoefficients> &surfaceCoefficients)
+void SurfaceSegmenter<PointT>::projectOnPlane(SurfaceModelPtr surface)
 {
-	for (int i = 0; i < surfaces.size(); i++)
-	{
-		// project surfaces on corresponding plane
-		pcl::ProjectInliers<PointT> proj;
-		proj.setModelType (pcl::SACMODEL_PLANE);
-		proj.setInputCloud (surfaces[i]);
-		pcl::ModelCoefficients::Ptr coeffPtr = boost::shared_ptr<pcl::ModelCoefficients>(new pcl::ModelCoefficients(surfaceCoefficients[i]));
-		proj.setModelCoefficients (coeffPtr);
-		PointCloudPtr tmp(new PointCloudT());
-		proj.filter (*tmp);
-		surfaces[i] = tmp;
-	}
+	// project surface on corresponding plane
+	pcl::ProjectInliers<PointT> proj;
+	proj.setModelType (pcl::SACMODEL_PLANE);
+	proj.setInputCloud (surface->get_cloud());
+	pcl::ModelCoefficients::Ptr coeffPtr = boost::shared_ptr<pcl::ModelCoefficients>(new pcl::ModelCoefficients(surface->get_planeCoefficients()));
+	proj.setModelCoefficients (coeffPtr);
+	PointCloudPtr tmp(new PointCloudT());
+	proj.filter (*tmp);
+	surface->set_cloud(tmp);
 }
 
 
+/*
 template<class PointT>
 double SurfaceSegmenter<PointT>::getAverageHeight(const PointCloudT &cloud)
 {
@@ -338,6 +323,7 @@ double SurfaceSegmenter<PointT>::getAverageHeight(const PointCloudT &cloud)
 	avgHeight /= cloud.size();
 	return avgHeight;
 }
+
 
 
 template<class PointT>
@@ -373,34 +359,33 @@ void SurfaceSegmenter<PointT>::filterInvalidObstacles(
 			cloudMinusSurfaces = cloudFiltered;
 		}
 	}
-}
+}*/
 
 
 template<class PointT>
-void SurfaceSegmenter<PointT>::segment(
-		const PointCloudConstPtr& cloud,
-		std::vector<PointCloudConstPtr> &surfaces,
-		PointCloudPtr &cloudMinusSurfaces,
-		std::vector<pcl::ModelCoefficients> &surfaceCoefficients) {
-	
-	cloudMinusSurfaces = preprocessCloud(cloud);
+void SurfaceSegmenter<PointT>::segment(FrameDataPtr frameData) 
+{
+	frameData->cloudMinusSurfaces = preprocessCloud(frameData->cloud);
 	std::vector<PointCloudPtr> planes;
 	std::vector<pcl::ModelCoefficients> planeCoefficients;
     // extract those planes that are considered as surfaces and put them in cloud_surfaces_
-    findPlanes(cloudMinusSurfaces, planes, planeCoefficients);
+    findPlanes(frameData->cloudMinusSurfaces, planes, planeCoefficients);
 
     // reduce number of points of each plane
     for (size_t i = 0; i < planes.size(); i++)
+    {
     	downSample(planes[i]);
+    	
+    	// cluster planes into seperate surfaces and create SurfaceModels
+    	cluster(planes[i], planeCoefficients[i], frameData);
+    }
 
-    // cluster planes into seperate surfaces
-    cluster(planes, planeCoefficients, surfaces, surfaceCoefficients);
-
-    // project the found surfaces on corresponding plane
-   	projectOnPlane(surfaces, surfaceCoefficients);
-
-    // filter out points that are close to stairs
-    filterInvalidObstacles(surfaces, cloudMinusSurfaces);
+    	
+    for (size_t i = 0; i < frameData->surfaces.size(); i++)
+    {
+    	// project the found surfaces on corresponding plane
+   		projectOnPlane(frameData->surfaces[i]);
+   	}
 }
 
 } // namespace lepp
