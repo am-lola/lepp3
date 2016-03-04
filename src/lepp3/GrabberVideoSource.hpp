@@ -2,6 +2,7 @@
 #define GRABBER_VIDEO_SOURCE_H_
 
 #include "BaseVideoSource.hpp"
+
 #include <pcl/io/openni_grabber.h>
 
 #include <opencv2/core/core.hpp>
@@ -25,21 +26,21 @@ public:
    * Instantiate a video source which wraps the given Grabber instance.
    * The VideoSource instance takes ownership of the given Grabber instance.
    */
-  GeneralGrabberVideoSource(boost::shared_ptr<pcl::Grabber> interface)
-      : interface_(interface),
-        rgb_viewer_enabled_(false) {}
-  GeneralGrabberVideoSource(boost::shared_ptr<pcl::Grabber> interface, bool rgb_enabled)
-      : interface_(interface),
-        rgb_viewer_enabled_(rgb_enabled) {}
+  GeneralGrabberVideoSource(
+    boost::shared_ptr<pcl::Grabber> interface,
+    bool rgb_online = false);
+  GeneralGrabberVideoSource(
+    boost::shared_ptr<pcl::Grabber> interface,
+    boost::shared_ptr<cv::VideoCapture> vc);
   virtual ~GeneralGrabberVideoSource();
   virtual void open();
-  bool rgb_viewer_enabled_;
+  bool online_rgb_;
 private:
   /**
    * A reference to the Grabber instance that the VideoSource wraps.
    */
   const boost::shared_ptr<pcl::Grabber> interface_;
-
+  const boost::shared_ptr<cv::VideoCapture> offline_vc_;
   /**
    * Member function which is registered as a callback of the Grabber.
    * Acts as the bond between the VideoSource and the Grabber, allowing the
@@ -50,30 +51,48 @@ private:
 };
 
 template<class PointT>
+GeneralGrabberVideoSource<PointT>::GeneralGrabberVideoSource(
+  boost::shared_ptr<pcl::Grabber> interface,
+  bool rgb_online)
+    : interface_(interface),
+      online_rgb_(rgb_online) {}
+
+template<class PointT>
+GeneralGrabberVideoSource<PointT>::GeneralGrabberVideoSource(
+  boost::shared_ptr<pcl::Grabber> interface,
+  boost::shared_ptr<cv::VideoCapture> vc)
+    : interface_(interface),
+      offline_vc_(vc) {}
+
+template<class PointT>
 GeneralGrabberVideoSource<PointT>::~GeneralGrabberVideoSource() {
   // RAII: make sure to stop any running Grabber
   interface_->stop();
+  if (offline_vc_->isOpened())
+    offline_vc_->release();
 }
 
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::cloud_cb_(
     const typename pcl::PointCloud<PointT>::ConstPtr& cloud) {
+  std::cout << "entered GeneralGrabberVideoSource::cloud_cb_" << std::endl;
+
   this->setNextFrame(cloud);
+
+  // If in offline mode, read the image sequence
+  if (offline_vc_ != NULL) {
+    cv::Mat image;
+    offline_vc_->read(image);
+    if (image.empty())
+      std::cerr << "received empty image!" << std::endl;
+    this->setNextFrame(image);
+  }
 }
 
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::image_cb_ (
     const typename boost::shared_ptr<openni_wrapper::Image>& rgb) {
-  cv::Mat frameRGB = cv::Mat(rgb->getHeight(), rgb->getWidth(), CV_8UC3);
-  rgb->fillRGB(frameRGB.cols,frameRGB.rows,frameRGB.data,frameRGB.step);
-  cv::Mat frameBGR;
-  cv::cvtColor(frameRGB,frameBGR,CV_RGB2BGR);
-
-  cv::Mat frame = frameBGR;
-
-
-  imshow( "RGB CAM", frame );
-  cv::waitKey(30);
+  this->setNextFrame(rgb);
 }
 
 
@@ -86,7 +105,8 @@ void GeneralGrabberVideoSource<PointT>::open() {
       this, _1);
   interface_->registerCallback(f);
 
-  if(rgb_viewer_enabled_) {
+  if(online_rgb_) {
+    std::cout << "setting opeenni_grabber's image_callback" << std::endl;
     boost::function<void (const boost::shared_ptr<openni_wrapper::Image>&)> g =
          boost::bind (&GeneralGrabberVideoSource::image_cb_, this, _1);
     interface_->registerCallback(g);

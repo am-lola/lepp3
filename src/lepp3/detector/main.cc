@@ -19,11 +19,14 @@
 
 #include "lepp3/visualization/EchoObserver.hpp"
 #include "lepp3/visualization/ObstacleVisualizer.hpp"
+#include "lepp3/visualization/StairVisualizer.hpp"
 
 #include "lepp3/filter/TruncateFilter.hpp"
 #include "lepp3/filter/SensorCalibrationFilter.hpp"
 
 #include "lepp3/models/ObjectModel.h"
+
+#include "lepp3/util/FileManager.hpp"
 
 #include "deps/toml.h"
 #include "deps/easylogging++.h"

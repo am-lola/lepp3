@@ -57,6 +57,9 @@ void PoseService::read_handler(
   // thread-safe operation.
   pose_ = new_pose;
   LINFO << "Pose Service: Updated current pose";
+  // notify any TFObserver of the new pose
+  LolaKinematicsParams params = getParams();
+  notifyObservers(++pose_counter_, params);
   queue_recv();
   // Print parameters received
   // LTRACE << "Received pose"
@@ -81,6 +84,13 @@ void PoseService::queue_recv() {
   socket_.async_receive(
       boost::asio::buffer(recv_buffer_),
       boost::bind(&PoseService::read_handler, this, _1, _2));
+}
+
+void PoseService::notifyObservers(int idx, LolaKinematicsParams& params) {
+  size_t const sz = observers_.size();
+  for (size_t i = 0; i < sz; ++i) {
+    observers_[i]->notifyNewTF(idx, params);
+  }
 }
 
 void PoseService::bind() {
@@ -159,4 +169,8 @@ LolaKinematicsParams PoseService::getParams() const {
   params.stamp = pose.stamp;
 
   return params;
+}
+
+void PoseService::attachObserver(boost::shared_ptr<TFObserver> observer) {
+    observers_.push_back(observer);
 }

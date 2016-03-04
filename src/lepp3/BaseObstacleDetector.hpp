@@ -79,6 +79,17 @@ public:
   virtual void notifyNewFrame(
       int idx,
       const typename pcl::PointCloud<PointT>::ConstPtr& point_cloud);
+  /**
+   * VideoObserver interface method implementation.
+   */
+  virtual void notifyNewFrame(
+      int idx,
+      const typename boost::shared_ptr<openni_wrapper::Image>& image);
+  /**
+   * VideoObserver interface method implementation.
+   */
+  void notifyNewFrame(int idx, const cv::Mat& image) {}
+
 
 protected:
   /// Some convenience typedefs
@@ -119,6 +130,12 @@ void BaseObstacleDetector<PointT>::notifyNewFrame(
   }
 }
 
+template<class PointT>
+void BaseObstacleDetector<PointT>::notifyNewFrame(
+    int id,
+    const typename boost::shared_ptr<openni_wrapper::Image>& image) {
+      return; // RGB image data is not used for obstacle detection
+}
 
 template<class PointT>
 void BaseObstacleDetector<PointT>::update() {
