@@ -2,6 +2,7 @@
 #define LEPP3_SMOOTH_OBSTACLE_AGGREGATOR_H__
 
 #include <vector>
+#include <list>
 #include <map>
 
 #include "lepp3/ObstacleDetector.hpp"
@@ -171,7 +172,7 @@ private:
    * We use a linked-list for this purpose since we need efficient removals
    * without copying elements or (importantly) invalidating iterators.
    */
-  std::vector<ObjectModelPtr> materialized_models_;
+  std::list<ObjectModelPtr> materialized_models_;
   /**
    * Maps the model to their position in the linked list so as to allow removing
    * objects efficiently.
@@ -180,7 +181,7 @@ private:
    * the number of objects will always be extremely small, it may as well be
    * O(1).
    */
-  std::map<model_id_t, std::vector<ObjectModelPtr>::iterator> model_idx_in_list_;
+  std::map<model_id_t, std::list<ObjectModelPtr>::iterator> model_idx_in_list_;
   /**
    * Current count of the number of frames processed by the aggregator.
    */
@@ -352,7 +353,7 @@ void SmoothObstacleAggregator::materializeFoundObjects() {
       // Materialize it...
       materialized_models_.push_back(model);
       // ...and make sure we know where in the list it got inserted.
-      std::vector<ObjectModelPtr>::iterator pos = materialized_models_.end();
+      std::list<ObjectModelPtr>::iterator pos = materialized_models_.end();
       --pos;
       model_idx_in_list_[model_id] = pos;
       // Finally, make sure we remove it from the mapping so that we don't end
@@ -371,8 +372,9 @@ void SmoothObstacleAggregator::updateFrame(FrameDataPtr frameData)
   adaptTracked(correspondence, frameData->obstacles);
   dropLostObjects();
   materializeFoundObjects();
-   // copy materialized models    
-  frameData->obstacles = materialized_models_;
+   // copy materialized models   
+  std::vector<ObjectModelPtr> materializedModelsCopy(materialized_models_.begin(), materialized_models_.end()); 
+  frameData->obstacles = materializedModelsCopy;
   notifyObservers(frameData);
 }
 

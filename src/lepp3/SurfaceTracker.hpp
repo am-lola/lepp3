@@ -7,6 +7,7 @@
 #include <pcl/surface/concave_hull.h>
 #include <pcl/surface/convex_hull.h>
 
+#include <list>
 #include <vector>
 #include <map>
 
@@ -185,7 +186,7 @@ private:
 	 * We use a linked-list for this purpose since we need efficient removals
 	 * without copying elements or (importantly) invalidating iterators.
 	 */
-	std::vector<SurfaceModelPtr> materialized_models_;
+	std::list<SurfaceModelPtr> materialized_models_;
 
 	/**
 	 * Maps the model to their position in the linked list so as to allow removing
@@ -195,14 +196,14 @@ private:
 	 * the number of surfaces will always be extremely small, it may as well be
 	 * O(1).
 	 */
-	std::map<model_id_t, std::vector<SurfaceModelPtr>::iterator> model_idx_in_list_;
+	std::map<model_id_t, std::list<SurfaceModelPtr>::iterator> model_idx_in_list_;
 
 	/**
 	 * Current count of the number of frames processed by the aggregator.
 	 */
 	int frame_cnt_;
 
-	static const int LOST_LIMIT = 8;
+	static const int LOST_LIMIT = 5;
 	static const int FOUND_LIMIT = 5;
 };
 
@@ -448,7 +449,7 @@ void SurfaceTracker<PointT>::materializeFoundSurfaces() {
 			// Materialize it...
 			materialized_models_.push_back(model);
 			// ...and make sure we know where in the list it got inserted.
-			std::vector<SurfaceModelPtr>::iterator pos =
+			std::list<SurfaceModelPtr>::iterator pos =
 					materialized_models_.end();
 			--pos;
 			model_idx_in_list_[model_id] = pos;
@@ -476,7 +477,8 @@ void SurfaceTracker<PointT>::updateFrame(FrameDataPtr frameData)
     materializeFoundSurfaces();
 
     // copy materialized models    
-    frameData->surfaces = materialized_models_;
+    std::vector<SurfaceModelPtr> materializedModelsCopy(materialized_models_.begin(), materialized_models_.end());
+    frameData->surfaces = materializedModelsCopy;
 
 	notifyObservers(frameData);
 }
