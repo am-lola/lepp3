@@ -56,7 +56,7 @@ void PrintUsage() {
 }
 
 int main(int argc, char* argv[]) {
-  _START_EASYLOGGINGPP(argc, argv);
+  _START_EASYLOGGINGPP(argc, argv);  
   // Initialize the context container
   boost::shared_ptr<Context<SimplePoint> > context;
   try {

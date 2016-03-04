@@ -28,8 +28,8 @@ struct VisionMessage {
 
   // Flags (passed in parameter at the index 4 in delete messages) indicating
   // whether the entire object model should be removed or only a part.
-  static float const DEL_WHOLE_SEGMENT_FLAG = 0;
-  static float const DEL_ONLY_PART_FLAG = 1;
+  static constexpr float DEL_WHOLE_SEGMENT_FLAG = 0;
+  static constexpr float DEL_ONLY_PART_FLAG = 1;
 
   // Static factory functions. Facilitate creating the messages without worrying
   // about the internal format.

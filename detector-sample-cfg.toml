@@ -1,0 +1,70 @@
+# This is a sample of a config file for the vision subsystem (when running
+# it with the `--cfg` flag).
+# The config file is in the [toml](https://github.com/toml-lang/toml) format,
+# but the vision subsystem does not use a full toml parser, making the order of
+# defined config values significant.
+#
+# THEREFORE, when writing custom config files, MAKE SURE that the ordering of
+# the various parameters is as shown in this sample.
+
+[VideoSource]
+# Available types: stream, oni, pcd
+#   oni and pcd types require an additional parameter: file_path
+type = "stream"
+# file_path = "../sample.oni"
+
+[RGBViewer]
+# Whether to show the camera's RGB stream
+# enabled = true|false
+enabled = true
+
+[FilteredVideoSource]
+# type = simple|prob|pt1
+type = "simple"
+
+  # The following list of filters is optional
+  # The order of the filters themselves IS NOT SIGNIFICANT.
+  [[FilteredVideoSource.filters]]
+    type = "SensorCalibrationFilter"
+    a = 1.0117
+    b = -0.0100851
+
+  [[FilteredVideoSource.filters]]
+    type = "TruncateFilter"
+    decimal_points = 2
+
+[[observers]]
+type = "ObstacleDetector"
+
+[SplitStrategy]
+# split_axis = largest|middle|smallest
+split_axis = "middle"
+# A number of split conditions that need to be satisfied in order for an object
+# split to occur.
+# Care should be taken to define the conditions in a way that guarantees that
+# splitting eventually stops for each object (possibly the easiest way is to
+# always include the DepthLimit condition with a fairly high depth limit).
+# If no split conditions are provided, the objects will never be split.
+  [[SplitStrategy.conditions]]
+    type = "DepthLimit"
+    depth = 2
+  [[SplitStrategy.conditions]]
+    type = "SizeLimit"
+    # size is a volume in [cm^3]
+    size = 3000.
+  [[SplitStrategy.conditions]]
+    type = "ShapeCondition"
+    # The threshold values to consider something "very much" a sphere
+    sphere1 = 0.8
+    sphere2 = 0.1
+    # The threshold value to consider something "very much" a cylinder
+    cylinder = 0.25
+  [[SplitStrategy.conditions]]
+    type = "DistanceThreshold"
+    # Distance is in [cm]
+    distance_threshold = 150
+
+[Visualization]
+# Whether the results are visualized **locally**
+# enabled = true|false
+enabled = true

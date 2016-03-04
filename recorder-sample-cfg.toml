@@ -1,0 +1,34 @@
+# This is a sample of a config file for the vision subsystem (when running
+# it with the `--cfg` flag).
+# The config file is in the [toml](https://github.com/toml-lang/toml) format,
+# but the vision subsystem does not use a full toml parser, making the order of
+# defined config values significant.
+#
+# THEREFORE, when writing custom config files, MAKE SURE that the ordering of
+# the various parameters is as shown in this sample.
+
+[VideoSource]
+# Available types: stream, oni, pcd
+#   oni and pcd types require an additional parameter: file_path
+type = "stream"
+
+[FilteredVideoSource]
+# type = simple|prob|pt1
+type = "simple"
+
+  # The following list of filters is optional
+  # The order of the filters themselves IS NOT SIGNIFICANT.
+  [[FilteredVideoSource.filters]]
+    type = "SensorCalibrationFilter"
+    a = 1.0117
+    b = -0.0100851
+
+  [[FilteredVideoSource.filters]]
+    type = "TruncateFilter"
+    decimal_points = 2
+
+[[observers]]
+type = "Recorder"
+cloud = true
+rgb = true
+pose = true
