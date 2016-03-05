@@ -1,6 +1,13 @@
 #ifndef LEPP3_CONFIG_CONTEXT_H_
 #define LEPP3_CONFIG_CONTEXT_H_
 
+/**
+ * This is legacy file, used to serve as a handle to read the config file
+ * and prepare the vision system accordingly.
+ * Context is replaced by the full config `Parser` class to give more options
+ * to developers, both in `Online` and `Offline` processes.  
+ */
+
 #include <iostream>
 #include <fstream>
 #include <sstream>

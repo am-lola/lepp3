@@ -2,16 +2,18 @@
 #define LEPP3_CONFIG_FILE_PARSER_H_
 
 #include "Parser.h"
+#include "deps/toml.h"
 
 /**
- * A `Context` implementation that reads the configuration from a config file
+ * A `Parser` implementation that reads the configuration from a config file
  * (given as a parameter at construct time).
+ * `tinytoml` is responsible for reading the TOML configuration file.
  */
 template<class PointT>
 class FileConfigParser : public Parser<PointT> {
 public:
   /**
-   * Create a new `FileConfigContext` that will read its configuration from the
+   * Create a new `FileConfigParser` that will read its configuration from the
    * given config file.
    *
    * If the file cannot be opened, there is an error parsing it, or one of the
@@ -31,14 +33,20 @@ public:
 
 protected:
   void init() {
+    // Make the pose service optional --> avoid stopping the parser.
+    // Compatibility for offline use.
     if (toml_tree_.find("PoseService"))
       initPoseService();
     else
       std::cout << "No pose service found." << std::endl;
+    // Make the robot communication optional --> avoid stopping the parser.
+    // Compatibility for offline use.
     if (toml_tree_.find("Robot"))
       initRobot();
     else
       std::cout << "No robot found." << std::endl;
+    // Make the robot service communication optional --> avoid stopping the parser.
+    // Compatibility for offline use.
     if (toml_tree_.find("RobotService"))
       initVisionService();
     else
@@ -50,7 +58,7 @@ protected:
     this->buildFilteredSource();
     // attach any available observers
     addObservers();
-    // ...and additional obstacle processors.
+    // ...and additional observer processors.
     addAggregators();
     // Finally, optionally visualize everything in a local GUI
     if (toml_tree_.find("Visualization"))
@@ -322,11 +330,21 @@ private:
 
   /// Private members
   std::string const& file_name_;
+  /**
+   * A handle to tinytoml's Parseresult. The object receives the path to TOML
+   * file and tries to build a tree as an output. This will be then used by
+   * toml::Value to get access to each element.
+   */
   toml::ParseResult const parser_;
+  /**
+   * Object containing all the available values from the TOML file which is read
+   * by the toml::ParseResult::parse method. Any data could be directly accessed
+   * from this object.
+   */
   toml::Value const& toml_tree_;
   /**
    * The base detector that we attach to the video source and to which, in
-   * turn, the "smooth" detector is attached. The `Context` maintains a
+   * turn, the "smooth" detector is attached. The `Parser` maintains a
    * reference to it to make sure it doesn't get destroyed, although it is
    * never exposed to any outside clients.
    */

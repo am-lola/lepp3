@@ -4,19 +4,19 @@
 #include "Parser.h"
 
 /**
- * An implementation of the `Context` base class.
+ * An implementation of the `Parser` base class.
  *
  * It provides a hardcoded pipeline configuration, with only a relatively small
  * number of parameters that are configurable by passing command line options.
  *
- * The CLI arguments need to be passed to the `HardcodedContext` at
+ * The CLI arguments need to be passed to the `HardcodedParser` at
  * construct-time.
  */
 template<class PointT>
 class HardcodedParser : public Parser<PointT> {
 public:
   /**
-   * Creates a new `HardcodedContext` based on the given CLI arguments.
+   * Creates a new `HardcodedParser` based on the given CLI arguments.
    */
   HardcodedParser(char* argv[], int argc) : argv(argv), argc(argc) {
     live_ = checkLive();
@@ -25,7 +25,7 @@ public:
   }
 
   /**
-   * Returns whether the run is within a live-context.
+   * Returns whether the run is within a live-Parser.
    */
   bool isLive() { return live_; }
 protected:
@@ -185,7 +185,7 @@ private:
 
   /**
    * The base detector that we attach to the video source and to which, in
-   * turn, the "smooth" detector is attached. The `Context` maintains a
+   * turn, the "smooth" detector is attached. The `Parser` maintains a
    * reference to it to make sure it doesn't get destroyed, although it is
    * never exposed to any outside clients.
    */

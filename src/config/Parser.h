@@ -11,8 +11,6 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "deps/toml.h"
-
 #include "lepp3/BaseObstacleDetector.hpp"
 #include "lepp3/GrabberVideoSource.hpp"
 #include "lepp3/BaseVideoSource.hpp"
@@ -36,10 +34,9 @@
 #include "deps/easylogging++.h"
 
 /**
- * An ABC that represents the context of the execution. Essentially, it is a
- * container for all parts of the robot's vision pipeline. The parts are
- * exposed via public accessor methods.
- *
+ * An ABC, based on legacy class `Context` that represents the context of the
+ * execution. Essentially, it is a container for all parts of the robot's vision
+ * pipeline. The parts are exposed via public accessor methods.
  * The ABC provides convenience methods for building up the context so that
  * different concrete implementations can be provided in a simple and
  * straightforward manner.
