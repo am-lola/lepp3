@@ -99,7 +99,8 @@ private:
    */
   void adaptTracked(
       std::map<model_id_t, size_t> const& correspondence,
-      std::vector<ObjectModelPtr> const& new_obstacles);
+      std::vector<ObjectModelPtr> const& new_obstacles,
+      long frameNum);
   /**
    * Updates the internal `frames_found_` and `frames_lost_` counters for each
    * mode, based on the given new matches description, i.e. increments the
@@ -182,14 +183,10 @@ private:
    * O(1).
    */
   std::map<model_id_t, std::list<ObjectModelPtr>::iterator> model_idx_in_list_;
-  /**
-   * Current count of the number of frames processed by the aggregator.
-   */
-  int frame_cnt_;
 };
 
 SmoothObstacleAggregator::SmoothObstacleAggregator()
-    : next_model_id_(0), frame_cnt_(0) {}
+    : next_model_id_(0) {}
 
 SmoothObstacleAggregator::model_id_t SmoothObstacleAggregator::nextModelId() {
   return next_model_id_++;
@@ -270,7 +267,8 @@ SmoothObstacleAggregator::matchToPrevious(
 
 void SmoothObstacleAggregator::adaptTracked(
     std::map<model_id_t, size_t> const& correspondence,
-    std::vector<ObjectModelPtr> const& new_obstacles) {
+    std::vector<ObjectModelPtr> const& new_obstacles,
+    long frameNum) {
   for (std::map<model_id_t, size_t>::const_iterator it = correspondence.begin();
         it != correspondence.end();
         ++it) {
@@ -281,7 +279,7 @@ void SmoothObstacleAggregator::adaptTracked(
         (new_obstacles[i]->center_point() - tracked_models_[model_id]->center_point()) / 2;
     BlendVisitor blender(translation_vec);
     tracked_models_[model_id]->accept(blender);
-    if (frame_cnt_ % 30 == 0) {
+    if (frameNum % 30 == 0) {
       CompositeModel* tracked = dynamic_cast<CompositeModel*>(&*tracked_models_[model_id]);
       CompositeModel* new_model = dynamic_cast<CompositeModel*>(&*new_obstacles[i]);
       if (tracked && new_model) {
@@ -369,7 +367,7 @@ void SmoothObstacleAggregator::updateFrame(FrameDataPtr frameData)
 {
   std::map<model_id_t, size_t> correspondence = matchToPrevious(frameData->obstacles);
   updateLostAndFound(correspondence);
-  adaptTracked(correspondence, frameData->obstacles);
+  adaptTracked(correspondence, frameData->obstacles, frameData->frameNum);
   dropLostObjects();
   materializeFoundObjects();
    // copy materialized models   

@@ -198,18 +198,13 @@ private:
 	 */
 	std::map<model_id_t, std::list<SurfaceModelPtr>::iterator> model_idx_in_list_;
 
-	/**
-	 * Current count of the number of frames processed by the aggregator.
-	 */
-	int frame_cnt_;
-
 	static const int LOST_LIMIT = 5;
 	static const int FOUND_LIMIT = 5;
 };
 
 template<class PointT>
 SurfaceTracker<PointT>::SurfaceTracker() :
-		next_model_id_(0), frame_cnt_(0) {
+		next_model_id_(0) {
 }
 
 template<class PointT>
