@@ -4,7 +4,7 @@
 #include <boost/asio.hpp>
 #include <boost/array.hpp>
 
-#include "lola/TransformObserver.hpp"
+#include "lola/PoseObserver.hpp"
 
 #include "lepp3/models/Coordinate.h"
 using boost::asio::ip::udp;

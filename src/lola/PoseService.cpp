@@ -89,7 +89,7 @@ void PoseService::queue_recv() {
 void PoseService::notifyObservers(int idx, LolaKinematicsParams& params) {
   size_t const sz = observers_.size();
   for (size_t i = 0; i < sz; ++i) {
-    observers_[i]->notifyNewTF(idx, params);
+    observers_[i]->NotifyNewPose(idx, params);
   }
 }
 
