@@ -330,7 +330,7 @@ protected:
 template<class PointT>
 class ProbFilteredVideoSource : public FilteredVideoSource<PointT> {
 public:
-  using typename FilteredVideoSource<PointT>::PointCloudT;
+  //using typename FilteredVideoSource<PointT>::PointCloudT;
 
   ProbFilteredVideoSource(boost::shared_ptr<VideoSource<PointT> > source)
       : FilteredVideoSource<PointT>(source),

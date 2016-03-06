@@ -1,6 +1,8 @@
 #ifndef LEPP3_TYPEDEFS_H__
 #define LEPP3_TYPEDEFS_H__
 
+#include <pcl/common/common.h>
+
 namespace lepp
 {
 	// forward declaration

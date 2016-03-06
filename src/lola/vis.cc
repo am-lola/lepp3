@@ -19,6 +19,7 @@
 #include "lepp3/FilteredVideoSource.hpp"
 #include "lepp3/SmoothObstacleAggregator.hpp"
 #include "lepp3/SplitApproximator.hpp"
+#include "lepp3/MomentOfInertiaApproximator.hpp"
 
 #include "lepp3/visualization/EchoObserver.hpp"
 #include "lepp3/visualization/Visualizer.hpp"
@@ -82,7 +83,7 @@ public:
   boost::shared_ptr<RobotService> robot_service() { return robot_service_; }
 
   /// The obstacle detector accessor
-  boost::shared_ptr<ObstacleDetector> detector() { return detector_; }
+  boost::shared_ptr<ObstacleDetector<PointT> > detector() { return detector_; }
 
 protected:
   /**
@@ -197,7 +198,7 @@ protected:
   boost::shared_ptr<RobotService> robot_service_;
   boost::shared_ptr<Robot> robot_;
 
-  boost::shared_ptr<ObstacleDetector> detector_;
+  boost::shared_ptr<ObstacleDetector<PointT> > detector_;
 
   boost::shared_ptr<Visualizer<PointT> > visualizer_;
 };
@@ -292,7 +293,7 @@ protected:
     // Smooth out the basic detector by applying a smooth detector to it
     boost::shared_ptr<SmoothObstacleAggregator> smooth_detector(
         new SmoothObstacleAggregator);
-    base_detector_->attachObstacleAggregator(smooth_detector);
+    base_detector_->attachObserver(smooth_detector);
     // Now the detector that is exposed via the context is a smoothed-out
     // base detector.
     this->detector_ = smooth_detector;
@@ -301,11 +302,11 @@ protected:
   void addAggregators() {
     boost::shared_ptr<LolaAggregator> lola_viewer(
         new LolaAggregator("127.0.0.1", 53250));
-    this->detector_->attachObstacleAggregator(lola_viewer);
+    this->detector_->attachObserver(lola_viewer);
 
     boost::shared_ptr<RobotAggregator> robot_aggregator(
         new RobotAggregator(*this->robot_service(), 30, *this->robot()));
-    this->detector_->attachObstacleAggregator(robot_aggregator);
+    this->detector_->attachObserver(robot_aggregator);
   }
 
   void initVisualizer() {
@@ -316,7 +317,7 @@ protected:
       // Attach the visualizer to both the point cloud source...
       this->source()->attachObserver(this->visualizer_);
       // ...as well as to the obstacle detector
-      this->detector_->attachObstacleAggregator(this->visualizer_);
+      this->detector_->attachObserver(this->visualizer_);
     }
   }
 
@@ -563,7 +564,7 @@ protected:
     // Smooth out the basic detector by applying a smooth detector to it
     boost::shared_ptr<SmoothObstacleAggregator> smooth_detector(
         new SmoothObstacleAggregator);
-    base_detector_->attachObstacleAggregator(smooth_detector);
+    base_detector_->attachObserver(smooth_detector);
     // Now the detector that is exposed via the context is a smoothed-out
     // base detector.
     this->detector_ = smooth_detector;
@@ -571,7 +572,7 @@ protected:
 
   void addAggregators() {
     while (nextLineMatches("[[aggregators]]")) {
-      this->detector_->attachObstacleAggregator(getNextAggregator());
+      this->detector_->attachObserver(getNextAggregator());
     }
 
     returnToPreviousLine();
@@ -587,7 +588,7 @@ protected:
       // Attach the visualizer to both the point cloud source...
       this->source()->attachObserver(this->visualizer_);
       // ...as well as to the obstacle detector
-      this->detector_->attachObstacleAggregator(this->visualizer_);
+      this->detector_->attachObserver(this->visualizer_);
     }
   }
 private:
@@ -618,11 +619,11 @@ private:
   }
 
   /**
-   * A helper function that constructs the next `ObstacleAggregator` instance,
+   * A helper function that constructs the next `FrameDataObserver` instance,
    * as defined in the following lines of the config file.
    * If the lines are invalid, an exception is thrown.
    */
-  boost::shared_ptr<ObstacleAggregator> getNextAggregator() {
+  boost::shared_ptr<FrameDataObserver> getNextAggregator() {
     std::string const type = expectKey<std::string>("type");
     if (type == "LolaAggregator") {
       std::string const ip = expectKey<std::string>("ip");

@@ -1,9 +1,9 @@
 #ifndef LEPP3_LOLA_LOLA_AGGREGATOR_H__
 #define LEPP3_LOLA_LOLA_AGGREGATOR_H__
 
-#include "lepp3/ObstacleAggregator.hpp"
 #include "lepp3/DiffAggregator.hpp"
 #include "lepp3/models/ObjectModel.h"
+#include "lepp3/FrameDataObserver.hpp"
 
 #include "lola/RobotService.h"
 #include "lola/Robot.h"
@@ -27,7 +27,7 @@ using namespace lepp;
  * datagram and sent over UDP to the remote host described by the initial
  * constructor parameters.
  */
-class LolaAggregator : public lepp::ObstacleAggregator {
+class LolaAggregator : public lepp::FrameDataObserver {
 public:
   /**
    * Creates a new `LolaAggregator` where the remote host to which the obstacle
@@ -36,9 +36,9 @@ public:
   LolaAggregator(std::string const& remote_host, int remote_port);
   ~LolaAggregator();
   /**
-   * `ObstacleAggregator` interface implementation.
+   * `FrameDataObserver` interface implementation.
    */
-  void updateObstacles(std::vector<ObjectModelPtr> const& obstacles);
+  virtual void updateFrame(FrameDataPtr frameData);
 private:
   /**
    * A helper function that builds the datagram payload based on the given
@@ -62,7 +62,7 @@ private:
  * primitive models) into its most primitive components and sending msesages for
  * each of those separately to the robot.
  */
-class RobotAggregator : public lepp::ObstacleAggregator {
+class RobotAggregator : public lepp::FrameDataObserver {
 public:
   /**
    * Create a new `RobotAggregator` that will use the given service to
@@ -70,11 +70,11 @@ public:
    */
   RobotAggregator(RobotService& service, int freq, Robot& robot);
   /**
-   * `ObstacleAggregator` interface implementation.
+   * `FrameDataObserver` interface implementation.
    */
-  void updateObstacles(std::vector<ObjectModelPtr> const& obstacles) {
+  void updateFrame(FrameDataPtr frameData) {
     // Just pass it on to find the diff!
-    diff_.updateObstacles(obstacles);
+    diff_.updateFrame(frameData);
   }
 private:
   /**

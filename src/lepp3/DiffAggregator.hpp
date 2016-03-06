@@ -1,7 +1,7 @@
 #ifndef LEPP3_DIFF_AGGREGATOR_H__
 #define LEPP3_DIFF_AGGREGATOR_H__
 
-#include "lepp3/ObstacleAggregator.hpp"
+#include "lepp3/FrameDataObserver.hpp"
 
 #include <set>
 #include <vector>
@@ -23,7 +23,7 @@ namespace lepp {
  * the appropriate callback is fired, if provided, so that the client can
  * take appropriate actions if a diff is detected.
  */
-class DiffAggregator : public ObstacleAggregator {
+class DiffAggregator : public FrameDataObserver {
 public:
   // Callback typedefs
   typedef boost::function<void (ObjectModel&)> NewObstacleCallback;
@@ -50,9 +50,9 @@ public:
    */
   void set_deleted_callback(DeletedObstacleCallback del_cb) { del_cb_ = del_cb; }
   /**
-   * Implementation of the `ObstacleAggregator` interface.
+   * Implementation of the `FrameDataObserver` interface.
    */
-  void updateObstacles(std::vector<ObjectModelPtr> const& obstacles);
+  virtual void updateFrame(FrameDataPtr frameData);
 private:
   /**
    * The number of frames after which the difference to the previous snapshot
@@ -82,8 +82,8 @@ private:
 };
 
 // TODO This is made inline to facilitate keeping lepp3 header-only for now.
-inline void DiffAggregator::updateObstacles(
-    std::vector<ObjectModelPtr> const& obstacles) {
+inline void DiffAggregator::updateFrame(FrameDataPtr frameData) {
+  const std::vector<ObjectModelPtr> &obstacles = frameData->obstacles;
   ++curr_;
   if (curr_ % freq_ != 0) return;
 

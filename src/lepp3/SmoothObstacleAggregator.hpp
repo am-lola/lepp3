@@ -8,7 +8,6 @@
 #include "lepp3/ObstacleDetector.hpp"
 #include "lepp3/FrameDataObserver.hpp"
 #include "lepp3/FrameDataSubject.hpp"
-#include "lepp3/ObstacleAggregator.hpp"
 
 #include "deps/easylogging++.h"
 
