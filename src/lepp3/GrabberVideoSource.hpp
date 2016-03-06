@@ -105,12 +105,9 @@ void GeneralGrabberVideoSource<PointT>::open() {
       this, _1);
   interface_->registerCallback(f);
 
-  if(online_rgb_) {
-    std::cout << "setting opeenni_grabber's image_callback" << std::endl;
-    boost::function<void (const boost::shared_ptr<openni_wrapper::Image>&)> g =
-         boost::bind (&GeneralGrabberVideoSource::image_cb_, this, _1);
-    interface_->registerCallback(g);
-  }
+  boost::function<void (const boost::shared_ptr<openni_wrapper::Image>&)> g =
+       boost::bind (&GeneralGrabberVideoSource::image_cb_, this, _1);
+  interface_->registerCallback(g);
 
   interface_->start();
 }
