@@ -38,19 +38,19 @@ protected:
     if (toml_tree_.find("PoseService"))
       initPoseService();
     else
-      std::cout << "No pose service found." << std::endl;
+      std::cout << "No pose service info found in config file." << std::endl;
     // Make the robot communication optional --> avoid stopping the parser.
     // Compatibility for offline use.
     if (toml_tree_.find("Robot"))
       initRobot();
     else
-      std::cout << "No robot found." << std::endl;
+      std::cout << "No robot info found in config file." << std::endl;
     // Make the robot service communication optional --> avoid stopping the parser.
     // Compatibility for offline use.
     if (toml_tree_.find("RobotService"))
       initVisionService();
     else
-      std::cout << "No robot service found." << std::endl;
+      std::cout << "No robot service info found in config file." << std::endl;
 
     // Now get our video source ready...
     initRawSource();
@@ -72,10 +72,19 @@ protected:
   /// Implementations of initialization of various parts of the pipeline.
   void initRawSource() {
     std::cout << "entered initRawSource" << std::endl;
-    std::string type = toml_tree_.find("VideoSource.type")->as<std::string>();
-    bool rgb_enabled = toml_tree_.find("RGBViewer.enabled")->as<bool>();
+    if (!toml_tree_.find("VideoSource.type"))
+      throw "error: no video source found in the config file.";
+    const std::string type = toml_tree_.find("VideoSource.type")->as<std::string>();
+
+    bool rgb_enabled;
+    if (!toml_tree_.find("RGBViewer.enabled"))
+      rgb_enabled = false;
+    else
+      rgb_enabled = toml_tree_.find("RGBViewer.enabled")->as<bool>();
+
     std::cout << "video source type : " << type << std::endl;
     std::cout << "rgb enabled: " << rgb_enabled << std::endl;
+
     if (type == "stream") {
       this->raw_source_ = boost::shared_ptr<VideoSource<PointT> >(
           new LiveStreamSource<PointT>(rgb_enabled));
@@ -259,7 +268,24 @@ protected:
   }
 
   void initRecorder() {
-    // TODO add recorder stuff from branch lepp3/sahand_playback_recorder
+    std::cout << "entered initRecorder" << std::endl;
+    this->recorder_.reset(new VideoRecorder<PointT>());
+    std::cout << "recorder got reset!" << std::endl;
+    const bool rec_cloud = toml_tree_.find(
+          "RecordingOptions.cloud")->as<bool>();
+    const bool rec_rgb = toml_tree_.find(
+          "RecordingOptions.rgb")->as<bool>();
+    const bool rec_pose = toml_tree_.find(
+          "RecordingOptions.pose")->as<bool>();
+    std::cout << "\trec_cloud: " << rec_cloud
+              << "\n\trec_rgb: " << rec_rgb
+              << "\n\trec_pose: " << rec_pose << std::endl;
+    if (rec_cloud)
+      this->source()->attachObserver(this->recorder());
+    if (rec_pose)
+      this->pose_service_->attachObserver(this->recorder());
+
+    this->recorder_->setMode(rec_cloud, rec_rgb, rec_pose);
   }
 
   void initSurfaceDetector() {

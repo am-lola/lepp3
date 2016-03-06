@@ -25,6 +25,8 @@
 #include "lepp3/filter/TruncateFilter.hpp"
 #include "lepp3/filter/SensorCalibrationFilter.hpp"
 
+#include "lepp3/util/VideoRecorder.hpp"
+
 #include "lola/OdoCoordinateTransformer.hpp"
 #include "lola/Splitters.hpp"
 #include "lola/LolaAggregator.h"
@@ -62,6 +64,8 @@ public:
 
   /// The obstacle detector accessor
   boost::shared_ptr<IObstacleDetector> detector() { return detector_; }
+  /// The recorder accessor
+  boost::shared_ptr<VideoRecorder<PointT> > recorder() { return recorder_; }
 
 protected:
   /**
@@ -164,7 +168,7 @@ protected:
   boost::shared_ptr<Robot> robot_;
 
   boost::shared_ptr<IObstacleDetector> detector_;
-  // TODO add recorder and surface_detector_ after merge
+  boost::shared_ptr<VideoRecorder<PointT> > recorder_;
   boost::shared_ptr<ObstacleVisualizer<PointT> > visualizer_;
 };
 
