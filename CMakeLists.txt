@@ -18,8 +18,7 @@ add_definitions(${PCL_DEFINITIONS})
 option(LEPP_BUILD_EXAMPLES "Build LEPP examples" FALSE)
 option(LEPP_BUILD_DETECTOR "Build an obstacle detector" TRUE)
 option(LEPP_BUILD_LOLA "Build an obstacle detector for LOLA" TRUE)
-option(LEPP_BUILD_RECORDER "Build a video recorder" TRUE)
-option(LEPP_BUILD_PLAYBACK "Build a video playback" TRUE)
+option(LEPP_BUILD_PLAYBACK "Build a video playback" FALSE)
 
 include_directories("src")
 
@@ -34,15 +33,9 @@ if(LEPP_BUILD_DETECTOR)
 endif()
 
 if(LEPP_BUILD_LOLA)
-    file(GLOB lola_src src/lola/*.cc)
+    file(GLOB lola_src src/lola/*.cc src/lola/*.cpp)
     add_executable(lola ${lola_src})
     target_link_libraries(lola ${PCL_LIBRARIES} ${OpenCV_LIBS})
-endif()
-
-if(LEPP_BUILD_RECORDER)
-    file(GLOB recorder_src src/lepp3/recorder/*.cc src/lola/PoseService.cpp)
-    add_executable(recorder ${recorder_src})
-    target_link_libraries(recorder ${PCL_LIBRARIES} ${OpenCV_LIBS})
 endif()
 
 if(LEPP_BUILD_PLAYBACK)
