@@ -1,5 +1,5 @@
-#ifndef LEPP3_VIDEO_RECORDER_H_
-#define LEPP3_VIDEO_RECORDER_H_
+#ifndef LEPP3_FILE_MANAGER_H_
+#define LEPP3_FILE_MANAGER_H_
 
 #include <iostream>
 #include <iterator>
@@ -32,6 +32,8 @@ bool comparator(std::string const& s1, std::string const& s2) {
 
   return (n1 < n2);
 }
+
+namespace lepp {
 
 class FileManager {
 public:
@@ -75,4 +77,6 @@ std::vector<std::string> FileManager::getFileNames(const std::string& ext) {
 	return file_names;
 }
 
-#endif // LEPP3_VIDEO_RECORDER_H_
+} // namespace lepp
+
+#endif // LEPP3_FILE_MANAGER_H_
