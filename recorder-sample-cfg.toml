@@ -1,11 +1,6 @@
 # This is a sample of a config file for the vision subsystem (when running
 # it with the `--cfg` flag).
 # The config file is in the [toml](https://github.com/toml-lang/toml) format,
-# but the vision subsystem does not use a full toml parser, making the order of
-# defined config values significant.
-#
-# THEREFORE, when writing custom config files, MAKE SURE that the ordering of
-# the various parameters is as shown in this sample.
 
 [VideoSource]
 # Available types: stream, oni, pcd
@@ -27,8 +22,17 @@ type = "simple"
     type = "TruncateFilter"
     decimal_points = 2
 
+# Uncomment in presense of Robot, to record pose.
+# IP address and port number may differ.
+# [PoseService]
+# ip = 192.168.0.8
+# # (The hex port value is equal to the decimal below) port = 0xd001
+# port = 53249
+
 [[observers]]
 type = "Recorder"
+
+[RecordingOptions]
 cloud = true
 rgb = true
-pose = true
+pose = false
