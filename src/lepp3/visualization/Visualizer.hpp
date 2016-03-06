@@ -27,13 +27,13 @@ namespace lepp {
  * The `ModelDrawer` should be able to represent any `ObjectModel` instance.
  *
  */
-class ModelDrawer : public ModelVisitor {
+class ModelDrawerPCL : public ModelVisitor {
 public:
   /**
    * Creates a new `ModelDrawer` instance that will draw any models that it
    * visits onto the given viewer.
    */
-  ModelDrawer(pcl::visualization::PCLVisualizer& viewer)
+  ModelDrawerPCL(pcl::visualization::PCLVisualizer& viewer)
       : viewer_(viewer), total_(0) {}
 
   /**
@@ -53,7 +53,7 @@ private:
   int total_;
 };
 
-void ModelDrawer::visitSphere(lepp::SphereModel& sphere) {
+void ModelDrawerPCL::visitSphere(lepp::SphereModel& sphere) {
   // We count how many object have been drawn in total, in order to make sure
   // we don't use any duplicate names.
   // The drawer relies on there not being any objects with a prefix "obstacle"
@@ -77,7 +77,7 @@ void ModelDrawer::visitSphere(lepp::SphereModel& sphere) {
       name);
 }
 
-void ModelDrawer::visitCapsule(lepp::CapsuleModel& capsule) {
+void ModelDrawerPCL::visitCapsule(lepp::CapsuleModel& capsule) {
   ++total_;
   std::ostringstream ss; ss << "obstacle " << total_;
   std::string const name = ss.str();
@@ -174,7 +174,7 @@ void Visualizer<PointT>::drawShapes(
   viewer.removeAllShapes();
 
   // ...and draw all the new ones.
-  ModelDrawer drawer(viewer);
+  ModelDrawerPCL drawer(viewer);
   size_t const sz = obstacles.size();
   for (size_t i = 0; i < sz; ++i) {
     obstacles[i]->accept(drawer);

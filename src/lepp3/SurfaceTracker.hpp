@@ -17,7 +17,7 @@ namespace lepp {
  * A visitor implementation that will perform a translation of models that it
  * visits by the given translation vector.
  */
-class BlendVisitors : public PlaneVisitor {
+class BlendVisitors : public SurfaceVisitor {
 public:
 	/**
 	 * Create a new `BlendVisitor` that will translate surface by the given
@@ -26,7 +26,7 @@ public:
 	BlendVisitors(Coordinate translation_vec, PointCloudConstPtr cloud, pcl::ModelCoefficients coefficients) :
 			translation_vec_(translation_vec), cloud_(cloud), newCoefficients(coefficients) {
 	}
-	void visitPlane(SurfaceModel &plane) 
+	void visitSurface(SurfaceModel &plane) 
 	{
 		// update center point
 		plane.translateCenterPoint(translation_vec_);

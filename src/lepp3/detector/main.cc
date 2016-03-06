@@ -22,6 +22,7 @@
 
 #include "lepp3/visualization/EchoObserver.hpp"
 #include "lepp3/visualization/Visualizer.hpp"
+#include "lepp3/visualization/ARVisualizer.hpp"
 
 #include "lepp3/filter/TruncateFilter.hpp"
 #include "lepp3/filter/SensorCalibrationFilter.hpp"
@@ -190,15 +191,25 @@ int main(int argc, char* argv[]) {
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~Visualizer~~~~~~~~~~~~~~~~~~~~~~~~
+  
+  // Set up ARVisualizer
+  boost::shared_ptr<ARVisualizer> arvis(new ARVisualizer());
+  // Attach visualizer to last stage of pipeline (Obstacle Tracking).
+  smooth_decorator->attachObserver(arvis);
+
+/*
+  // PCL Visualizer
   // Prepare the result visualizer...
   boost::shared_ptr<Visualizer<PointT> > pclVisualizer(
     new Visualizer<PointT>());
 
   // attach smooth obstacle decerator to visualizer
   smooth_decorator->attachObserver(pclVisualizer);
+*/
   
   // Starts capturing new frames and forwarding them to attached observers.
   source->open();
+
 
   while (true)
     boost::this_thread::sleep(boost::posix_time::milliseconds(8000));

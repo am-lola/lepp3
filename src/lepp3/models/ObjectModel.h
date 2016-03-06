@@ -42,9 +42,9 @@ private:
 
 class ModelVisitor {
 public:
+  virtual ~ModelVisitor() {}
   virtual void visitSphere(SphereModel& sphere) = 0;
   virtual void visitCapsule(CapsuleModel& capsule) = 0;
-  virtual ~ModelVisitor() {}
 };
 
 /**

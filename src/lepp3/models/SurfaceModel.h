@@ -6,17 +6,19 @@
 
 namespace lepp {
 
-// forward declaration needed for PlaneVisitor
+// forward declaration needed for SurfaceVisitor
 class SurfaceModel;
 
-class PlaneVisitor {
+class SurfaceVisitor 
+{
 public:
-	virtual void visitPlane(SurfaceModel &plane) = 0;
-	virtual ~PlaneVisitor() {
-	}
+	virtual void visitSurface(SurfaceModel &plane) = 0;
+	virtual ~SurfaceVisitor() {}
 };
 
-class SurfaceModel {
+
+class SurfaceModel
+{
 public:
 	SurfaceModel(PointCloudConstPtr surfaceCloud, pcl::ModelCoefficients planeCoefficients) : 
 		cloud(surfaceCloud), 
@@ -27,9 +29,9 @@ public:
 		computeCenterpoint();
 	}
 
-	void accept(PlaneVisitor & visitor) 
+	void accept(SurfaceVisitor &visitor) 
 	{
-		visitor.visitPlane(*this);
+		visitor.visitSurface(*this);
 	}
 
 	/**
