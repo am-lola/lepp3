@@ -1,8 +1,7 @@
 #ifndef lepp3_SMOOTH_SURFACE_AGGREGATOR_H__
 #define lepp3_SMOOTH_SURFACE_AGGREGATOR_H__
 
-#include "lepp3/FrameDataObserver.hpp"
-#include "lepp3/FrameDataSubject.hpp"
+#include "lepp3/FrameData.hpp"
 #include "lepp3/Typedefs.hpp"
 #include <pcl/surface/concave_hull.h>
 #include <pcl/surface/convex_hull.h>

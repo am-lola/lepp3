@@ -1,7 +1,7 @@
 #ifndef LEPP3_ARVISUALIZER_H__
 #define LEPP3_ARVISUALIZER_H__
 
-#include "lepp3/FrameDataObserver.hpp"
+#include "lepp3/FrameData.hpp"
 #include "lepp3/Typedefs.hpp"
 #include "lepp3/models/ObjectModel.h"
 #include "lepp3/models/SurfaceModel.h"
@@ -181,17 +181,7 @@ void ARVisualizer::updateFrame(FrameDataPtr frameData)
 {
   // remove all objects drawn with the visualizer on the previous frame.
 	arvis->RemoveAll();
-
-  // add polygon for orientation purposes.
-  double polypts[12] = {
-     1,1,0,
-     -1,1,0,
-     -1,-1,0,
-     1,-1,0
-  };
-  ar::Polygon poly = ar::Polygon(polypts, 4, ar::Color(0.2, 0.7, 0));
-  arvis->Add(poly);
-
+  
   //draw surfaces
   drawSurfaces(frameData->surfaces);
 

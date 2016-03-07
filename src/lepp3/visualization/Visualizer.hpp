@@ -12,7 +12,7 @@
 #include "lepp3/Typedefs.hpp"
 #include "lepp3/models/ObjectModel.h"
 #include "lepp3/ConvexHullDetector.hpp"
-#include "lepp3/FrameDataObserver.hpp"
+#include "lepp3/FrameData.hpp"
 
 namespace lepp {
 

@@ -7,6 +7,7 @@ namespace lepp
 {
 	// forward declaration
 	struct FrameData;
+	struct RGBData;
 	class SurfaceModel;
 	class ObjectModel;
 
@@ -19,6 +20,7 @@ namespace lepp
 	typedef boost::shared_ptr<FrameData> FrameDataPtr;
 	typedef boost::shared_ptr<SurfaceModel> SurfaceModelPtr;
 	typedef boost::shared_ptr<ObjectModel> ObjectModelPtr;
+	typedef boost::shared_ptr<RGBData> RGBDataPtr;
 }
 
 #endif

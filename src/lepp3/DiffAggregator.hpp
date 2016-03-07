@@ -1,7 +1,7 @@
 #ifndef LEPP3_DIFF_AGGREGATOR_H__
 #define LEPP3_DIFF_AGGREGATOR_H__
 
-#include "lepp3/FrameDataObserver.hpp"
+#include "lepp3/FrameData.hpp"
 
 #include <set>
 #include <vector>

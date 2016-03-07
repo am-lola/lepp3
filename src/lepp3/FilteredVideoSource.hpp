@@ -4,7 +4,7 @@
 #include "lepp3/VideoSource.hpp"
 #include "lepp3/VideoObserver.hpp"
 #include "lepp3/filter/PointFilter.hpp"
-#include "lepp3/FrameDataObserver.hpp"
+#include "lepp3/FrameData.hpp"
 
 #include <algorithm>
 #include <numeric>
@@ -168,7 +168,7 @@ template<class PointT>
 void FilteredVideoSource<PointT>::open() {
   // Start the wrapped VideoSource and make sure that this instance is notified
   // when it emits any new clouds.
-  source_->attachObserver(this->shared_from_this());
+  source_->FrameDataSubject::attachObserver(this->shared_from_this());
   source_->open();
 }
 

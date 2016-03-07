@@ -2,8 +2,7 @@
 #define LEPP3_CONVEX_HULL_DETECTOR_H__
 
 #include "lepp3/Typedefs.hpp"
-#include "lepp3/FrameDataObserver.hpp"
-#include "lepp3/FrameDataSubject.hpp"
+#include "lepp3/FrameData.hpp"
 #include "lepp3/GnuplotWriter.hpp"
 #include <pcl/surface/convex_hull.h>
 #include <pcl/filters/project_inliers.h>

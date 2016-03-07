@@ -20,8 +20,7 @@
 #include "lepp3/SmoothObstacleAggregator.hpp"
 #include "lepp3/SplitApproximator.hpp"
 #include "lepp3/MomentOfInertiaApproximator.hpp"
-#include "lepp3/FrameDataSubject.hpp"
-#include "lepp3/FrameDataObserver.hpp"
+#include "lepp3/FrameData.hpp"
 
 #include "lepp3/visualization/EchoObserver.hpp"
 #include "lepp3/visualization/Visualizer.hpp"
@@ -291,7 +290,7 @@ protected:
     // Prepare the base detector...
     base_detector_.reset(new ObstacleDetector<PointT>(approx));
 
-    this->source()->attachObserver(base_detector_);
+    this->source()->FrameDataSubject::attachObserver(base_detector_);
     // Smooth out the basic detector by applying a smooth detector to it
     boost::shared_ptr<SmoothObstacleAggregator> smooth_detector(
         new SmoothObstacleAggregator);
@@ -317,7 +316,7 @@ protected:
     if (visualization) {
       this->visualizer_.reset(new Visualizer<PointT>());
       // Attach the visualizer to both the point cloud source...
-      this->source()->attachObserver(this->visualizer_);
+      this->source()->FrameDataSubject::attachObserver(this->visualizer_);
       // ...as well as to the obstacle detector
       this->detector_->attachObserver(this->visualizer_);
     }
@@ -562,7 +561,7 @@ protected:
         new SplitObjectApproximator<PointT>(simple_approx, splitter));
     // Prepare the base detector...
     base_detector_.reset(new ObstacleDetector<PointT>(approx));
-    this->source()->attachObserver(base_detector_);
+    this->source()->FrameDataSubject::attachObserver(base_detector_);
     // Smooth out the basic detector by applying a smooth detector to it
     boost::shared_ptr<SmoothObstacleAggregator> smooth_detector(
         new SmoothObstacleAggregator);
@@ -588,7 +587,7 @@ protected:
       //this->visualizer_.reset(new ObstacleVisualizer<PointT>());
       this->visualizer_.reset(new Visualizer<PointT>());
       // Attach the visualizer to both the point cloud source...
-      this->source()->attachObserver(this->visualizer_);
+      this->source()->FrameDataSubject::attachObserver(this->visualizer_);
       // ...as well as to the obstacle detector
       this->detector_->attachObserver(this->visualizer_);
     }

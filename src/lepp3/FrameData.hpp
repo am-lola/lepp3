@@ -24,6 +24,56 @@ struct FrameData
 	std::vector<PointCloudPtr>		obstacleClouds;
 };
 
-}
 
+
+class FrameDataObserver 
+{
+public:
+	/**
+	* Virtual deconstructor.
+	*/
+	virtual ~FrameDataObserver() {}
+
+	/**
+	* Update observer with new frame data.
+	*/
+	virtual void updateFrame(FrameDataPtr frameData) = 0;
+};
+
+
+
+class FrameDataSubject 
+{
+public:
+	/**
+	* Virtual deconstructor.
+	*/
+	virtual ~FrameDataSubject() {}
+
+	/**
+	* Attach new observer to observer list.
+	*/
+	void attachObserver(boost::shared_ptr<FrameDataObserver> observer)
+	{
+	  observers.push_back(observer);
+	}
+
+protected:
+	/**
+	* Notify all attached observers.
+	*/
+    void notifyObservers(FrameDataPtr frameData)
+    {
+	  for (size_t i = 0; i < observers.size(); i++) 
+	  {
+	    observers[i]->updateFrame(frameData);
+	  }
+	}
+
+private:
+	// vector holding all attached observers of this subject
+	std::vector<boost::shared_ptr<FrameDataObserver> > observers;
+};
+
+}
 #endif

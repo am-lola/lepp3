@@ -3,7 +3,9 @@
 
 #include "lepp3/Typedefs.hpp"
 #include "lepp3/FrameData.hpp"
+#include "lepp3/RGBData.hpp"
 #include "VideoSource.hpp"
+
 #include <pcl/io/openni_grabber.h>
 
 #include <opencv2/core/core.hpp>
@@ -63,7 +65,8 @@ GeneralGrabberVideoSource<PointT>::~GeneralGrabberVideoSource() {
 
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::cloud_cb_(
-    const PointCloudConstPtr& cloud) {
+    const PointCloudConstPtr& cloud) 
+{
   FrameDataPtr frameData(new FrameData(++frameCount));
   frameData->cloud = cloud;
   this->setNextFrame(frameData);
@@ -71,22 +74,16 @@ void GeneralGrabberVideoSource<PointT>::cloud_cb_(
 
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::image_cb_ (
-    const typename boost::shared_ptr<openni_wrapper::Image>& rgb) {
-  cv::Mat frameRGB = cv::Mat(rgb->getHeight(), rgb->getWidth(), CV_8UC3);
-  rgb->fillRGB(frameRGB.cols,frameRGB.rows,frameRGB.data,frameRGB.step);
-  cv::Mat frameBGR;
-  cv::cvtColor(frameRGB,frameBGR,CV_RGB2BGR);
-
-  cv::Mat frame = frameBGR;
-
-
-  imshow( "RGB CAM", frame );
-  cv::waitKey(30);
+    const typename boost::shared_ptr<openni_wrapper::Image>& rgb) 
+{
+  RGBDataPtr rgbData(new RGBData(frameCount, rgb));
+  this->setNextFrame(rgbData);  
 }
 
 
 template<class PointT>
-void GeneralGrabberVideoSource<PointT>::open() {
+void GeneralGrabberVideoSource<PointT>::open() 
+{
   // Register the callback and start grabbing frames...
   typedef void (callback_t)(const PointCloudConstPtr&);
   boost::function<callback_t> f = boost::bind(

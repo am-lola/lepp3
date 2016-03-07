@@ -147,7 +147,7 @@ int main(int argc, char* argv[]) {
 
   boost::shared_ptr<SurfaceDetector<PointT> > surfaceDetector(
       new SurfaceDetector<PointT>());
-  source->attachObserver(surfaceDetector);
+  source->FrameDataSubject::attachObserver(surfaceDetector);
 
 
   // Surface Tracking

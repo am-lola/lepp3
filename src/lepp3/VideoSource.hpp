@@ -9,7 +9,7 @@
 #include <pcl/visualization/cloud_viewer.h>
 
 #include "lepp3/FrameData.hpp"
-#include "lepp3/FrameDataSubject.hpp"
+#include "lepp3/RGBData.hpp"
 #include "lepp3/Typedefs.hpp"
 #include "VideoObserver.hpp"
 
@@ -28,7 +28,7 @@ namespace lepp {
  * the source.
  */
 template<class PointT>
-class VideoSource : public FrameDataSubject {
+class VideoSource : public FrameDataSubject, public RGBDataSubject {
 public:
   VideoSource() {}
   virtual ~VideoSource();
@@ -46,6 +46,8 @@ protected:
    * observers.
    */
   virtual void setNextFrame(FrameDataPtr frameData);
+
+  virtual void setNextFrame(RGBDataPtr rgbData);
 };
 
 template<class PointT>
@@ -54,11 +56,17 @@ VideoSource<PointT>::~VideoSource() {
 }
 
 template<class PointT>
-void VideoSource<PointT>::setNextFrame(
-    FrameDataPtr frameData) 
+void VideoSource<PointT>::setNextFrame(FrameDataPtr frameData) 
 {
-  notifyObservers(frameData);
+  FrameDataSubject::notifyObservers(frameData);
 }
+
+template<class PointT>
+void VideoSource<PointT>::setNextFrame(RGBDataPtr rgbData) 
+{
+  RGBDataSubject::notifyObservers(rgbData);
+}
+
 
 }  // namespace lepp
 

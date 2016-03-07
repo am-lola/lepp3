@@ -6,8 +6,7 @@
 #include "lepp3/BaseSegmenter.hpp"
 #include "lepp3/EuclideanPlaneSegmenter.hpp"
 #include "lepp3/ObjectApproximator.hpp"
-#include "lepp3/FrameDataObserver.hpp"
-#include "lepp3/FrameDataSubject.hpp"
+#include "lepp3/FrameData.hpp"
 #include "lepp3/models/ObjectModel.h"
 #include "lepp3/ConvexHullDetector.hpp"
 
