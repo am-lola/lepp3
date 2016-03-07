@@ -44,13 +44,6 @@ public:
     double radius = capsule.radius();
     ar::Capsule cap(center1, center2, radius, ar::Color(127,0,127,0.3));
     arvis->Add(cap);
-
-    // add spheres at both ends of capsule
-    ar::Color sphereColor(127,0,127,0.2);
-    ar::Sphere s1(center1, radius, sphereColor);
-    ar::Sphere s2(center2, radius, sphereColor);
-    arvis->Add(s1);
-    arvis->Add(s2);
   }
 
 private:
