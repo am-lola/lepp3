@@ -4,9 +4,11 @@
 #include "lepp3/Typedefs.hpp"
 #include "lepp3/models/Coordinate.h"
 
+
+
+
 namespace lepp {
 
-// forward declaration needed for SurfaceVisitor
 class SurfaceModel;
 
 class SurfaceVisitor 
@@ -15,7 +17,6 @@ public:
 	virtual void visitSurface(SurfaceModel &plane) = 0;
 	virtual ~SurfaceVisitor() {}
 };
-
 
 class SurfaceModel
 {
@@ -55,7 +56,10 @@ public:
 	/**
 	* Translate center point by given coordinate.
 	*/ 
-	void translateCenterPoint(const Coordinate &tranlateVec);
+	void translateCenterPoint(const Coordinate &tranlateVec)
+	{
+		center = center + tranlateVec;
+	}
 
 private:
 	int id_;
@@ -69,21 +73,14 @@ private:
 	/**
 	* Computer the centerpoint of the current surface cloud.
 	*/
-	void computeCenterpoint();
+	void computeCenterpoint()
+	{
+		pcl::getMinMax3D(*cloud, minPoint, maxPoint);
+		center.x = (minPoint.x + maxPoint.x) / 2;
+		center.y = (minPoint.y + maxPoint.y) / 2;
+		center.z = (minPoint.z + maxPoint.z) / 2;
+	}
 };
-
-void SurfaceModel::computeCenterpoint()
-{
-	pcl::getMinMax3D(*cloud, minPoint, maxPoint);
-	center.x = (minPoint.x + maxPoint.x) / 2;
-	center.y = (minPoint.y + maxPoint.y) / 2;
-	center.z = (minPoint.z + maxPoint.z) / 2;
-}
-
-void SurfaceModel::translateCenterPoint(const Coordinate &tranlateVec)
-{
-	center = center + tranlateVec;
-}
 
 }  // namespace lepp
 

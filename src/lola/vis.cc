@@ -20,6 +20,8 @@
 #include "lepp3/SmoothObstacleAggregator.hpp"
 #include "lepp3/SplitApproximator.hpp"
 #include "lepp3/MomentOfInertiaApproximator.hpp"
+#include "lepp3/FrameDataSubject.hpp"
+#include "lepp3/FrameDataObserver.hpp"
 
 #include "lepp3/visualization/EchoObserver.hpp"
 #include "lepp3/visualization/Visualizer.hpp"
@@ -83,7 +85,7 @@ public:
   boost::shared_ptr<RobotService> robot_service() { return robot_service_; }
 
   /// The obstacle detector accessor
-  boost::shared_ptr<ObstacleDetector<PointT> > detector() { return detector_; }
+  boost::shared_ptr<FrameDataSubject> detector() { return detector_; }
 
 protected:
   /**
@@ -198,7 +200,7 @@ protected:
   boost::shared_ptr<RobotService> robot_service_;
   boost::shared_ptr<Robot> robot_;
 
-  boost::shared_ptr<ObstacleDetector<PointT> > detector_;
+  boost::shared_ptr<FrameDataSubject> detector_;
 
   boost::shared_ptr<Visualizer<PointT> > visualizer_;
 };
