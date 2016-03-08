@@ -322,6 +322,15 @@ FileOdoTransformer<PointT>::readNextParams() {
     std::getline(fin_, line);
   } while (line[0] == '#');
 
+  // check if reached the end of file (activate looping)
+  if (fin_.eof()) {
+    // clear the input stream
+    fin_.clear();
+    // head back to the begining of file
+    fin_.seekg(0, std::ios::beg);
+    // set the internal frame counter back to zero
+    this->current_frame_ = 0;
+  }
   // Parse next frame's transformation parameters from the read line...
   LolaKinematicsParams params;
 
