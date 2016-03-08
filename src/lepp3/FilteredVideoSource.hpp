@@ -94,6 +94,11 @@ public:
    */
   virtual void open();
   /**
+   * Implementation of the VideoSource interface.
+   */
+  virtual void setOptions(
+    std::map<std::string, bool> options);
+  /**
    * Implementation of the VideoObserver interface.
    */
   virtual void notifyNewFrame(
@@ -160,6 +165,11 @@ void FilteredVideoSource<PointT>::open() {
   // when it emits any new clouds.
   source_->attachObserver(this->shared_from_this());
   source_->open();
+}
+
+template<class PointT>
+void FilteredVideoSource<PointT>::setOptions(std::map<std::string, bool> options) {
+  source_->setOptions(options);
 }
 
 template<class PointT>
