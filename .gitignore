@@ -1,6 +1,6 @@
 build
 *~
 *.oni
-*.txt.user
+*.txt.user*
 .idea/*
 *~
