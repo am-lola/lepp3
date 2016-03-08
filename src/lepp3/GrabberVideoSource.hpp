@@ -28,8 +28,11 @@ public:
    */
   GeneralGrabberVideoSource(boost::shared_ptr<pcl::Grabber> interface);
   virtual ~GeneralGrabberVideoSource();
-  void setGrabberOptions(bool cloud, bool image);
   virtual void open();
+  /**
+   * Implementation of VideoSource interface
+   */
+  virtual void setOptions(std::map<std::string, bool> options);
 protected:
   /**
    * Member function which is registered as a callback of the Grabber.
@@ -44,6 +47,10 @@ private:
    */
   const boost::shared_ptr<pcl::Grabber> interface_;
   void image_cb_ (const boost::shared_ptr<openni_wrapper::Image>& rgb);
+  /**
+   * Boolean values which determine whether the interface subsribes to receive
+   * the point cloud and/or image.
+   */
   bool receive_cloud_, receive_image_;
 };
 
@@ -63,8 +70,6 @@ GeneralGrabberVideoSource<PointT>::~GeneralGrabberVideoSource() {
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::cloud_cb_(
     const typename pcl::PointCloud<PointT>::ConstPtr& cloud) {
-  std::cout << "entered GeneralGrabberVideoSource::cloud_cb_" << std::endl;
-
   this->setNextFrame(cloud);
 }
 
@@ -75,23 +80,34 @@ void GeneralGrabberVideoSource<PointT>::image_cb_ (
 }
 
 template<class PointT>
-void GeneralGrabberVideoSource<PointT>::setGrabberOptions(
-    bool cloud, bool image) {
-  receive_cloud_ = cloud;
-  receive_image_ = image;
+void GeneralGrabberVideoSource<PointT>::setOptions(
+    std::map<std::string, bool> options) {
+  for (std::pair<std::string, bool> const& key_value : options) {
+    if (key_value.first == "subscribe_cloud") {
+      receive_cloud_ = key_value.second;
+    } else if (key_value.first == "subscribe_image") {
+      receive_image_ = key_value.second;
+    }
+    else throw "Invalid grabber options.";
+  }
 }
+
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::open() {
   // Register the callback and start grabbing frames...
-  typedef void (callback_t)(const typename pcl::PointCloud<PointT>::ConstPtr&);
-  boost::function<callback_t> f = boost::bind(
-      &GeneralGrabberVideoSource::cloud_cb_,
-      this, _1);
-  interface_->registerCallback(f);
+  if (receive_cloud_) {
+    typedef void (callback_t)(const typename pcl::PointCloud<PointT>::ConstPtr&);
+    boost::function<callback_t> f = boost::bind(
+        &GeneralGrabberVideoSource::cloud_cb_,
+        this, _1);
+    interface_->registerCallback(f);
+  }
 
-  // boost::function<void (const boost::shared_ptr<openni_wrapper::Image>&)> g =
-  //      boost::bind (&GeneralGrabberVideoSource::image_cb_, this, _1);
-  // interface_->registerCallback(g);
+  if (receive_image_) {
+    boost::function<void (const boost::shared_ptr<openni_wrapper::Image>&)> g =
+         boost::bind (&GeneralGrabberVideoSource::image_cb_, this, _1);
+    interface_->registerCallback(g);
+  }
 
   interface_->start();
 }
@@ -146,7 +162,11 @@ OfflineVideoSource<PointT>::OfflineVideoSource(
   boost::shared_ptr<pcl::Grabber> pcd_interface,
   boost::shared_ptr<cv::VideoCapture> vc)
     : GeneralGrabberVideoSource<PointT>(pcd_interface),
-      rgb_interface_(vc) {}
+      rgb_interface_(vc) {
+  // Subscription to cloud and image (a.k.a internal receive_cloud_ and
+  // receive_image_) is already taken care of by default in
+  // GeneralGrabberVideoSource's ctor
+}
 
 template<class PointT>
 OfflineVideoSource<PointT>::~OfflineVideoSource() {
@@ -167,8 +187,13 @@ void OfflineVideoSource<PointT>::cloud_cb_(
   if (rgb_interface_ != NULL) {
     cv::Mat image;
     rgb_interface_->read(image);
-    if (image.empty())
-      std::cerr << "received empty image!" << std::endl;
+    // Check if reached the end of image sequence.
+    if(image.empty()) {
+      // seek back to the first frame
+      rgb_interface_->set(CV_CAP_PROP_POS_FRAMES, 0);
+      // Read the frame (because the point cloud is already there).
+      rgb_interface_->read(image);
+    }
     this->setNextFrame(image);
   }
 }
