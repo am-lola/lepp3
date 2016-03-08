@@ -29,8 +29,8 @@ endif()
 
 if(LEPP_BUILD_LOLA)
     file(GLOB detector_src src/lepp3/detector/*.cc src/lola/*.cpp)
-    add_executable(detector ${detector_src})
-    target_link_libraries(detector ${PCL_LIBRARIES} ${OpenCV_LIBS})
+    add_executable(lola ${detector_src})
+    target_link_libraries(lola ${PCL_LIBRARIES} ${OpenCV_LIBS})
 endif()
 
 # Uncomment to make the header files visible in QtCreator
