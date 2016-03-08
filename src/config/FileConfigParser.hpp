@@ -1,8 +1,14 @@
 #ifndef LEPP3_CONFIG_FILE_PARSER_H_
 #define LEPP3_CONFIG_FILE_PARSER_H_
 
+#include <iostream>
+#include <sstream>
+
 #include "Parser.h"
+
 #include "deps/toml.h"
+
+#include "lepp3/util/FileManager.hpp"
 
 /**
  * A `Parser` implementation that reads the configuration from a config file
@@ -74,20 +80,12 @@ protected:
     std::cout << "entered initRawSource" << std::endl;
     if (!toml_tree_.find("VideoSource.type"))
       throw "error: no video source found in the config file.";
-    const std::string type = toml_tree_.find("VideoSource.type")->as<std::string>();
-
-    bool rgb_enabled;
-    if (!toml_tree_.find("RGBViewer.enabled"))
-      rgb_enabled = false;
-    else
-      rgb_enabled = toml_tree_.find("RGBViewer.enabled")->as<bool>();
-
-    std::cout << "video source type : " << type << std::endl;
-    std::cout << "rgb enabled: " << rgb_enabled << std::endl;
+    const std::string type = toml_tree_.find(
+          "VideoSource.type")->as<std::string>();
 
     if (type == "stream") {
       this->raw_source_ = boost::shared_ptr<VideoSource<PointT> >(
-          new LiveStreamSource<PointT>(rgb_enabled));
+          new LiveStreamSource<PointT>());
     } else if (type == "pcd") {
       std::string file_path = toml_tree_.find(
             "VideoSource.file_path")->as<std::string>();
@@ -107,6 +105,27 @@ protected:
             pcl::io::OpenNI2Grabber::OpenNI_Default_Mode));
       this->raw_source_ = boost::shared_ptr<VideoSource<PointT> >(
           new GeneralGrabberVideoSource<PointT>(interface));
+    } else if (type == "am_offline") {
+      std::string dir_path = toml_tree_.find(
+            "VideoSource.dir_path")->as<std::string>();
+      std::cout << "oni file path: " << dir_path << std::endl;
+      FileManager fm(dir_path);
+      // Prepare the pcd file names required by PCDGrabber
+      const std::vector<std::string> file_names = fm.getFileNames(".pcd");
+      boost::shared_ptr<pcl::Grabber> pcd_interface(new pcl::PCDGrabber<PointT>(
+        file_names,
+        30., // frame rate
+        true)); // video loop
+      // Prepare the filename sequence for cv::VideoCapture
+      std::stringstream ss;
+      ss << dir_path << "image_%04d.jpg";
+      std::cout << "image dir: " << ss.str() << std::endl;
+      const boost::shared_ptr<cv::VideoCapture> img_interface(
+          new cv::VideoCapture(ss.str()));
+
+      this->raw_source_ = boost::shared_ptr<OfflineVideoSource<PointT> >(
+          new OfflineVideoSource<PointT>(pcd_interface, img_interface));
+      // TODO simplify the construction of OfflineVideoSource
     } else {
       throw "Invalid VideoSource configuration";
     }
@@ -167,7 +186,7 @@ protected:
       std::cout << "observer type: " << type << std::endl;
       if (type == "ObstacleDetector") {
         initObstacleDetector();
-      } else if (type == "StairDetector") {
+      } else if (type == "SurfaceDetector") {
         // TODO add relevant stuff from branch -> StairDetector/SurfaceDetector
         initSurfaceDetector();
       } else if (type == "Recorder") {
@@ -280,26 +299,46 @@ protected:
     std::cout << "\trec_cloud: " << rec_cloud
               << "\n\trec_rgb: " << rec_rgb
               << "\n\trec_pose: " << rec_pose << std::endl;
+
+    // set the VideoGrabber options (whether to subscribe to cloud/rgb) ...
+    std::map<std::string, bool> video_options;
+    video_options.insert(
+          std::pair<std::string, bool>("subscribe_cloud", rec_cloud));
+    video_options.insert(
+          std::pair<std::string, bool>("subscribe_image", rec_rgb));
+
+    this->source()->setOptions(video_options);
+
+    // ... and set the VideoRecorder options accordingly.
+    this->recorder_->setMode(rec_cloud, rec_rgb, rec_pose);
+
     if (rec_cloud)
       this->source()->attachObserver(this->recorder());
     if (rec_pose)
       this->pose_service_->attachObserver(this->recorder());
 
-    this->recorder_->setMode(rec_cloud, rec_rgb, rec_pose);
   }
 
   void initSurfaceDetector() {
     // TODO add recorder stuff from branch lepp3/surfaces
   }
   void initVisualizer() {
-    bool visualization = toml_tree_.find("Visualization.enabled")->as<bool>();
-    if (visualization) {
+    bool viz_cloud = toml_tree_.find("Visualization.cloud")->as<bool>();
+    if (viz_cloud) {
+      // TODO add relevant stuff for cloud visualization and any necessary
+      // observer
       this->visualizer_.reset(new ObstacleVisualizer<PointT>());
       // Attach the visualizer to both the point cloud source...
       this->source()->attachObserver(this->visualizer_);
       // ...as well as to the obstacle detector
       if (this->detector())
         this->detector_->attachObstacleAggregator(this->visualizer_);
+    }
+
+    bool viz_rgb = toml_tree_.find("Visualization.rgb")->as<bool>();
+    if (viz_rgb) {
+      // TODO add relevant stuff for RGB image visualization and any necessary
+      // observer
     }
   }
 private:
@@ -319,6 +358,11 @@ private:
     } else if (type == "RobotOdoTransformer") {
       return boost::shared_ptr<PointFilter<PointT> >(
           new RobotOdoTransformer<PointT>(this->pose_service_));
+    } else if (type == "FileOdoTransformer") {
+      std::string const file_name = toml_tree_.find(
+            "file_path")->as<std::string>();
+      return boost::shared_ptr<PointFilter<PointT> >(
+          new FileOdoTransformer<PointT>(file_name));
     } else if (type == "TruncateFilter") {
       int decimals = v.find("decimal_points")->as<int>();
       return boost::shared_ptr<PointFilter<PointT> >(

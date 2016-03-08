@@ -1,15 +1,11 @@
 #ifndef LEPP3_CONFIG_PARSER_H_
 #define LEPP3_CONFIG_PARSER_H_
 
-#include <iostream>
 #include <fstream>
-#include <sstream>
 #include <map>
 
 #include <pcl/io/openni2_grabber.h>
 #include <pcl/io/pcd_grabber.h>
-
-#include <boost/algorithm/string.hpp>
 
 #include "lepp3/BaseObstacleDetector.hpp"
 #include "lepp3/GrabberVideoSource.hpp"
@@ -34,6 +30,8 @@
 #include "lola/RobotService.h"
 
 #include "deps/easylogging++.h"
+
+using namespace lepp;
 
 /**
  * An ABC, based on legacy class `Context` that represents the context of the
