@@ -8,7 +8,7 @@
 # `oni` and `pcd` types require an additional parameter: file_path
 # `am_offline` type requires an additional parameters: dir_path
 type = "am_offline"
-# dir_path = "rec_2016-3-8_135420/"
+dir_path = "rec_2016-3-8_175619/"
 
 [FilteredVideoSource]
 # type = simple|prob|pt1
@@ -26,13 +26,13 @@ type = "simple"
     decimal_points = 2
 
   # Uncomment in the presence of any incoming POSE information
-  [[FilteredVideoSource.filters]]
+  # [[FilteredVideoSource.filters]]
     # `type` = OdoTransformer|FileOdoTransformer
     # The OdoTransformer knows to reference the PoseService found in the IOC
     # container automatically.
     # The FileOdoTransformer needs an additional parameter: file_path
-    type = FileOdoTransformer
-    file_path = "2016-3-8_13517/params.txt"
+    # type = FileOdoTransformer
+    # file_path = "rec_2016-3-8_175619/params.txt"
 
 # Uncomment in presense of **ONLINE** pose service, to record pose.
 # IP address and port number may differ.
