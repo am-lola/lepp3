@@ -2,6 +2,8 @@
 #define BASE_VIDEO_SOURCE_H_
 
 #include <vector>
+#include <map>
+#include <initializer_list>
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
@@ -58,6 +60,12 @@ public:
    * frame and converted it into a point cloud.
    */
   virtual void attachObserver(boost::shared_ptr<ObserverType> observer);
+  /**
+   * Convenience method for subclasses to set any option on the members or
+   * methods of the class.
+   */
+  virtual void setOptions(
+    std::map<std::string, bool> options) = 0;
 
 protected:
   /**
