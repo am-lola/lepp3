@@ -3,10 +3,11 @@
 # The config file is in the [toml](https://github.com/toml-lang/toml) format,
 
 [VideoSource]
-# Available types: stream, oni, pcd
-#   oni and pcd types require an additional parameter: file_path
+# Common options:
+#   - `type`: stream, oni, pcd, am_offline
+# `oni` and `pcd` types require an additional parameter: file_path
+# `am_offline` type requires an additional parameters: dir_path
 type = "stream"
-# file_path = "../sample.oni"
 
 [FilteredVideoSource]
 # type = simple|prob|pt1
@@ -23,6 +24,10 @@ type = "simple"
     type = "TruncateFilter"
     decimal_points = 2
 
+# Available `observer` types: ObstacleDetector|SurfaceDetector|Recorder
+#   ObstacleDetector requires *SplitStrategy*
+#   TODO: complete description for *SurfaceDetector* requirements
+#   Recorder requires RecordingOptions
 [[observers]]
 type = "ObstacleDetector"
 
@@ -54,12 +59,22 @@ split_axis = "middle"
     # Distance is in [cm]
     distance_threshold = 150
 
+# Uncomment if any information needs to be sent to the robot.
+# [RobotService]
+# ip = 192.168.0.7
+# port = 61448
+# # Delay is given in milliseconds. 0 is a valid value.
+# delay = 10
+
+# Uncomment in the presense of the robot
+# [Robot]
+# # The size of the "bubble" in which no modifications or deletions of objects
+# # are sent to the robot. **In meters**
+# bubble_size = 1.2
+
 [Visualization]
 # Whether the results are visualized **locally**
-# enabled = true|false
-enabled = true
-
-[RGBViewer]
-# Whether to show the camera's RGB stream
-# enabled = true|false
-enabled = true
+# `cloud` = true|false ---- visualize the point cloud
+# `rgb` = true|false   ---- visualize the rgb image
+cloud = true
+rgb = true
