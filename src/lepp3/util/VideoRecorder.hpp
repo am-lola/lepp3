@@ -30,7 +30,8 @@ std::string get_dir_name() {
   std::stringstream ss;
   time_t t = time(0);   // get time now
   struct tm * now = localtime( & t );
-  ss << (now->tm_year + 1900) << '-'
+  ss << "rec_"
+     << (now->tm_year + 1900) << '-'
      << (now->tm_mon + 1) << '-'
      <<  now->tm_mday << '_'
      << now->tm_hour << now->tm_min << now->tm_sec;
@@ -172,7 +173,6 @@ VideoRecorder<PointT>::VideoRecorder()
       tf_fout.close();
     }
   }
-  std::cout << "exit ctor" << std::endl;
 }
 
 template<class PointT>
@@ -258,6 +258,8 @@ void VideoRecorder<PointT>::NotifyNewPose(
     if (cloud_lk_ && image_lk_) {
       params_idx_++;
       params_ = params;
+      // Modify the frame number to the internal counter
+      params_.frame_num = params_idx_;
       saveParams();
       // Release the locks for next frames.
       cloud_lk_ = false;
@@ -309,7 +311,6 @@ template<class PointT>
 void VideoRecorder<PointT>::saveParams() {
   Timer t;
   t.start();
-  // open the file
   std::ofstream tf_fout_;
   // open the file and add the current params to the end of it
   tf_fout_.open(params_file_name_.c_str(), std::ofstream::app);
@@ -327,7 +328,7 @@ void VideoRecorder<PointT>::saveParams() {
   ss << params_.frame_num << "\t";
   ss << params_.stamp;
   tf_fout_ << ss.str() << std::endl;
-  // and close the file...
+  // ... and close the file.
   tf_fout_.close();
   t.stop();
   std::cout << "SAVING PARAMS TOOK: " << t.duration() << " ms" << std::endl;
