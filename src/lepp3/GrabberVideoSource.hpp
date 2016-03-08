@@ -26,50 +26,38 @@ public:
    * Instantiate a video source which wraps the given Grabber instance.
    * The VideoSource instance takes ownership of the given Grabber instance.
    */
-  GeneralGrabberVideoSource(
-    boost::shared_ptr<pcl::Grabber> interface,
-    bool rgb_online = false);
-  GeneralGrabberVideoSource(
-    boost::shared_ptr<pcl::Grabber> interface,
-    boost::shared_ptr<cv::VideoCapture> vc);
+  GeneralGrabberVideoSource(boost::shared_ptr<pcl::Grabber> interface);
   virtual ~GeneralGrabberVideoSource();
+  void setGrabberOptions(bool cloud, bool image);
   virtual void open();
-  bool online_rgb_;
-private:
-  /**
-   * A reference to the Grabber instance that the VideoSource wraps.
-   */
-  const boost::shared_ptr<pcl::Grabber> interface_;
-  const boost::shared_ptr<cv::VideoCapture> offline_vc_;
+protected:
   /**
    * Member function which is registered as a callback of the Grabber.
    * Acts as the bond between the VideoSource and the Grabber, allowing the
    * adaptation of the interface.
    */
-  void cloud_cb_(const typename pcl::PointCloud<PointT>::ConstPtr& cloud);
+  virtual void cloud_cb_(
+    const typename pcl::PointCloud<PointT>::ConstPtr& cloud);
+private:
+  /**
+   * A reference to the Grabber instance that the VideoSource wraps.
+   */
+  const boost::shared_ptr<pcl::Grabber> interface_;
   void image_cb_ (const boost::shared_ptr<openni_wrapper::Image>& rgb);
+  bool receive_cloud_, receive_image_;
 };
 
 template<class PointT>
 GeneralGrabberVideoSource<PointT>::GeneralGrabberVideoSource(
-  boost::shared_ptr<pcl::Grabber> interface,
-  bool rgb_online)
+  boost::shared_ptr<pcl::Grabber> interface)
     : interface_(interface),
-      online_rgb_(rgb_online) {}
-
-template<class PointT>
-GeneralGrabberVideoSource<PointT>::GeneralGrabberVideoSource(
-  boost::shared_ptr<pcl::Grabber> interface,
-  boost::shared_ptr<cv::VideoCapture> vc)
-    : interface_(interface),
-      offline_vc_(vc) {}
+      receive_cloud_(true),
+      receive_image_(false) {}
 
 template<class PointT>
 GeneralGrabberVideoSource<PointT>::~GeneralGrabberVideoSource() {
   // RAII: make sure to stop any running Grabber
   interface_->stop();
-  if (offline_vc_->isOpened())
-    offline_vc_->release();
 }
 
 template<class PointT>
@@ -78,15 +66,6 @@ void GeneralGrabberVideoSource<PointT>::cloud_cb_(
   std::cout << "entered GeneralGrabberVideoSource::cloud_cb_" << std::endl;
 
   this->setNextFrame(cloud);
-
-  // If in offline mode, read the image sequence
-  if (offline_vc_ != NULL) {
-    cv::Mat image;
-    offline_vc_->read(image);
-    if (image.empty())
-      std::cerr << "received empty image!" << std::endl;
-    this->setNextFrame(image);
-  }
 }
 
 template<class PointT>
@@ -95,7 +74,12 @@ void GeneralGrabberVideoSource<PointT>::image_cb_ (
   this->setNextFrame(rgb);
 }
 
-
+template<class PointT>
+void GeneralGrabberVideoSource<PointT>::setGrabberOptions(
+    bool cloud, bool image) {
+  receive_cloud_ = cloud;
+  receive_image_ = image;
+}
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::open() {
   // Register the callback and start grabbing frames...
@@ -105,9 +89,9 @@ void GeneralGrabberVideoSource<PointT>::open() {
       this, _1);
   interface_->registerCallback(f);
 
-  boost::function<void (const boost::shared_ptr<openni_wrapper::Image>&)> g =
-       boost::bind (&GeneralGrabberVideoSource::image_cb_, this, _1);
-  interface_->registerCallback(g);
+  // boost::function<void (const boost::shared_ptr<openni_wrapper::Image>&)> g =
+  //      boost::bind (&GeneralGrabberVideoSource::image_cb_, this, _1);
+  // interface_->registerCallback(g);
 
   interface_->start();
 }
@@ -126,14 +110,68 @@ public:
             new pcl::OpenNIGrabber("", pcl::OpenNIGrabber::OpenNI_QVGA_30Hz))) {
     // Empty... All work performed in the initializer list.
   }
-  LiveStreamSource(bool rgb_enabled)
-      : GeneralGrabberVideoSource<PointT>(boost::shared_ptr<pcl::Grabber>(
-            new pcl::OpenNIGrabber("", pcl::OpenNIGrabber::OpenNI_QVGA_30Hz)),
-            rgb_enabled) {
-    // Empty... All work performed in the initializer list.
-  }
+};
+
+/**
+ * A convenience class for an offline stream captured from a sequence of files.
+ *
+ * This class is in direct connection with lepp::VideoRecorder, where the input
+ * is recorded in a customzied way (seuqnce of point clouds, RGB Images and a
+ * file containing all kinematics.)
+ */
+template<class PointT>
+class OfflineVideoSource : public GeneralGrabberVideoSource<PointT> {
+public:
+  OfflineVideoSource(
+    boost::shared_ptr<pcl::Grabber> pcd_interface,
+    boost::shared_ptr<cv::VideoCapture> vc);
+  virtual ~OfflineVideoSource();
+protected:
+  /**
+   * Implementation of GeneralGrabberVideoSource::cloud_cb_ with the focus on
+   * the RGB image sequence as well as the incoming point cloud.
+   */
+  void cloud_cb_(const typename pcl::PointCloud<PointT>::ConstPtr& cloud);
+private:
+  /**
+   * cv::VideoCapture instance that is responsible for reading the rgb image
+   * sequence.
+   */
+  const boost::shared_ptr<cv::VideoCapture> rgb_interface_;
 
 };
+
+template<class PointT>
+OfflineVideoSource<PointT>::OfflineVideoSource(
+  boost::shared_ptr<pcl::Grabber> pcd_interface,
+  boost::shared_ptr<cv::VideoCapture> vc)
+    : GeneralGrabberVideoSource<PointT>(pcd_interface),
+      rgb_interface_(vc) {}
+
+template<class PointT>
+OfflineVideoSource<PointT>::~OfflineVideoSource() {
+  // RAII: make sure to stop any running Grabber
+  // destructors are called automatically in the reverse order of construction
+  if (rgb_interface_->isOpened())
+    rgb_interface_->release();
+}
+
+template<class PointT>
+void OfflineVideoSource<PointT>::cloud_cb_(
+    const typename pcl::PointCloud<PointT>::ConstPtr& cloud) {
+  std::cout << "entered OfflineVideoSource::cloud_cb_" << std::endl;
+
+  this->setNextFrame(cloud);
+
+  // Read the next RGB image in the sequence along with current point cloud.
+  if (rgb_interface_ != NULL) {
+    cv::Mat image;
+    rgb_interface_->read(image);
+    if (image.empty())
+      std::cerr << "received empty image!" << std::endl;
+    this->setNextFrame(image);
+  }
+}
 
 }  // namespace lepp
 
