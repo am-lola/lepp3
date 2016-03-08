@@ -125,7 +125,6 @@ protected:
 
       this->raw_source_ = boost::shared_ptr<OfflineVideoSource<PointT> >(
           new OfflineVideoSource<PointT>(pcd_interface, img_interface));
-      // TODO simplify the construction of OfflineVideoSource
     } else {
       throw "Invalid VideoSource configuration";
     }
@@ -320,19 +319,13 @@ protected:
   }
 
   void initSurfaceDetector() {
-    // TODO add recorder stuff from branch lepp3/surfaces
+    // TODO add stuff from branch lepp3/surfaces
   }
   void initVisualizer() {
     bool viz_cloud = toml_tree_.find("Visualization.cloud")->as<bool>();
     if (viz_cloud) {
       // TODO add relevant stuff for cloud visualization and any necessary
       // observer
-      this->visualizer_.reset(new ObstacleVisualizer<PointT>());
-      // Attach the visualizer to both the point cloud source...
-      this->source()->attachObserver(this->visualizer_);
-      // ...as well as to the obstacle detector
-      if (this->detector())
-        this->detector_->attachObstacleAggregator(this->visualizer_);
     }
 
     bool viz_rgb = toml_tree_.find("Visualization.rgb")->as<bool>();
