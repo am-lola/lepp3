@@ -15,7 +15,7 @@ using namespace lepp;
 /**
  * A basic implementation of an obstacle detector that detects obstacles from a
  * `VideoSource`. In order to do so, it needs to be attached to a `VideoSource`
- * instance (and therefore it implements the `VideoObserver` interface).
+ * instance (and therefore it implements the `FrameDataObserver` interface).
  *
  * Obstacles in each frame that the `VideoSource` gives to the detector are
  * found by first performing segmentation of the given point cloud (using the
@@ -40,7 +40,7 @@ private:
   PointCloudPtr cloud_;
   boost::shared_ptr<BaseSegmenter<PointT> > segmenter_;
   boost::shared_ptr<ObjectApproximator<PointT> > approximator_;
-  static const double MAX_SQUARED_DISTANCE = 0.0075;
+  static constexpr double MAX_SQUARED_DISTANCE = 0.0075;
 
 
   /**

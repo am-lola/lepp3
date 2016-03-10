@@ -2,7 +2,6 @@
 #define LEPP3_FILTERED_VIDEO_SOURCE_H__
 
 #include "lepp3/VideoSource.hpp"
-#include "lepp3/VideoObserver.hpp"
 #include "lepp3/filter/PointFilter.hpp"
 #include "lepp3/FrameData.hpp"
 
@@ -11,6 +10,7 @@
 
 #include <pcl/common/transforms.h>
 #include <pcl/filters/conditional_removal.h>
+#include <opencv2/core/core.hpp>
 
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/unordered_set.hpp>
@@ -96,7 +96,12 @@ public:
    */
   virtual void open();
   /**
-   * Implementation of the VideoObserver interface.
+   * Implementation of the VideoSource interface.
+   */
+  virtual void setOptions(
+    std::map<std::string, bool> options);
+  /**
+   * Implementation of the FrameDataObserver interface.
    */
   virtual void updateFrame(FrameDataPtr frameData);
 
@@ -240,11 +245,15 @@ void FilteredVideoSource<PointT>::removeBackground(PointCloudPtr &cloudPtr)
   extract.filter(*cloudPtr);
 }
 
-
+template<class PointT>
+void FilteredVideoSource<PointT>::setOptions(std::map<std::string, bool> options) {
+  source_->setOptions(options);
+}
 
 template<class PointT>
 void FilteredVideoSource<PointT>::updateFrame(
-    FrameDataPtr frameData) {
+    FrameDataPtr frameData) 
+{
   Timer t;
   t.start();
 
@@ -306,6 +315,7 @@ void FilteredVideoSource<PointT>::updateFrame(
   this->setNextFrame(frameData);
   //cout << filtered.size() << "   " << cloud_filtered->size() << endl;
 }
+
 
 /**
  * An implementation of a `FilteredVideoSource` that only applies the

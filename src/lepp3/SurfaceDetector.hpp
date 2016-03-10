@@ -16,7 +16,7 @@ class SurfaceDetector : public FrameDataObserver, public FrameDataSubject
     virtual ~SurfaceDetector() {}
 
     /**
-     * VideoObserver interface method implementation.
+     * FrameDataObserver interface method implementation.
      */
     virtual void updateFrame(FrameDataPtr frameData);
 

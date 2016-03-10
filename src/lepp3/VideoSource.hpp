@@ -11,7 +11,6 @@
 #include "lepp3/FrameData.hpp"
 #include "lepp3/RGBData.hpp"
 #include "lepp3/Typedefs.hpp"
-#include "VideoObserver.hpp"
 
 namespace lepp {
 
@@ -20,7 +19,7 @@ namespace lepp {
  * cloud video information.
  *
  * The VideoSource is an "Observable" object to which interested observers
- * (implementing the VideoObserver interface) can attach.
+ * (implementing the FrameDataObserver interface) can attach.
  *
  * This class provides the common functionality for all VideoSource
  * implementations. Most importantly, it implements all logic regarding tracking
@@ -37,6 +36,13 @@ public:
    * Starts the video source.
    */
   virtual void open() = 0;
+
+  /**
+   * Convenience method for subclasses to set any option on the members or
+   * methods of the class.
+   */
+  virtual void setOptions(
+    std::map<std::string, bool> options) = 0;
 
 protected:
   /**

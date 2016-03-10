@@ -135,8 +135,8 @@ public:
 	static void projectPointOntoLineSegment(const PointT &seg1, const PointT &seg2, const PointT &p, PointT &projVec);
 
 private:
-	static const int NUM_HULL_POINTS = 8;
-	static const double MERGE_UPDATE_PERCENTAGE = 0.5;
+	static constexpr int NUM_HULL_POINTS = 8;
+	static constexpr double MERGE_UPDATE_PERCENTAGE = 0.5;
 
 	// reduce the number of points in the given hull to 'numPoints'
 	void reduceConvHullPoints(PointCloudPtr &hull, int numPoints);

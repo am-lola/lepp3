@@ -123,8 +123,6 @@ void ModelDrawerPCL::visitCapsule(lepp::CapsuleModel& capsule) {
 /**
  * Visualizes the obstacles detected by a particular obstacle detector by
  * overlaying them onto a point cloud feed coming from a video source.
- *
- * Implements the VideoObserver and ObstacleAggregator interfaces.
  */
 template<class PointT>
 class Visualizer : public FrameDataObserver {

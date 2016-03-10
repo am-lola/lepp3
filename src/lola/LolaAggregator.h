@@ -14,7 +14,7 @@
 using namespace lepp;
 
 /**
- * A LOLA-specific implementation of an `ObstacleAggregator`.
+ * A LOLA-specific implementation of an `FrameDataObserver`.
  *
  * It serializes the received obstacles into a format where each obstacle is
  * represented by 11 integers. Each integer is serialized with machine-specific
@@ -52,7 +52,7 @@ private:
 };
 
 /**
- * An `ObstacleAggregator` implementation that sends notifications to the robot
+ * An `FrameDataObserver` implementation that sends notifications to the robot
  * after every certain amount of frames, informing it of changes in the known
  * obstacles since the previous message.
  *

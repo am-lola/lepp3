@@ -13,7 +13,7 @@
 namespace lepp {
 
 /**
- * An implementation of an `ObstacleAggregator` that finds diffs between
+ * An implementation of an `FrameDataObserver` that finds diffs between
  * obstacles detected in subsequent snapshots.
  *
  * A snapshot is taken after a certain number of frames, provided in the

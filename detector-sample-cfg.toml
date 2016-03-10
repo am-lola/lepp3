@@ -1,0 +1,80 @@
+# This is a sample of a config file for the vision subsystem (when running
+# it with the `--cfg` flag).
+# The config file is in the [toml](https://github.com/toml-lang/toml) format,
+
+[VideoSource]
+# Common options:
+#   - `type`: stream, oni, pcd, am_offline
+# `oni` and `pcd` types require an additional parameter: file_path
+# `am_offline` type requires an additional parameters: dir_path
+type = "stream"
+
+[FilteredVideoSource]
+# type = simple|prob|pt1
+type = "simple"
+
+  # The following list of filters is optional
+  # The order of the filters themselves IS NOT SIGNIFICANT.
+  [[FilteredVideoSource.filters]]
+    type = "SensorCalibrationFilter"
+    a = 1.0117
+    b = -0.0100851
+
+  [[FilteredVideoSource.filters]]
+    type = "TruncateFilter"
+    decimal_points = 2
+
+# Available `observer` types: ObstacleDetector|SurfaceDetector|Recorder
+#   ObstacleDetector requires *SplitStrategy*
+#   TODO: complete description for *SurfaceDetector* requirements
+#   Recorder requires RecordingOptions
+[[observers]]
+type = "ObstacleDetector"
+
+[SplitStrategy]
+# split_axis = largest|middle|smallest
+split_axis = "middle"
+# A number of split conditions that need to be satisfied in order for an object
+# split to occur.
+# Care should be taken to define the conditions in a way that guarantees that
+# splitting eventually stops for each object (possibly the easiest way is to
+# always include the DepthLimit condition with a fairly high depth limit).
+# If no split conditions are provided, the objects will never be split.
+  [[SplitStrategy.conditions]]
+    type = "DepthLimit"
+    depth = 2
+  [[SplitStrategy.conditions]]
+    type = "SizeLimit"
+    # size is a volume in [cm^3]
+    size = 3000.
+  [[SplitStrategy.conditions]]
+    type = "ShapeCondition"
+    # The threshold values to consider something "very much" a sphere
+    sphere1 = 0.8
+    sphere2 = 0.1
+    # The threshold value to consider something "very much" a cylinder
+    cylinder = 0.25
+  [[SplitStrategy.conditions]]
+    type = "DistanceThreshold"
+    # Distance is in [cm]
+    distance_threshold = 150
+
+# Uncomment if any information needs to be sent to the robot.
+# [RobotService]
+# ip = 192.168.0.7
+# port = 61448
+# # Delay is given in milliseconds. 0 is a valid value.
+# delay = 10
+
+# Uncomment in the presense of the robot
+# [Robot]
+# # The size of the "bubble" in which no modifications or deletions of objects
+# # are sent to the robot. **In meters**
+# bubble_size = 1.2
+
+[Visualization]
+# Whether the results are visualized **locally**
+# `cloud` = true|false ---- visualize the point cloud
+# `rgb` = true|false   ---- visualize the rgb image
+cloud = true
+rgb = true
