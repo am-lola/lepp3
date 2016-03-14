@@ -5,6 +5,7 @@
 #include <sstream>
 
 #include "Parser.h"
+#include "lepp3/SurfaceTracker.hpp"
 
 #include "deps/toml.h"
 
@@ -319,8 +320,17 @@ protected:
   }
 
   void initSurfaceDetector() {
-    // TODO add stuff from branch lepp3/surfaces
+    std::cout << "entered initSurfaceDetector" << std::endl;
+    surface_detector_.reset(new SurfaceDetector<PointT>());
+    this->source()->FrameDataSubject::attachObserver(surface_detector_);
+    surface_tracker_.reset(new SurfaceTracker<PointT>());
+    this->surface_detector_->FrameDataSubject::attachObserver(surface_tracker_);
+    convex_hull_detector_.reset(new ConvexHullDetector());
+    this->surface_tracker_->FrameDataSubject::attachObserver(convex_hull_detector_);
+    ar_visualizer_.reset(new ARVisualizer());
+    convex_hull_detector_->FrameDataSubject::attachObserver(ar_visualizer_);
   }
+
   void initVisualizer() {
     bool viz_cloud = toml_tree_.find("Visualization.cloud")->as<bool>();
     if (viz_cloud) {
@@ -412,6 +422,10 @@ private:
    * never exposed to any outside clients.
    */
   boost::shared_ptr<ObstacleDetector<PointT> > base_obstacle_detector_;
+  boost::shared_ptr<SurfaceDetector<PointT> > surface_detector_;
+  boost::shared_ptr<SurfaceTracker<PointT> > surface_tracker_;
+  boost::shared_ptr<ConvexHullDetector> convex_hull_detector_;
+  boost::shared_ptr<ARVisualizer> ar_visualizer_;
 };
 
 #endif
