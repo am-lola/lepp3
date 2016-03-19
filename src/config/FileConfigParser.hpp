@@ -247,6 +247,9 @@ protected:
   }
 
   void initObstacleDetector() {
+
+    initSurfaceDetector();
+
     std::cout << "entered initObstacleDetector" << std::endl;
     // Prepare the approximator that the detector is to use.
     // First, the simple approximator...
@@ -259,10 +262,10 @@ protected:
     // to the detector.
     boost::shared_ptr<ObjectApproximator<PointT> > approx(
         new SplitObjectApproximator<PointT>(simple_approx, splitter));
-    std::cout << "attaching obstacle_detector to source" << std::endl;
-    // Prepare the base detector...
+    std::cout << "attaching obstacle_detector to surface detection pipeline" << std::endl;
+
     base_obstacle_detector_.reset(new ObstacleDetector<PointT>(approx));
-    this->source()->FrameDataSubject::attachObserver(base_obstacle_detector_);
+    convex_hull_detector_->FrameDataSubject::attachObserver(base_obstacle_detector_);
     // Smooth out the basic detector by applying a smooth detector to it
     boost::shared_ptr<SmoothObstacleAggregator> smooth_detector(
         new SmoothObstacleAggregator);
@@ -270,6 +273,9 @@ protected:
     // Now the detector that is exposed via the context is a smoothed-out
     // base detector.
     this->detector_ = smooth_detector;
+
+    // for easier debugging, visulizer is added to obstacle detector here
+    this->detector_->FrameDataSubject::attachObserver(ar_visualizer_);
     std::cout << "initObstacleDetector DONE!" << std::endl;
   }
 
@@ -327,6 +333,8 @@ protected:
     this->surface_detector_->FrameDataSubject::attachObserver(surface_tracker_);
     convex_hull_detector_.reset(new ConvexHullDetector());
     this->surface_tracker_->FrameDataSubject::attachObserver(convex_hull_detector_);
+    
+    // for easier debugging, visulizer is added to surface detector here
     ar_visualizer_.reset(new ARVisualizer());
     convex_hull_detector_->FrameDataSubject::attachObserver(ar_visualizer_);
   }

@@ -42,7 +42,7 @@ split_axis = "middle"
 # If no split conditions are provided, the objects will never be split.
   [[SplitStrategy.conditions]]
     type = "DepthLimit"
-    depth = 2
+    depth = 1
   [[SplitStrategy.conditions]]
     type = "SizeLimit"
     # size is a volume in [cm^3]
@@ -54,10 +54,10 @@ split_axis = "middle"
     sphere2 = 0.1
     # The threshold value to consider something "very much" a cylinder
     cylinder = 0.25
-  [[SplitStrategy.conditions]]
-    type = "DistanceThreshold"
-    # Distance is in [cm]
-    distance_threshold = 150
+  #[[SplitStrategy.conditions]]
+  #  type = "DistanceThreshold"
+  #  # Distance is in [cm]
+  #  distance_threshold = 150
 
 # Uncomment if any information needs to be sent to the robot.
 # [RobotService]
