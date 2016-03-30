@@ -187,7 +187,6 @@ protected:
       if (type == "ObstacleDetector") {
         initObstacleDetector();
       } else if (type == "SurfaceDetector") {
-        // TODO add relevant stuff from branch -> StairDetector/SurfaceDetector
         initSurfaceDetector();
       } else if (type == "Recorder") {
         initRecorder();
@@ -247,7 +246,8 @@ protected:
   }
 
   void initObstacleDetector() {
-
+    // surface detector must be executed before obstacle detector due to 
+    // sequential pipeline layout
     initSurfaceDetector();
 
     std::cout << "entered initObstacleDetector" << std::endl;
@@ -273,23 +273,16 @@ protected:
     // Now the detector that is exposed via the context is a smoothed-out
     // base detector.
     this->detector_ = smooth_detector;
-
-    // for easier debugging, visulizer is added to obstacle detector here
-    this->detector_->FrameDataSubject::attachObserver(ar_visualizer_);
-    std::cout << "initObstacleDetector DONE!" << std::endl;
   }
 
-  void addAggregators() {
-    std::cout << "entered addAggregators" << std::endl;
-    const toml::Value* available = toml_tree_.find("aggregators");
-    if (!available)
-      return;
-    const toml::Array& agg_array = available->as<toml::Array>();
-    std::cout << "# aggregators : ";
-    std::cout << agg_array.size() << std::endl;
-    for (const toml::Value& v : agg_array) {
-      this->detector_->attachObserver(getAggregator(v));
-    }
+  void initSurfaceDetector() {
+    std::cout << "entered initSurfaceDetector" << std::endl;
+    surface_detector_.reset(new SurfaceDetector<PointT>());
+    this->source()->FrameDataSubject::attachObserver(surface_detector_);
+    surface_tracker_.reset(new SurfaceTracker<PointT>());
+    this->surface_detector_->FrameDataSubject::attachObserver(surface_tracker_);
+    convex_hull_detector_.reset(new ConvexHullDetector());
+    this->surface_tracker_->FrameDataSubject::attachObserver(convex_hull_detector_);
   }
 
   void initRecorder() {
@@ -325,21 +318,39 @@ protected:
 
   }
 
-  void initSurfaceDetector() {
-    std::cout << "entered initSurfaceDetector" << std::endl;
-    surface_detector_.reset(new SurfaceDetector<PointT>());
-    this->source()->FrameDataSubject::attachObserver(surface_detector_);
-    surface_tracker_.reset(new SurfaceTracker<PointT>());
-    this->surface_detector_->FrameDataSubject::attachObserver(surface_tracker_);
-    convex_hull_detector_.reset(new ConvexHullDetector());
-    this->surface_tracker_->FrameDataSubject::attachObserver(convex_hull_detector_);
-    
-    // for easier debugging, visulizer is added to surface detector here
-    ar_visualizer_.reset(new ARVisualizer());
-    convex_hull_detector_->FrameDataSubject::attachObserver(ar_visualizer_);
+  void addAggregators() {
+    std::cout << "entered addAggregators" << std::endl;
+    const toml::Value* available = toml_tree_.find("aggregators");
+    if (!available)
+      return;
+    const toml::Array& agg_array = available->as<toml::Array>();
+    std::cout << "# aggregators : ";
+    std::cout << agg_array.size() << std::endl;
+    for (const toml::Value& v : agg_array) {
+      this->detector_->attachObserver(getAggregator(v));
+    }
   }
 
   void initVisualizer() {
+    const toml::Value* available = toml_tree_.find("observers");
+    if (available)
+    {
+      const toml::Array& obs_arr = available->as<toml::Array>();
+      for (const toml::Value& v : obs_arr) {
+        std::string const type = v.find("type")->as<std::string>();
+        if (type == "ObstacleDetector") 
+        {
+          ar_visualizer_.reset(new ARVisualizer());
+          this->detector_->FrameDataSubject::attachObserver(ar_visualizer_);
+        } 
+        else if (type == "SurfaceDetector") 
+        {
+          ar_visualizer_.reset(new ARVisualizer());
+          convex_hull_detector_->FrameDataSubject::attachObserver(ar_visualizer_);
+        } 
+      }
+    }
+
     bool viz_cloud = toml_tree_.find("Visualization.cloud")->as<bool>();
     if (viz_cloud) {
       // TODO add relevant stuff for cloud visualization and any necessary

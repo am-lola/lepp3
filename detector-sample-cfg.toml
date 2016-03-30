@@ -26,7 +26,8 @@ type = "simple"
 
 # Available `observer` types: ObstacleDetector|SurfaceDetector|Recorder
 #   ObstacleDetector requires *SplitStrategy*
-#   TODO: complete description for *SurfaceDetector* requirements
+#   ObstacleDetector implies having a SurfaceDetector as well, so do not 
+#     specify an ObstacleDetector and a SurfaceDetector at the same time.
 #   Recorder requires RecordingOptions
 [[observers]]
 type = "ObstacleDetector"
