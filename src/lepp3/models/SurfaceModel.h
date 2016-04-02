@@ -5,8 +5,6 @@
 #include "lepp3/models/Coordinate.h"
 
 
-
-
 namespace lepp {
 
 class SurfaceModel;
@@ -67,18 +65,17 @@ private:
 	pcl::ModelCoefficients planeCoefficients;
 	PointCloudConstPtr hull;
 	Coordinate center;
-	PointT minPoint;
-	PointT maxPoint;
-
+	
 	/**
 	* Computer the centerpoint of the current surface cloud.
 	*/
 	void computeCenterpoint()
 	{
-		pcl::getMinMax3D(*cloud, minPoint, maxPoint);
-		center.x = (minPoint.x + maxPoint.x) / 2;
-		center.y = (minPoint.y + maxPoint.y) / 2;
-		center.z = (minPoint.z + maxPoint.z) / 2;
+		Eigen::Vector4f centroid;
+    	pcl::compute3DCentroid (*cloud, centroid);
+    	center.x = centroid[0];
+    	center.y = centroid[1];
+    	center.z = centroid[2];
 	}
 };
 

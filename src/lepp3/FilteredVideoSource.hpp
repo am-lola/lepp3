@@ -158,12 +158,6 @@ private:
   void transformToWorldCoordinates(PointCloudT &cloud);
 
   /**
-  * Remove all points from the given point cloud whose z-coordinate is less than
-  * a defined value.
-  */
-  void removeGround(PointCloudPtr &cloud);
-
-  /**
   * Remove all points from the given point cloud that are too far away from Lola.
   */
   void removeBackground(PointCloudPtr &cloudPtr);
@@ -195,32 +189,6 @@ void FilteredVideoSource<PointT>::transformToWorldCoordinates(PointCloudT &cloud
   pcl::transformPointCloud (cloud, *transformed_cloud, transform_2);
   cloud = *transformed_cloud;
 }
-
-
-/**
-* Remove all points from the given point cloud whose z-coordinate is less than
-* a defined value.
-*/
-template<class PointT>
-void FilteredVideoSource<PointT>::removeGround(PointCloudPtr &cloudPtr)
-{
-  pcl::ExtractIndices<PointT> extract;
-  pcl::PointIndices::Ptr currentPlaneIndices(new pcl::PointIndices);
-
-
-  int i = 0;
-  for (PointCloudT::iterator it = cloudPtr->begin(); it != cloudPtr->end(); it++, i++)
-  {
-    if (it->z > -0.1)
-      currentPlaneIndices->indices.push_back(i);
-  }
-
-  extract.setInputCloud(cloudPtr);
-  extract.setIndices(currentPlaneIndices);
-  extract.setNegative(true);
-  extract.filter(*cloudPtr);
-}
-
 
 
 /**
@@ -302,7 +270,6 @@ void FilteredVideoSource<PointT>::updateFrame(
   // Now we obtain the fully filtered cloud...
   this->getFiltered(filtered);
   this->transformToWorldCoordinates(filtered); 
-  //this->removeGround(cloud_filtered);
   this->removeBackground(cloud_filtered);
 
   // ...and we're done!

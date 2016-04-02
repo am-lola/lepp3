@@ -12,7 +12,7 @@ template<class PointT>
 class SurfaceDetector : public FrameDataObserver, public FrameDataSubject 
 {
  public:
-    SurfaceDetector();
+    SurfaceDetector(bool surfaceDetectorActive);
     virtual ~SurfaceDetector() {}
 
     /**
@@ -21,12 +21,12 @@ class SurfaceDetector : public FrameDataObserver, public FrameDataSubject
     virtual void updateFrame(FrameDataPtr frameData);
 
   private:
-    boost::shared_ptr<BaseSegmenter<PointT> > segmenter_;
+    boost::shared_ptr<BaseSegmenter<PointT> > segmenter_;;
 };
 
 template<class PointT>
-SurfaceDetector<PointT>::SurfaceDetector()
-    : segmenter_(new SurfaceSegmenter<PointT>()) {}
+SurfaceDetector<PointT>::SurfaceDetector(bool surfaceDetectorActive)
+    : segmenter_(new SurfaceSegmenter<PointT>(surfaceDetectorActive)) {}
 
 
 template<class PointT>

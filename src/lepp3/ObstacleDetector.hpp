@@ -31,7 +31,7 @@ public:
    * `ObjectApproximator` instance for generating approximations for detected
    * obstacles.
    */
-  ObstacleDetector(boost::shared_ptr<ObjectApproximator<PointT> > approx);
+  ObstacleDetector(boost::shared_ptr<ObjectApproximator<PointT> > approx, bool surfaceDetectorActive);
   virtual ~ObstacleDetector() {}
 
   virtual void updateFrame(FrameDataPtr frameData);
@@ -41,6 +41,7 @@ private:
   boost::shared_ptr<BaseSegmenter<PointT> > segmenter_;
   boost::shared_ptr<ObjectApproximator<PointT> > approximator_;
   static constexpr double MAX_SQUARED_DISTANCE = 0.0075;
+  bool surfaceDetectorActive;
 
 
   /**
@@ -48,13 +49,21 @@ private:
   * than MAX_SQUARED_DISTANCE to the boundary of the considered surface hull.
   */
   bool isValidObstacle(FrameDataPtr frameData, int obstacleIndex);
+
+
+  /**
+  * Filter out invalid obstacles that sometimes occur between stair steps.
+  */
+  void filterInvalidObstacles(FrameDataPtr frameData);
+
 };
 
 template<class PointT>
 ObstacleDetector<PointT>::ObstacleDetector(
-    boost::shared_ptr<ObjectApproximator<PointT> > approx)
+    boost::shared_ptr<ObjectApproximator<PointT> > approx, bool surfaceDetectorActive)
       : approximator_(approx),
-        segmenter_(new EuclideanPlaneSegmenter<PointT>()) 
+        segmenter_(new EuclideanPlaneSegmenter<PointT>()),
+        surfaceDetectorActive(surfaceDetectorActive)
 {}
 
 
@@ -92,6 +101,23 @@ bool ObstacleDetector<PointT>::isValidObstacle(FrameDataPtr frameData, int obsta
   return true;
 }
 
+template<class PointT>
+void ObstacleDetector<PointT>::filterInvalidObstacles(FrameDataPtr frameData)
+{
+  std::vector<ObjectModelPtr> validObstacles;
+  std::vector<PointCloudPtr> validObstacleClouds;
+  for (size_t i = 0; i < frameData->obstacles.size(); i++)
+  {
+    if (isValidObstacle(frameData,i))
+    {
+      validObstacles.push_back(frameData->obstacles[i]);
+      validObstacleClouds.push_back(frameData->obstacleClouds[i]);
+    }
+  }
+  frameData->obstacles = validObstacles;
+  frameData->obstacleClouds = validObstacleClouds;
+}
+
 
 template<class PointT>
 void ObstacleDetector<PointT>::updateFrame(FrameDataPtr frameData) 
@@ -105,18 +131,8 @@ void ObstacleDetector<PointT>::updateFrame(FrameDataPtr frameData)
   }
   
   // remove invalid obstacles
-  std::vector<ObjectModelPtr> validObstacles;
-  std::vector<PointCloudPtr> validObstacleClouds;
-  for (size_t i = 0; i < frameData->obstacles.size(); i++)
-  {
-    if (isValidObstacle(frameData,i))
-    {
-      validObstacles.push_back(frameData->obstacles[i]);
-      validObstacleClouds.push_back(frameData->obstacleClouds[i]);
-    }
-  }
-  frameData->obstacles = validObstacles;
-  frameData->obstacleClouds = validObstacleClouds;
+  if (surfaceDetectorActive)
+    filterInvalidObstacles(frameData);
   
   notifyObservers(frameData);
 }

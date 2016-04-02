@@ -141,10 +141,9 @@ protected:
     return strat;
   }
 
-  /// Initialize the `ObstacleDetector`. Must set the `detector_` member.
-  virtual void initObstacleDetector() = 0;
-  /// Initialize the `StairDetector`. Must set the `surface_detector_` member.
-  virtual void initSurfaceDetector() = 0;
+  /// Initialize 'ObstacleDetector' and 'SurfaceDetector' if necessary.
+  virtual void initSurfObstDetector() = 0;
+
   /// Initialize the `Recorder`. Must set the `recorder_` member.
   virtual void initRecorder() = 0;
 

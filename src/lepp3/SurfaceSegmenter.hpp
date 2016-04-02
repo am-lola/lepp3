@@ -12,13 +12,14 @@
 #include <pcl/filters/project_inliers.h>
 
 #include <cmath>
+#include <limits>
 
 namespace lepp {
 
 template<class PointT>
 class SurfaceSegmenter: public BaseSegmenter<PointT> {
 public:
-    SurfaceSegmenter();
+    SurfaceSegmenter(bool surfaceDetectorActive);
 
     /**
     * Segment the given cloud into surfaces. Store the found surfaces and surface model 
@@ -40,7 +41,7 @@ private:
 	* Detect all planes in the given point cloud and store those and their 
 	* coefficients in the given vectors.
 	*/
-    void findPlanes(PointCloudPtr const& cloud_filtered, 
+    void findPlanes(PointCloudPtr &cloud_filtered, 
     	std::vector<PointCloudPtr> &planes, 
     	std::vector<pcl::ModelCoefficients> &planeCoefficients);
 
@@ -90,24 +91,22 @@ private:
     */
     void downSample(PointCloudPtr &cloud);
 
-    /**
-    * Filter out all the points from the cloud that are close to the surface.
-    */
-	//void filterInvalidObstacles(std::vector<PointCloudConstPtr> &surfaces, 
-	//	PointCloudPtr &cloudMinusSurfaces);
-
-
-	/**
-	* Return average z-coordinate of all points in given point cloud.
-	*/
-	//double getAverageHeight(const PointCloudT &cloud);
-
-
 	/**
 	* Project given surfaces on plane specified by the corresponding plane coefficients.
 	*/
 	void projectOnPlane(SurfaceModelPtr surface);
 
+
+	/**
+	* If surface detector is disabled, only the ground has to be removed but all other
+	* planes have to stay in place. To make sure that the whole ground is removed,
+	* planes are detected and classified and all removed from the given point cloud.
+	* In a second step all non-ground planes are added back to the point cloud.
+	* This is done by removing the lowest plane (which is the ground) and all other planes
+	* that are less than a few centimeters apart from the plane.
+	*/
+	void addNonGroundPlanes(PointCloudPtr &cloud_filtered, 
+		std::vector<PointCloudPtr> &planes);
 
 	/**
 	* Instance used to extract the planes from the input cloud.
@@ -120,11 +119,16 @@ private:
 
 	/*Segmentation ratio*/
 	const double MIN_FILTER_PERCENTAGE;
+
+	// boolean indicating whether the surface detector was activated in config file
+	bool surfaceDetectorActive;
 };
 
 template<class PointT>
-SurfaceSegmenter<PointT>::SurfaceSegmenter() :
-        MIN_FILTER_PERCENTAGE(0.1) { //, cloud_surfaces_(new PointCloudT()) {
+SurfaceSegmenter<PointT>::SurfaceSegmenter(bool surfaceDetectorActive) :
+        MIN_FILTER_PERCENTAGE(0.1),
+        surfaceDetectorActive(surfaceDetectorActive) 
+{ //, cloud_surfaces_(new PointCloudT()) {
 	// Parameter initialization of the plane segmentation
 	segmentation_.setOptimizeCoefficients(true);
 	segmentation_.setModelType(pcl::SACMODEL_PLANE);
@@ -190,7 +194,7 @@ void SurfaceSegmenter<PointT>::classify(
 
 template<class PointT>
 void SurfaceSegmenter<PointT>::findPlanes(
-	PointCloudPtr const& cloud_filtered,
+	PointCloudPtr &cloud_filtered,
 	std::vector<PointCloudPtr> &planes,
 	std::vector<pcl::ModelCoefficients> &planeCoefficients) {
 
@@ -233,6 +237,34 @@ void SurfaceSegmenter<PointT>::findPlanes(
 		classify(currentPlane, currentPlaneCoefficients, planes, planeCoefficients);
 	}
 }
+
+
+template<class PointT>
+void SurfaceSegmenter<PointT>::addNonGroundPlanes(
+	PointCloudPtr &cloud_filtered, 
+	std::vector<PointCloudPtr> &planes)
+{
+	// compute centroid for each plane and find minimum
+	double minHeight = std::numeric_limits<double>::lowest();
+	double planeHeights[planes.size()];
+	for (size_t i = 0; i < planes.size(); i++)
+	{
+		Eigen::Vector4f centroid;
+		pcl::compute3DCentroid (*planes[i], centroid);
+		planeHeights[i] = centroid[2];
+		// pay attention to the orientation of the z-axis! Axis is inverted!
+		if (planeHeights[i] > minHeight)
+			minHeight = planeHeights[i];
+	}		
+	
+	// add all planes back that are further than Xcm apart from the ground
+	for (size_t i = 0; i < planes.size(); i++)
+	{
+		if (std::abs(planeHeights[i] - minHeight) > 0.05)
+			*cloud_filtered += *planes[i];
+	}
+}
+
 
 
 template<class PointT>
@@ -304,62 +336,13 @@ void SurfaceSegmenter<PointT>::projectOnPlane(SurfaceModelPtr surface)
 	pcl::ProjectInliers<PointT> proj;
 	proj.setModelType (pcl::SACMODEL_PLANE);
 	proj.setInputCloud (surface->get_cloud());
-	pcl::ModelCoefficients::Ptr coeffPtr = boost::shared_ptr<pcl::ModelCoefficients>(new pcl::ModelCoefficients(surface->get_planeCoefficients()));
+	pcl::ModelCoefficients::Ptr coeffPtr = boost::shared_ptr<pcl::ModelCoefficients>(
+		new pcl::ModelCoefficients(surface->get_planeCoefficients()));
 	proj.setModelCoefficients (coeffPtr);
 	PointCloudPtr tmp(new PointCloudT());
 	proj.filter (*tmp);
 	surface->set_cloud(tmp);
 }
-
-
-/*
-template<class PointT>
-double SurfaceSegmenter<PointT>::getAverageHeight(const PointCloudT &cloud)
-{
-	double avgHeight = 0;
-	for (int i = 0; i < cloud.size(); i++)
-		avgHeight += cloud[i].z;
-
-	avgHeight /= cloud.size();
-	return avgHeight;
-}
-
-
-
-template<class PointT>
-void SurfaceSegmenter<PointT>::filterInvalidObstacles(
-	std::vector<PointCloudConstPtr> &surfaces, 
-	PointCloudPtr &cloudMinusSurfaces)
-{
-	for (size_t i = 0; i < surfaces.size(); i++)
-	{
-		double avgHeight = getAverageHeight(*surfaces[i]);
-
-		// surface is not the ground
-		if (avgHeight < -0.1) // TODO fine tune parameter
-		{
-			PointT minPoint;
-			PointT maxPoint;
-			// get max x,y,z coordinates of points in surfaces[i]
-			pcl::getMinMax3D(*surfaces[i], minPoint, maxPoint);
-
-			// enlarge the box in X and Y direction. Use average height for Z-coordinate.
-			const double delta = 0.03;
-			Eigen::Vector4f minVec(minPoint.x - delta, minPoint.y - delta, avgHeight - 3*delta, 0);
-			Eigen::Vector4f maxVec(maxPoint.x + delta, maxPoint.y + delta, avgHeight + 3*delta, 0);
-
-			// filter out all points in the box spanned by minVec and maxVec
-			pcl::CropBox<PointT> cropFilter;
-			cropFilter.setInputCloud(cloudMinusSurfaces);
-			cropFilter.setMin(minVec);
-			cropFilter.setMax(maxVec);
-			cropFilter.setNegative(true);
-			PointCloudPtr cloudFiltered(new PointCloudT());
-			cropFilter.filter(*cloudFiltered);
-			cloudMinusSurfaces = cloudFiltered;
-		}
-	}
-}*/
 
 
 template<class PointT>
@@ -371,6 +354,14 @@ void SurfaceSegmenter<PointT>::segment(FrameDataPtr frameData)
     // extract those planes that are considered as surfaces and put them in cloud_surfaces_
     findPlanes(frameData->cloudMinusSurfaces, planes, planeCoefficients);
 
+    if (!surfaceDetectorActive)
+    {
+    	// add all planes beside the ground back to the point cloud
+		addNonGroundPlanes(frameData->cloudMinusSurfaces, planes);
+		// do not cluster and process planes if surface detector was disabled
+    	return;
+    }
+
     // reduce number of points of each plane
     for (size_t i = 0; i < planes.size(); i++)
     {
@@ -379,7 +370,6 @@ void SurfaceSegmenter<PointT>::segment(FrameDataPtr frameData)
     	// cluster planes into seperate surfaces and create SurfaceModels
     	cluster(planes[i], planeCoefficients[i], frameData);
     }
-
     	
     for (size_t i = 0; i < frameData->surfaces.size(); i++)
     {

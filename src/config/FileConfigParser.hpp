@@ -29,7 +29,9 @@ public:
   FileConfigParser(std::string const& file_name)
       : file_name_(file_name),
         parser_(toml::parse(file_name)),
-        toml_tree_(parser_.value) {
+        toml_tree_(parser_.value),
+        surfaceDetectorActive(false),
+        obstacleDetectorActive(false) {
 
     if (!toml_tree_.valid()) {
       throw "The config file is not valid";
@@ -175,23 +177,33 @@ protected:
     this->robot_service_ = async_robot_service;
   }
 
-  void addObservers() {
+  void addObservers() 
+  {
     std::cout << "entered addObservers" << std::endl;
     const toml::Value* available = toml_tree_.find("observers");
     if (!available)
       return;
     const toml::Array& obs_arr = available->as<toml::Array>();
-    for (const toml::Value& v : obs_arr) {
+    for (const toml::Value& v : obs_arr) 
+    {
       std::string const type = v.find("type")->as<std::string>();
       std::cout << "observer type: " << type << std::endl;
-      if (type == "ObstacleDetector") {
-        initObstacleDetector();
-      } else if (type == "SurfaceDetector") {
-        initSurfaceDetector();
-      } else if (type == "Recorder") {
+      if (type == "ObstacleDetector") 
+      {
+        obstacleDetectorActive = true;
+      } 
+      else if (type == "SurfaceDetector") 
+      {
+        surfaceDetectorActive = true;
+      } 
+      else if (type == "Recorder") 
+      {
         initRecorder();
       }
     }
+    // initialize obstacle and surface detector if necessary
+    if (surfaceDetectorActive || obstacleDetectorActive)
+      initSurfObstDetector();
   }
 
   virtual boost::shared_ptr<SplitStrategy<PointT> > buildSplitStrategy() {
@@ -245,45 +257,57 @@ protected:
     return split_strat;
   }
 
-  void initObstacleDetector() {
-    // surface detector must be executed before obstacle detector due to 
-    // sequential pipeline layout
-    initSurfaceDetector();
 
-    std::cout << "entered initObstacleDetector" << std::endl;
-    // Prepare the approximator that the detector is to use.
-    // First, the simple approximator...
-    boost::shared_ptr<ObjectApproximator<PointT> > simple_approx(
-        this->getApproximator());
-    // ...then the split strategy
-    boost::shared_ptr<SplitStrategy<PointT> > splitter(
-        this->buildSplitStrategy());
-    // ...finally, wrap those into a `SplitObjectApproximator` that is given
-    // to the detector.
-    boost::shared_ptr<ObjectApproximator<PointT> > approx(
-        new SplitObjectApproximator<PointT>(simple_approx, splitter));
-    std::cout << "attaching obstacle_detector to surface detection pipeline" << std::endl;
-
-    base_obstacle_detector_.reset(new ObstacleDetector<PointT>(approx));
-    convex_hull_detector_->FrameDataSubject::attachObserver(base_obstacle_detector_);
-    // Smooth out the basic detector by applying a smooth detector to it
-    boost::shared_ptr<SmoothObstacleAggregator> smooth_detector(
-        new SmoothObstacleAggregator);
-    base_obstacle_detector_->attachObserver(smooth_detector);
-    // Now the detector that is exposed via the context is a smoothed-out
-    // base detector.
-    this->detector_ = smooth_detector;
-  }
-
-  void initSurfaceDetector() {
-    std::cout << "entered initSurfaceDetector" << std::endl;
-    surface_detector_.reset(new SurfaceDetector<PointT>());
+  void initSurfObstDetector()
+  {
+    // surfaceDetector is always active because ground is always removed
+    surface_detector_.reset(new SurfaceDetector<PointT>(surfaceDetectorActive));
     this->source()->FrameDataSubject::attachObserver(surface_detector_);
-    surface_tracker_.reset(new SurfaceTracker<PointT>());
-    this->surface_detector_->FrameDataSubject::attachObserver(surface_tracker_);
-    convex_hull_detector_.reset(new ConvexHullDetector());
-    this->surface_tracker_->FrameDataSubject::attachObserver(convex_hull_detector_);
+
+    if (surfaceDetectorActive)
+    {
+      // initialize tracking of surfaces
+      surface_tracker_.reset(new SurfaceTracker<PointT>());
+      this->surface_detector_->FrameDataSubject::attachObserver(surface_tracker_);
+      // initialize convex hull detector
+      convex_hull_detector_.reset(new ConvexHullDetector());
+      this->surface_tracker_->FrameDataSubject::attachObserver(convex_hull_detector_);
+    }
+
+    if (obstacleDetectorActive)
+    {
+      // Prepare the approximator that the detector is to use.
+      // First, the simple approximator...
+      boost::shared_ptr<ObjectApproximator<PointT> > simple_approx(
+          this->getApproximator());
+      // ...then the split strategy
+      boost::shared_ptr<SplitStrategy<PointT> > splitter(
+          this->buildSplitStrategy());
+      // ...finally, wrap those into a `SplitObjectApproximator` that is given
+      // to the detector.
+      boost::shared_ptr<ObjectApproximator<PointT> > approx(
+          new SplitObjectApproximator<PointT>(simple_approx, splitter));
+
+      base_obstacle_detector_.reset(new ObstacleDetector<PointT>(approx, surfaceDetectorActive));
+
+      // if surface detector is active, connect the obstacle detector to the last step
+      // of the surface detection pipeline which is the ConvexHullDetector
+      if (surfaceDetectorActive)
+        convex_hull_detector_->FrameDataSubject::attachObserver(base_obstacle_detector_);
+      // otherwise connect the obstacle detector directly to the surface detector
+      else
+        this->surface_detector_->FrameDataSubject::attachObserver(base_obstacle_detector_);
+
+      // Smooth out the basic detector by applying a smooth detector to it
+      boost::shared_ptr<SmoothObstacleAggregator> smooth_detector(
+          new SmoothObstacleAggregator);
+      base_obstacle_detector_->attachObserver(smooth_detector);
+      // Now the detector that is exposed via the context is a smoothed-out
+      // base detector.
+      this->detector_ = smooth_detector;
+    }
   }
+
 
   void initRecorder() {
     std::cout << "entered initRecorder" << std::endl;
@@ -331,24 +355,17 @@ protected:
     }
   }
 
-  void initVisualizer() {
-    const toml::Value* available = toml_tree_.find("observers");
-    if (available)
+  void initVisualizer() 
+  {
+    if (surfaceDetectorActive && !obstacleDetectorActive)
     {
-      const toml::Array& obs_arr = available->as<toml::Array>();
-      for (const toml::Value& v : obs_arr) {
-        std::string const type = v.find("type")->as<std::string>();
-        if (type == "ObstacleDetector") 
-        {
-          ar_visualizer_.reset(new ARVisualizer());
-          this->detector_->FrameDataSubject::attachObserver(ar_visualizer_);
-        } 
-        else if (type == "SurfaceDetector") 
-        {
-          ar_visualizer_.reset(new ARVisualizer());
-          convex_hull_detector_->FrameDataSubject::attachObserver(ar_visualizer_);
-        } 
-      }
+      ar_visualizer_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive));
+      convex_hull_detector_->FrameDataSubject::attachObserver(ar_visualizer_);
+    }
+    else if (obstacleDetectorActive)
+    {
+      ar_visualizer_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive));
+      this->detector_->FrameDataSubject::attachObserver(ar_visualizer_);
     }
 
     bool viz_cloud = toml_tree_.find("Visualization.cloud")->as<bool>();
@@ -445,6 +462,9 @@ private:
   boost::shared_ptr<SurfaceTracker<PointT> > surface_tracker_;
   boost::shared_ptr<ConvexHullDetector> convex_hull_detector_;
   boost::shared_ptr<ARVisualizer> ar_visualizer_;
+
+  bool surfaceDetectorActive;
+  bool obstacleDetectorActive;
 };
 
 #endif

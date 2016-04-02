@@ -32,6 +32,9 @@ type = "simple"
 [[observers]]
 type = "ObstacleDetector"
 
+[[observers]]
+type = "SurfaceDetector"
+
 [SplitStrategy]
 # split_axis = largest|middle|smallest
 split_axis = "middle"

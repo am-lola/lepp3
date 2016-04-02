@@ -113,7 +113,10 @@ const int SurfaceDrawer::g[6] = {  0,   0, 255,   0, 255, 255};
 class ARVisualizer : public FrameDataObserver  
 {
 public:
-	ARVisualizer() : arvis(new ar::ARVisualizer())
+	ARVisualizer(bool visualizeSurfaces, bool visualizeObstacles) : 
+    arvis(new ar::ARVisualizer()),
+    visualizeSurfaces(visualizeSurfaces),
+    visualizeObstacles(visualizeObstacles)
 	{  
     // Updates the camera parameters used for rendering.
     // @position Position of the camera in world-coordinates
@@ -152,6 +155,9 @@ private:
   */
   void drawObstacles(std::vector<ObjectModelPtr> obstacles);
 
+  // visulize obstacles and surfaces only if options were chosen in config file
+  bool visualizeSurfaces;
+  bool visualizeObstacles;
 };
 
 
@@ -183,10 +189,12 @@ void ARVisualizer::updateFrame(FrameDataPtr frameData)
 	arvis->RemoveAll();
   
   //draw surfaces
-  drawSurfaces(frameData->surfaces);
+  if (visualizeSurfaces)
+    drawSurfaces(frameData->surfaces);
 
   // draw obstacles
-  drawObstacles(frameData->obstacles);
+  if (visualizeObstacles)
+    drawObstacles(frameData->obstacles);
 }
 
 

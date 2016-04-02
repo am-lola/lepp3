@@ -74,7 +74,8 @@ protected:
     this->robot_service_ = async_robot_service;
   }
 
-  void initObstacleDetector() {
+  void initSurfObstDetector() 
+  {
     // Prepare the approximator that the detector is to use.
     // First, the simple approximator...
     boost::shared_ptr<ObjectApproximator<PointT> > simple_approx(
@@ -87,7 +88,7 @@ protected:
     boost::shared_ptr<ObjectApproximator<PointT> > approx(
         new SplitObjectApproximator<PointT>(simple_approx, splitter));
     // Prepare the base detector...
-    base_obstacle_detector_.reset(new ObstacleDetector<PointT>(approx));
+    base_obstacle_detector_.reset(new ObstacleDetector<PointT>(approx,false));
 
     this->source()->FrameDataSubject::attachObserver(base_obstacle_detector_);
     // Smooth out the basic detector by applying a smooth detector to it
@@ -98,8 +99,6 @@ protected:
     // base detector.
     this->detector_ = smooth_detector;
   }
-
-  void initSurfaceDetector() {}
 
   void initRecorder() {}
 
@@ -117,7 +116,7 @@ protected:
     // Factor out to a member ...
     bool visualization = true;
     if (visualization) {
-      this->visualizer_.reset(new ARVisualizer());
+      this->visualizer_.reset(new ARVisualizer(false, false));
       // Attach the visualizer to both the point cloud source...
       this->source()->FrameDataSubject::attachObserver(this->visualizer_);
       // ...as well as to the obstacle detector
