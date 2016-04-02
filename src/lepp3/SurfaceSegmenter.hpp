@@ -13,6 +13,7 @@
 
 #include <cmath>
 #include <limits>
+#include <omp.h>
 
 namespace lepp {
 
@@ -112,10 +113,6 @@ private:
 	* Instance used to extract the planes from the input cloud.
 	*/
 	pcl::SACSegmentation<PointT> segmentation_;
-	/**
-	* Instance used to extract the actual clusters from the input cloud.
-	*/
-	pcl::EuclideanClusterExtraction<PointT> clusterizer_;
 
 	/*Segmentation ratio*/
 	const double MIN_FILTER_PERCENTAGE;
@@ -284,15 +281,16 @@ void SurfaceSegmenter<PointT>::getSurfaceClusters(
 		PointCloudPtr const& cloud, std::vector<pcl::PointIndices> &cluster_indices) {
 	// Extract the clusters from such a filtered cloud.
 	int max_size=cloud->points.size();
-	clusterizer_.setClusterTolerance(0.03);
-	clusterizer_.setMinClusterSize(2300);
-	clusterizer_.setMaxClusterSize(max_size);
+	pcl::EuclideanClusterExtraction<PointT> clusterizer;
+	clusterizer.setClusterTolerance(0.03);
+	clusterizer.setMinClusterSize(2300);
+	clusterizer.setMaxClusterSize(max_size);
 	pcl::search::KdTree<pcl::PointXYZ>::Ptr kd_tree_(
 			new pcl::search::KdTree<pcl::PointXYZ>);
 	kd_tree_->setInputCloud(cloud);
-	clusterizer_.setSearchMethod(kd_tree_);
-	clusterizer_.setInputCloud(cloud);
-	clusterizer_.extract(cluster_indices);
+	clusterizer.setSearchMethod(kd_tree_);
+	clusterizer.setInputCloud(cloud);
+	clusterizer.extract(cluster_indices);
 }
 
 
@@ -308,6 +306,7 @@ void SurfaceSegmenter<PointT>::cluster(
     getSurfaceClusters(plane, cluster_indices);
 
     // cluster the current plane into seperate surfaces
+   	std::vector<SurfaceModelPtr> clusteredSurfaces;
     for (int j = 0; j < cluster_indices.size(); j++)
     {
     	// extract all points from the classified surface that 
@@ -324,8 +323,16 @@ void SurfaceSegmenter<PointT>::cluster(
 		extract.filter(*current);
 
 		// create new surface model for current plane
-		frameData->surfaces.push_back(SurfaceModelPtr(new SurfaceModel(current, planeCoefficients)));
+		clusteredSurfaces.push_back(SurfaceModelPtr(new SurfaceModel(current, planeCoefficients)));
+
+		// project the found surfaces on corresponding plane
+		projectOnPlane(clusteredSurfaces[j]);
     }
+
+    //add clusetered surfaces to shared frameData variable
+#pragma omp critical
+	frameData->surfaces.insert(std::end(frameData->surfaces), 
+		std::begin(clusteredSurfaces), std::end(clusteredSurfaces));
 }
 
 
@@ -363,19 +370,14 @@ void SurfaceSegmenter<PointT>::segment(FrameDataPtr frameData)
     }
 
     // reduce number of points of each plane
+#pragma omp parallel for
     for (size_t i = 0; i < planes.size(); i++)
     {
     	downSample(planes[i]);
-    	
+
     	// cluster planes into seperate surfaces and create SurfaceModels
     	cluster(planes[i], planeCoefficients[i], frameData);
     }
-    	
-    for (size_t i = 0; i < frameData->surfaces.size(); i++)
-    {
-    	// project the found surfaces on corresponding plane
-   		projectOnPlane(frameData->surfaces[i]);
-   	}
 }
 
 } // namespace lepp
