@@ -41,7 +41,8 @@ void SurfaceDetector<PointT>::updateFrame(FrameDataPtr frameData)
   finder_->findSurfaces(frameData, planes, planeCoefficients);
 
   // cluster planes and create surface models
-  clusterer_->clusterSurfaces(planes, planeCoefficients, frameData->surfaces);
+  if (surfaceDetectorActive)
+    clusterer_->clusterSurfaces(planes, planeCoefficients, frameData->surfaces);
 
   notifyObservers(frameData);
 }
