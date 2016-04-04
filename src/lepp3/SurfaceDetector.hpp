@@ -2,9 +2,11 @@
 #define BASE_SURFACE_DETECTOR_H_
 
 #include "lepp3/Typedefs.hpp"
-#include "lepp3/BaseSegmenter.hpp"
-#include "lepp3/SurfaceSegmenter.hpp"
+#include "lepp3/SurfaceFinder.hpp"
+#include "lepp3/SurfaceClusterer.hpp"
 #include "lepp3/FrameData.hpp"
+
+#include <vector>
 
 namespace lepp {
 
@@ -12,8 +14,10 @@ template<class PointT>
 class SurfaceDetector : public FrameDataObserver, public FrameDataSubject 
 {
  public:
-    SurfaceDetector(bool surfaceDetectorActive);
-    virtual ~SurfaceDetector() {}
+    SurfaceDetector(bool surfaceDetectorActive)
+      : surfaceDetectorActive(surfaceDetectorActive),
+        finder_(new SurfaceFinder<PointT>(surfaceDetectorActive)),
+        clusterer_(new SurfaceClusterer<PointT>()) {}
 
     /**
      * FrameDataObserver interface method implementation.
@@ -21,18 +25,24 @@ class SurfaceDetector : public FrameDataObserver, public FrameDataSubject
     virtual void updateFrame(FrameDataPtr frameData);
 
   private:
-    boost::shared_ptr<BaseSegmenter<PointT> > segmenter_;;
-};
+    boost::shared_ptr<SurfaceFinder<PointT> > finder_;
+    boost::shared_ptr<SurfaceClusterer<PointT> > clusterer_;
+    bool surfaceDetectorActive;
 
-template<class PointT>
-SurfaceDetector<PointT>::SurfaceDetector(bool surfaceDetectorActive)
-    : segmenter_(new SurfaceSegmenter<PointT>(surfaceDetectorActive)) {}
+};
 
 
 template<class PointT>
 void SurfaceDetector<PointT>::updateFrame(FrameDataPtr frameData) 
 {
-  segmenter_->segment(frameData);
+  std::vector<PointCloudPtr> planes;
+  std::vector<pcl::ModelCoefficients> planeCoefficients;
+  // detect planes
+  finder_->findSurfaces(frameData, planes, planeCoefficients);
+
+  // cluster planes and create surface models
+  clusterer_->clusterSurfaces(planes, planeCoefficients, frameData->surfaces);
+
   notifyObservers(frameData);
 }
 

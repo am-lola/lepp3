@@ -1,33 +1,31 @@
-#ifndef lepp3_SURFACE_SEGMENTER_H__
-#define lepp3_SURFACE_SEGMENTER_H__
+#ifndef lepp3_SURFACE_FINDER_HPP__
+#define lepp3_SURFACE_FINDER_HPP__
 
 #include "lepp3/Typedefs.hpp"
-#include "lepp3/BaseSegmenter.hpp"
 
 #include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/segmentation/extract_clusters.h>
 #include <pcl/filters/extract_indices.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/filters/crop_box.h>
-#include <pcl/filters/project_inliers.h>
 
 #include <cmath>
 #include <limits>
-#include <omp.h>
 
 namespace lepp {
 
 template<class PointT>
-class SurfaceSegmenter: public BaseSegmenter<PointT> {
+class SurfaceFinder 
+{
 public:
-    SurfaceSegmenter(bool surfaceDetectorActive);
+    SurfaceFinder(bool surfaceDetectorActive);
 
     /**
     * Segment the given cloud into surfaces. Store the found surfaces and surface model 
     * coefficients in 'surfaces' and 'surfaceCoefficients'. Subtract the found surfaces 
     * from the input cloud and store the remaining cloud in 'cloudMinusSurfaces'.
     */
-	virtual void segment(FrameDataPtr frameData);
+	void findSurfaces(
+		FrameDataPtr frameData, 
+		std::vector<PointCloudPtr> &planes, 
+		std::vector<pcl::ModelCoefficients> &planeCoefficients);
 
 private:
 	/**
@@ -47,12 +45,16 @@ private:
     	std::vector<pcl::ModelCoefficients> &planeCoefficients);
 
 	/**
-	* Extracts the Euclidean clusters from the given point cloud.
-	* Returns a vector where each element represents the pcl::PointIndices
-	* instance representing the corresponding cluster.
+	* If surface detector is disabled, only the ground has to be removed but all other
+	* planes have to stay in place. To make sure that the whole ground is removed,
+	* planes are detected and classified and all removed from the given point cloud.
+	* In a second step all non-ground planes are added back to the point cloud.
+	* This is done by removing the lowest plane (which is the ground) and all other planes
+	* that are less than a few centimeters apart from the plane.
 	*/
-    void getSurfaceClusters(PointCloudPtr const& cloud, 
-    	std::vector<pcl::PointIndices> &cluster_indices);
+	void addNonGroundPlanes(PointCloudPtr &cloud_filtered, 
+		std::vector<PointCloudPtr> &planes);
+
 
 	/**
 	* Several planes corresponding to the same surface might be detected.
@@ -70,46 +72,6 @@ private:
 		const pcl::ModelCoefficients &coeffs2);
 
 	/**
-	* A plane might contain several non-connected planes that do not correspond
-	* to the same surface. Thus, the planes are clustered into seperate surfaces 
-	* in this function if necessary.
-	**/
-	void cluster(
-		PointCloudPtr plane,
-		pcl::ModelCoefficients &planeCoefficients,
-		FrameDataPtr frameData);
-
-	/**
-    * Downsample point cloud. Reduce the size of the given point cloud.
-    * This function is called after the segmentation/classifying step but
-    * before clustering. 
-    * This step is NOT done before segmentation/classify because cloudMinusSurfaces
-    * should have a resolution as high as possible since this cloud is used to
-    * detect obstacles. 
-    * Clustering surfaces is found to be quite inefficient though but since we
-    * obtain a convex hull for each surface later on anyway, downsampling the point
-    * size does not influence the quality of the surface clustering.
-    */
-    void downSample(PointCloudPtr &cloud);
-
-	/**
-	* Project given surfaces on plane specified by the corresponding plane coefficients.
-	*/
-	void projectOnPlane(SurfaceModelPtr surface);
-
-
-	/**
-	* If surface detector is disabled, only the ground has to be removed but all other
-	* planes have to stay in place. To make sure that the whole ground is removed,
-	* planes are detected and classified and all removed from the given point cloud.
-	* In a second step all non-ground planes are added back to the point cloud.
-	* This is done by removing the lowest plane (which is the ground) and all other planes
-	* that are less than a few centimeters apart from the plane.
-	*/
-	void addNonGroundPlanes(PointCloudPtr &cloud_filtered, 
-		std::vector<PointCloudPtr> &planes);
-
-	/**
 	* Instance used to extract the planes from the input cloud.
 	*/
 	pcl::SACSegmentation<PointT> segmentation_;
@@ -122,7 +84,7 @@ private:
 };
 
 template<class PointT>
-SurfaceSegmenter<PointT>::SurfaceSegmenter(bool surfaceDetectorActive) :
+SurfaceFinder<PointT>::SurfaceFinder(bool surfaceDetectorActive) :
         MIN_FILTER_PERCENTAGE(0.1),
         surfaceDetectorActive(surfaceDetectorActive) 
 { //, cloud_surfaces_(new PointCloudT()) {
@@ -135,7 +97,7 @@ SurfaceSegmenter<PointT>::SurfaceSegmenter(bool surfaceDetectorActive) :
 }
 
 template<class PointT>
-PointCloudPtr SurfaceSegmenter<PointT>::preprocessCloud(
+PointCloudPtr SurfaceFinder<PointT>::preprocessCloud(
 		PointCloudConstPtr const& cloud) {
 	// Remove NaN points from the input cloud.
 	// The pcl API forces us to pass in a reference to the vector, even if we have
@@ -149,7 +111,7 @@ PointCloudPtr SurfaceSegmenter<PointT>::preprocessCloud(
 
 
 template<class PointT> 
-double SurfaceSegmenter<PointT>::getAngle(
+double SurfaceFinder<PointT>::getAngle(
 		const pcl::ModelCoefficients &coeffs1, const pcl::ModelCoefficients &coeffs2) {
 	//Scalar Product
 	float scalar_product = 
@@ -162,7 +124,7 @@ double SurfaceSegmenter<PointT>::getAngle(
 
 
 template<class PointT>
-void SurfaceSegmenter<PointT>::classify(
+void SurfaceFinder<PointT>::classify(
 		PointCloudPtr const& cloud_planar_surface,
 		const pcl::ModelCoefficients & coeffs,
 		std::vector<PointCloudPtr> &planes,
@@ -190,7 +152,7 @@ void SurfaceSegmenter<PointT>::classify(
 
 
 template<class PointT>
-void SurfaceSegmenter<PointT>::findPlanes(
+void SurfaceFinder<PointT>::findPlanes(
 	PointCloudPtr &cloud_filtered,
 	std::vector<PointCloudPtr> &planes,
 	std::vector<pcl::ModelCoefficients> &planeCoefficients) {
@@ -237,7 +199,7 @@ void SurfaceSegmenter<PointT>::findPlanes(
 
 
 template<class PointT>
-void SurfaceSegmenter<PointT>::addNonGroundPlanes(
+void SurfaceFinder<PointT>::addNonGroundPlanes(
 	PointCloudPtr &cloud_filtered, 
 	std::vector<PointCloudPtr> &planes)
 {
@@ -263,101 +225,14 @@ void SurfaceSegmenter<PointT>::addNonGroundPlanes(
 }
 
 
-
 template<class PointT>
-void SurfaceSegmenter<PointT>::downSample(PointCloudPtr &cloud)
-{
-  PointCloudPtr cloud_filtered(new PointCloudT());
-  pcl::VoxelGrid<PointT> sor;
-  sor.setInputCloud (cloud);
-  sor.setLeafSize (0.01, 0.01, 0.01);
-  sor.filter (*cloud_filtered);
-  cloud = cloud_filtered;
-}
-
-
-template<class PointT>
-void SurfaceSegmenter<PointT>::getSurfaceClusters(
-		PointCloudPtr const& cloud, std::vector<pcl::PointIndices> &cluster_indices) {
-	// Extract the clusters from such a filtered cloud.
-	int max_size=cloud->points.size();
-	pcl::EuclideanClusterExtraction<PointT> clusterizer;
-	clusterizer.setClusterTolerance(0.03);
-	clusterizer.setMinClusterSize(2300);
-	clusterizer.setMaxClusterSize(max_size);
-	pcl::search::KdTree<pcl::PointXYZ>::Ptr kd_tree_(
-			new pcl::search::KdTree<pcl::PointXYZ>);
-	kd_tree_->setInputCloud(cloud);
-	clusterizer.setSearchMethod(kd_tree_);
-	clusterizer.setInputCloud(cloud);
-	clusterizer.extract(cluster_indices);
-}
-
-
-template<class PointT>
-void SurfaceSegmenter<PointT>::cluster(
-	PointCloudPtr plane,
-	pcl::ModelCoefficients &planeCoefficients,
-	FrameDataPtr frameData) 
-{
-	// A classified surface may consist of different clusters. 
-	// Get point indices of points belonging to the same cluster.
-    std::vector<pcl::PointIndices> cluster_indices;
-    getSurfaceClusters(plane, cluster_indices);
-
-    // cluster the current plane into seperate surfaces
-   	std::vector<SurfaceModelPtr> clusteredSurfaces;
-    for (int j = 0; j < cluster_indices.size(); j++)
-    {
-    	// extract all points from the classified surface that 
-    	// belong to the same clauster
-    	pcl::ExtractIndices<PointT> extract;
-    	extract.setInputCloud(plane);
-    	// TODO: Optimization. ClusterIndices are copied beacuse
-    	// extract expects a PointIndices::Ptr when calling setIndices.
-    	pcl::PointIndices::Ptr currentClusterIndices(
-    		new pcl::PointIndices(cluster_indices[j]));
-		extract.setIndices(currentClusterIndices);
-		extract.setNegative(false);
-		PointCloudPtr current(new PointCloudT());
-		extract.filter(*current);
-
-		// create new surface model for current plane
-		clusteredSurfaces.push_back(SurfaceModelPtr(new SurfaceModel(current, planeCoefficients)));
-
-		// project the found surfaces on corresponding plane
-		projectOnPlane(clusteredSurfaces[j]);
-    }
-
-    //add clusetered surfaces to shared frameData variable
-#pragma omp critical
-	frameData->surfaces.insert(std::end(frameData->surfaces), 
-		std::begin(clusteredSurfaces), std::end(clusteredSurfaces));
-}
-
-
-template<class PointT>
-void SurfaceSegmenter<PointT>::projectOnPlane(SurfaceModelPtr surface)
-{
-	// project surface on corresponding plane
-	pcl::ProjectInliers<PointT> proj;
-	proj.setModelType (pcl::SACMODEL_PLANE);
-	proj.setInputCloud (surface->get_cloud());
-	pcl::ModelCoefficients::Ptr coeffPtr = boost::shared_ptr<pcl::ModelCoefficients>(
-		new pcl::ModelCoefficients(surface->get_planeCoefficients()));
-	proj.setModelCoefficients (coeffPtr);
-	PointCloudPtr tmp(new PointCloudT());
-	proj.filter (*tmp);
-	surface->set_cloud(tmp);
-}
-
-
-template<class PointT>
-void SurfaceSegmenter<PointT>::segment(FrameDataPtr frameData) 
+void SurfaceFinder<PointT>::findSurfaces(
+	FrameDataPtr frameData, 
+	std::vector<PointCloudPtr> &planes, 
+	std::vector<pcl::ModelCoefficients> &planeCoefficients) 
 {
 	frameData->cloudMinusSurfaces = preprocessCloud(frameData->cloud);
-	std::vector<PointCloudPtr> planes;
-	std::vector<pcl::ModelCoefficients> planeCoefficients;
+
     // extract those planes that are considered as surfaces and put them in cloud_surfaces_
     findPlanes(frameData->cloudMinusSurfaces, planes, planeCoefficients);
 
@@ -367,16 +242,6 @@ void SurfaceSegmenter<PointT>::segment(FrameDataPtr frameData)
 		addNonGroundPlanes(frameData->cloudMinusSurfaces, planes);
 		// do not cluster and process planes if surface detector was disabled
     	return;
-    }
-
-    // reduce number of points of each plane
-#pragma omp parallel for
-    for (size_t i = 0; i < planes.size(); i++)
-    {
-    	downSample(planes[i]);
-
-    	// cluster planes into seperate surfaces and create SurfaceModels
-    	cluster(planes[i], planeCoefficients[i], frameData);
     }
 }
 
