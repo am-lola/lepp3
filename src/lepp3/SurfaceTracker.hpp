@@ -1,7 +1,7 @@
 #ifndef lepp3_SMOOTH_SURFACE_AGGREGATOR_H__
 #define lepp3_SMOOTH_SURFACE_AGGREGATOR_H__
 
-#include "lepp3/FrameData.hpp"
+#include "lepp3/SurfaceData.hpp"
 #include "lepp3/Typedefs.hpp"
 #include <pcl/surface/concave_hull.h>
 #include <pcl/surface/convex_hull.h>
@@ -66,7 +66,7 @@ private:
  * aggregators that are attached to it.
  */
 template<class PointT>
-class SurfaceTracker: public FrameDataObserver, public FrameDataSubject {
+class SurfaceTracker: public SurfaceDataObserver, public SurfaceDataSubject {
 
 public:
 	/**
@@ -78,7 +78,7 @@ public:
 	 * The member function that all concrete aggregators need to implement in
 	 * order to be able to process newly detected surfaces.
 	 */
-	virtual void updateFrame(FrameDataPtr frameData);
+	virtual void updateSurfaces(SurfaceDataPtr surfaceData);
 
 // Private types
 private:
@@ -462,19 +462,19 @@ void SurfaceTracker<PointT>::materializeFoundSurfaces() {
 
 
 template<class PointT>
-void SurfaceTracker<PointT>::updateFrame(FrameDataPtr frameData)
+void SurfaceTracker<PointT>::updateSurfaces(SurfaceDataPtr surfaceData)
 {
-	std::map<int, size_t> correspondence = matchToPrevious(frameData->surfaces);
+	std::map<int, size_t> correspondence = matchToPrevious(surfaceData->surfaces);
     updateLostAndFound(correspondence);
-	adaptTracked(correspondence, frameData->surfaces);
+	adaptTracked(correspondence, surfaceData->surfaces);
 	dropLostSurface();
     materializeFoundSurfaces();
 
     // copy materialized models    
     std::vector<SurfaceModelPtr> materializedModelsCopy(materialized_models_.begin(), materialized_models_.end());
-    frameData->surfaces = materializedModelsCopy;
+    surfaceData->surfaces = materializedModelsCopy;
 
-	notifyObservers(frameData);
+	notifyObservers(surfaceData);
 }
 
 }// namespace lepp

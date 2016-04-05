@@ -2,6 +2,7 @@
 #define lepp3_SURFACE_CLUSTERER_HPP__
 
 #include "lepp3/Typedefs.hpp"
+#include "lepp3/SurfaceData.hpp"
 
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/filters/extract_indices.h>
@@ -13,7 +14,7 @@
 namespace lepp {
 
 template<class PointT>
-class SurfaceClusterer
+class SurfaceClusterer : public SurfaceDataObserver, public SurfaceDataSubject
 {
 public:
     SurfaceClusterer() {}
@@ -23,9 +24,7 @@ public:
     * coefficients in 'surfaces' and 'surfaceCoefficients'. Subtract the found surfaces 
     * from the input cloud and store the remaining cloud in 'cloudMinusSurfaces'.
     */
-	virtual void clusterSurfaces(std::vector<PointCloudPtr> &planes,
-		std::vector<pcl::ModelCoefficients> &planeCoefficients,
-		std::vector<SurfaceModelPtr> &surfaces);
+	virtual void updateSurfaces(SurfaceDataPtr surfaceData);
 
 private:
 	/**
@@ -151,20 +150,18 @@ void SurfaceClusterer<PointT>::cluster(
 }
 
 template<class PointT>
-void SurfaceClusterer<PointT>::clusterSurfaces(
-	std::vector<PointCloudPtr> &planes,
-	std::vector<pcl::ModelCoefficients> &planeCoefficients,
-	std::vector<SurfaceModelPtr> &surfaces) 
+void SurfaceClusterer<PointT>::updateSurfaces(SurfaceDataPtr surfaceData)
 {
     // reduce number of points of each plane
 #pragma omp parallel for schedule(dynamic,1)
-    for (size_t i = 0; i < planes.size(); i++)
+    for (size_t i = 0; i < surfaceData->planes.size(); i++)
     {
-    	downSample(planes[i]);
+    	downSample(surfaceData->planes[i]);
 
     	// cluster planes into seperate surfaces and create SurfaceModels
-    	cluster(planes[i], planeCoefficients[i], surfaces);
+    	cluster(surfaceData->planes[i], surfaceData->planeCoefficients[i], surfaceData->surfaces);
     }
+    notifyObservers(surfaceData);
 }
 
 } // namespace lepp

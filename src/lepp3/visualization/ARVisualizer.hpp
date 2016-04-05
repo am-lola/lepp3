@@ -9,6 +9,7 @@
 #include <am2b-arvis/ARVisualizer.hpp>
 #include <vector>
 #include <algorithm>
+#include <iostream> 
 
 namespace lepp 
 {
@@ -127,8 +128,7 @@ public:
     //double up[3] = {0,0,1};
     
 		arvis->Start();
-    //arvis->SetCameraPose(position, forward, up);
-    
+    //arvis->SetCameraPose(position, forward, up);   
 	}
 	~ARVisualizer()
 	{
@@ -154,6 +154,12 @@ private:
   * Visualize obstacles in given vector with ARVisualizer.
   */
   void drawObstacles(std::vector<ObjectModelPtr> obstacles);
+
+  /**
+  * Output the number of the frame.
+  */
+  void outputFrameNum(const long &frameNum, const long &surfaceFrameNum, 
+    const long &surfaceReferenceFrameNum);
 
   // visulize obstacles and surfaces only if options were chosen in config file
   bool visualizeSurfaces;
@@ -183,18 +189,40 @@ void ARVisualizer::drawObstacles(std::vector<ObjectModelPtr> obstacles)
 }
 
 
+void ARVisualizer::outputFrameNum(const long &frameNum, const long &surfaceFrameNum, 
+  const long &surfaceReferenceFrameNum)
+{
+  if (visualizeObstacles)
+  {
+    std::cout << "Frame " << frameNum;
+    if (visualizeSurfaces)
+      std::cout << "    ";
+    else
+      std::cout << std::endl;
+  }
+  
+  if (visualizeSurfaces)
+  {
+    std::cout << "SurfaceFrame " << surfaceFrameNum << "    "
+      << "SurfaceReference " << surfaceReferenceFrameNum << std::endl;
+  }
+}
+
+
 void ARVisualizer::updateFrame(FrameDataPtr frameData)
 {
   // remove all objects drawn with the visualizer on the previous frame.
 	arvis->RemoveAll();
-  
-  //draw surfaces
+
+  if (visualizeObstacles)
+    drawObstacles(frameData->obstacles);
+
   if (visualizeSurfaces)
     drawSurfaces(frameData->surfaces);
 
-  // draw obstacles
-  if (visualizeObstacles)
-    drawObstacles(frameData->obstacles);
+  // output frame num and surface frame num
+  outputFrameNum(frameData->frameNum, frameData->surfaceFrameNum, 
+    frameData->surfaceReferenceFrameNum);
 }
 
 

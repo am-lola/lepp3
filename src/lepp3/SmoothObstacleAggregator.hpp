@@ -311,7 +311,7 @@ void SmoothObstacleAggregator::dropLostObjects() {
   // Drop obstacles that haven't been seen in a while
   // !!!NOTE!!! Deleting while iterating is no longer the same in C++11!
   std::map<model_id_t, int>::iterator it = frames_lost_.begin();
-  int const LOST_LIMIT = 10;
+  int const LOST_LIMIT = 12;
   while (it != frames_lost_.end()) {
     if (it->second >= LOST_LIMIT) {
       //LTRACE << "Object " << it->first << " not found 5 times in a row: DROPPING";
@@ -336,7 +336,7 @@ void SmoothObstacleAggregator::dropLostObjects() {
 }
 
 void SmoothObstacleAggregator::materializeFoundObjects() {
-  int const FOUND_LIMIT = 5;
+  int const FOUND_LIMIT = 8;
   std::map<model_id_t, int>::iterator it = frames_found_.begin();
   while (it != frames_found_.end()) {
     // Deconstruct the iterator pair for convenience

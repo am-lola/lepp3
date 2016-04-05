@@ -266,12 +266,20 @@ protected:
 
     if (surfaceDetectorActive)
     {
+      // initialize surface clusterer
+      surface_clusterer_.reset(new SurfaceClusterer<PointT>());
+      surface_detector_->SurfaceDataSubject::attachObserver(surface_clusterer_);
+
       // initialize tracking of surfaces
       surface_tracker_.reset(new SurfaceTracker<PointT>());
-      this->surface_detector_->FrameDataSubject::attachObserver(surface_tracker_);
+      surface_clusterer_->SurfaceDataSubject::attachObserver(surface_tracker_);
+
       // initialize convex hull detector
       convex_hull_detector_.reset(new ConvexHullDetector());
-      this->surface_tracker_->FrameDataSubject::attachObserver(convex_hull_detector_);
+      surface_tracker_->SurfaceDataSubject::attachObserver(convex_hull_detector_);
+
+      // connect convex hull detector back to surfaceDetector (close the loop)
+      convex_hull_detector_->SurfaceDataSubject::attachObserver(surface_detector_);
     }
 
     if (obstacleDetectorActive)
@@ -282,21 +290,14 @@ protected:
           this->getApproximator());
       // ...then the split strategy
       boost::shared_ptr<SplitStrategy<PointT> > splitter(
-          this->buildSplitStrategy());
+          buildSplitStrategy());
       // ...finally, wrap those into a `SplitObjectApproximator` that is given
       // to the detector.
       boost::shared_ptr<ObjectApproximator<PointT> > approx(
           new SplitObjectApproximator<PointT>(simple_approx, splitter));
 
       base_obstacle_detector_.reset(new ObstacleDetector<PointT>(approx, surfaceDetectorActive));
-
-      // if surface detector is active, connect the obstacle detector to the last step
-      // of the surface detection pipeline which is the ConvexHullDetector
-      if (surfaceDetectorActive)
-        convex_hull_detector_->FrameDataSubject::attachObserver(base_obstacle_detector_);
-      // otherwise connect the obstacle detector directly to the surface detector
-      else
-        this->surface_detector_->FrameDataSubject::attachObserver(base_obstacle_detector_);
+      surface_detector_->FrameDataSubject::attachObserver(base_obstacle_detector_);
 
       // Smooth out the basic detector by applying a smooth detector to it
       boost::shared_ptr<SmoothObstacleAggregator> smooth_detector(
@@ -360,7 +361,7 @@ protected:
     if (surfaceDetectorActive && !obstacleDetectorActive)
     {
       ar_visualizer_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive));
-      convex_hull_detector_->FrameDataSubject::attachObserver(ar_visualizer_);
+      surface_detector_->FrameDataSubject::attachObserver(ar_visualizer_);
     }
     else if (obstacleDetectorActive)
     {
@@ -459,6 +460,7 @@ private:
    */
   boost::shared_ptr<ObstacleDetector<PointT> > base_obstacle_detector_;
   boost::shared_ptr<SurfaceDetector<PointT> > surface_detector_;
+  boost::shared_ptr<SurfaceClusterer<PointT> > surface_clusterer_;
   boost::shared_ptr<SurfaceTracker<PointT> > surface_tracker_;
   boost::shared_ptr<ConvexHullDetector> convex_hull_detector_;
   boost::shared_ptr<ARVisualizer> ar_visualizer_;

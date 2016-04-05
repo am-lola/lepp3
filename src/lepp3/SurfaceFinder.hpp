@@ -85,7 +85,7 @@ private:
 
 template<class PointT>
 SurfaceFinder<PointT>::SurfaceFinder(bool surfaceDetectorActive) :
-        MIN_FILTER_PERCENTAGE(0.1),
+        MIN_FILTER_PERCENTAGE(0.08),
         surfaceDetectorActive(surfaceDetectorActive) 
 { //, cloud_surfaces_(new PointCloudT()) {
 	// Parameter initialization of the plane segmentation

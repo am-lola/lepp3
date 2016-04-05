@@ -2,7 +2,7 @@
 #define LEPP3_CONVEX_HULL_DETECTOR_H__
 
 #include "lepp3/Typedefs.hpp"
-#include "lepp3/FrameData.hpp"
+#include "lepp3/SurfaceData.hpp"
 #include "lepp3/GnuplotWriter.hpp"
 #include <pcl/surface/convex_hull.h>
 #include <pcl/filters/project_inliers.h>
@@ -118,11 +118,11 @@ public:
 * For each surface then it is computing the convex hull, and in a second step reduces the number of points
 * of the convex hull to a user defined number.
 */
-class ConvexHullDetector : public FrameDataObserver, public FrameDataSubject
+class ConvexHullDetector : public SurfaceDataObserver, public SurfaceDataSubject
 {
 public:
 	// inherited from the SurfaceAggregator interface
-	virtual void updateFrame(FrameDataPtr frameData);
+	virtual void updateSurfaces(SurfaceDataPtr surfaceData);
 
 	/**
 	* Return squared euclidean length of given vector.
@@ -352,33 +352,33 @@ void ConvexHullDetector::mergeConvexHulls(PointCloudConstPtr oldHull, PointCloud
 }
 
 
-void ConvexHullDetector::updateFrame(FrameDataPtr frameData)
+void ConvexHullDetector::updateSurfaces(SurfaceDataPtr surfaceData)
 {
-	for (int i = 0; i < frameData->surfaces.size(); i++)
+	for (int i = 0; i < surfaceData->surfaces.size(); i++)
 	{
 		// detect new convex hull
 		PointCloudPtr newHull(new PointCloudT());
-		detectConvexHull(frameData->surfaces[i]->get_cloud(), newHull);
+		detectConvexHull(surfaceData->surfaces[i]->get_cloud(), newHull);
 		reduceConvHullPoints(newHull, NUM_HULL_POINTS);
 
 		// project old and new hull onto the same surface
 		PointCloudPtr projNewHull(new PointCloudT());
 		PointCloudPtr projOldHull(new PointCloudT());
-		projectOnPlane(PointCloudConstPtr(newHull), frameData->surfaces[i]->get_planeCoefficients(), projNewHull);
-		projectOnPlane(frameData->surfaces[i]->get_hull(), frameData->surfaces[i]->get_planeCoefficients(), projOldHull);
+		projectOnPlane(PointCloudConstPtr(newHull), surfaceData->surfaces[i]->get_planeCoefficients(), projNewHull);
+		projectOnPlane(surfaceData->surfaces[i]->get_hull(), surfaceData->surfaces[i]->get_planeCoefficients(), projOldHull);
 
 
 		// merge convex hull with old convex hull of same surface. If the surface is detected for the first time,
 		// simply take the new cloud.
 		PointCloudPtr mergeHull(new PointCloudT());
 		mergeConvexHulls(projOldHull, projNewHull, mergeHull);
-		frameData->surfaces[i]->set_hull(mergeHull);
+		surfaceData->surfaces[i]->set_hull(mergeHull);
 
 		// write out files
-		//GnuplotWriter::writeHulls(frameData->frameNum, i, PointCloudConstPtr(projOldHull), 
-		//	PointCloudConstPtr(projNewHull), frameData->surfaces[i]->get_hull());		
+		//GnuplotWriter::writeHulls(surfaceData->frameNum, i, PointCloudConstPtr(projOldHull), 
+		//	PointCloudConstPtr(projNewHull), surfaceData->surfaces[i]->get_hull());		
 	}
-	notifyObservers(frameData);
+	notifyObservers(surfaceData);
 }
 
 
