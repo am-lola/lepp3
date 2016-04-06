@@ -96,6 +96,21 @@ void SurfaceDetector<PointT>::updateSurfaces(SurfaceDataPtr surfaceData)
 {
   // copy detected surfaces over in exchangeSurfaces variable
   surfaceMutex.lock();
+  // deep copy - enable in case of race conditions
+  /*
+  exchangeSurfaces.clear();
+  for (size_t i = 0; i < surfaceData->surfaces.size(); i++)
+  {
+    int id = surfaceData->surfaces[i]->id();
+    PointCloudPtr cloud(new PointCloudT(*surfaceData->surfaces[i]->get_cloud()));
+    pcl::ModelCoefficients planeCoefficients(surfaceData->surfaces[i]->get_planeCoefficients());
+    PointCloudPtr hull(new PointCloudT(*surfaceData->surfaces[i]->get_hull()));
+    SurfaceModelPtr copyModel(new SurfaceModel(cloud, planeCoefficients));
+    copyModel->set_id(id);
+    copyModel->set_hull(hull);
+    exchangeSurfaces.push_back(copyModel);
+  }
+  */
   exchangeSurfaces = surfaceData->surfaces;
   surfaceReferenceFrameNum = surfaceData->frameNum;
   surfaceFrameNum++;

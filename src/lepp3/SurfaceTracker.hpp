@@ -19,32 +19,41 @@ namespace lepp {
 class BlendVisitors : public SurfaceVisitor {
 public:
 	/**
-	 * Create a new `BlendVisitor` that will translate surface by the given
-	 * vector.
+	 * Create a new `BlendVisitor` will update the given surface in the argument using the class parameters.
 	 */
-	BlendVisitors(Coordinate translation_vec, PointCloudConstPtr cloud, pcl::ModelCoefficients coefficients) :
-			translation_vec_(translation_vec), cloud_(cloud), newCoefficients(coefficients) {
+	BlendVisitors(model_id_t id, Coordinate translation_vec, PointCloudConstPtr hull, 
+		pcl::ModelCoefficients oldCoefficients) :
+			id(id), 
+			translation_vec(translation_vec), 
+			hull(hull), 
+			oldCoefficients(oldCoefficients) {
 	}
-	void visitSurface(SurfaceModel &plane) 
+	void visitSurface(SurfaceModel &newPlane) 
 	{
+		// set id of new plane
+		newPlane.set_id(id);
+
 		// update center point
-		plane.translateCenterPoint(translation_vec_);
+		newPlane.translateCenterPoint(translation_vec);
 
-		// update point cloud of plane
-		plane.set_cloud(cloud_);	
+		// set convex hull to old convex hull (this is used by the convex hull detector later on)
+		newPlane.set_hull(hull);	
 
-		// Merge plane coefficients of old and new frame. Simply take average of every single coefficient.
-		const pcl::ModelCoefficients &oldCoefficients = plane.get_planeCoefficients();				
+		// Take average of old and new model coefficients
+		pcl::ModelCoefficients mergeCoefficients (newPlane.get_planeCoefficients());			
 		for (int i = 0; i < 4; i++)
-			newCoefficients.values[i] = 0.5 * (oldCoefficients.values[i] + newCoefficients.values[i]);		
-		plane.set_planeCoefficients(newCoefficients);
+			mergeCoefficients.values[i] = 0.5 * (mergeCoefficients.values[i] + oldCoefficients.values[i]);
+		newPlane.set_planeCoefficients(mergeCoefficients);
 	}
 
 private:
-	Coordinate const translation_vec_;
-	PointCloudConstPtr cloud_;
-	pcl::ModelCoefficients newCoefficients;
+	model_id_t id;
+	Coordinate const translation_vec;
+	PointCloudConstPtr hull;
+	pcl::ModelCoefficients oldCoefficients;
 };
+
+
 
 /**
  * A `SurfaceAggregator` decorator.
@@ -164,7 +173,7 @@ private:
 	/**
 	 * A mapping of model IDs to their `SurfaceModel` representation.
 	 */
-	std::map<model_id_t, boost::shared_ptr<SurfaceModel> > tracked_models_;
+	std::map<model_id_t, SurfaceModelPtr > tracked_models_;
 
 	/**
 	 * A mapping of the model ID to the number of subsequent frames that the model
@@ -329,30 +338,28 @@ void SurfaceTracker<PointT>::adaptTracked(
 		std::vector<SurfaceModelPtr> const& new_surfaces) {
 
 	for (std::map<int, size_t>:: const_iterator it =
-			correspondence.begin(); it != correspondence.end(); ++it) {
+			correspondence.begin(); it != correspondence.end(); ++it) 
+	{
 		model_id_t const& model_id = it->first;
 		int const& i = it->second;
 
+		// exchange the tracked surface model with the new surface model
+		SurfaceModelPtr oldSurfaceModel = tracked_models_[model_id];
+		tracked_models_[model_id] = new_surfaces[i];
+
+		// update surface model poointer in the materialized models if necessary
+		if (model_idx_in_list_.find(model_id) != model_idx_in_list_.end())
+			*model_idx_in_list_[model_id] = tracked_models_[model_id];
+
+
 		// Blend the new representation into the one we're tracking
-		Coordinate const translation_vec = (new_surfaces[i]->centerpoint()
-				- tracked_models_[model_id]->centerpoint()) / 2;
+		Coordinate const translation_vec = (oldSurfaceModel->centerpoint() - new_surfaces[i]->centerpoint()) / 2;
 
-		BlendVisitors blender(translation_vec, new_surfaces[i]->get_cloud(), new_surfaces[i]->get_planeCoefficients());
+		// Blend the old surface into the new one
+		BlendVisitors blender(oldSurfaceModel->id(), translation_vec, oldSurfaceModel->get_hull(), 
+			oldSurfaceModel->get_planeCoefficients());
+
 		tracked_models_[model_id]->accept(blender);
-
-//		/////////////////////////////////////////////////////////////////////
-//		if (frame_cnt_ % 30 == 0) {
-//			SurfaceModel* tracked =
-//					dynamic_cast<SurfaceModel*>(&*tracked_models_[model_id]);
-//			SurfaceModel* new_model =
-//					dynamic_cast<SurfaceModel*>(&*new_surfaces[i]);
-//
-//			if (tracked && new_model) {
-//				tracked->set_models(new_model->models());
-//			}
-//		}
-
-		//////////////////////////////////////////////////////////////////////
 	}
 }
 

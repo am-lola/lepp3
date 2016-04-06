@@ -48,6 +48,7 @@ public:
 	void set_cloud(PointCloudConstPtr &new_cloud) {cloud = new_cloud;}
 	void set_cloud(PointCloudPtr &new_cloud) {cloud = new_cloud;}
 	void set_hull(PointCloudPtr &new_hull) {hull = new_hull;}
+	void set_hull(PointCloudConstPtr &new_hull) {hull = new_hull;}
 	void set_id(int id) {id_ = id;}
 	void set_planeCoefficients(pcl::ModelCoefficients &new_coefficients) {planeCoefficients = new_coefficients;}
 

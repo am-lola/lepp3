@@ -30,7 +30,7 @@ public:
     Coordinate const& center = sphere.center();
     double centerPoint[3] = {center.x, center.y, center.z};
     double radius = sphere.radius();
-    ar::Sphere obstacle(centerPoint, radius, ar::Color(0,127,127,0.7));
+    ar::Sphere obstacle(centerPoint, radius, ar::Color(0,127,127,0.3));
     arvis->Add(obstacle);
   }
 
@@ -43,7 +43,7 @@ public:
     double center1[3] = {capsule.first().x, capsule.first().y, capsule.first().z};
     double center2[3] = {capsule.second().x, capsule.second().y, capsule.second().z};
     double radius = capsule.radius();
-    ar::Capsule cap(center1, center2, radius, ar::Color(127,0,127,0.7));
+    ar::Capsule cap(center1, center2, radius, ar::Color(127,0,127,0.3));
     arvis->Add(cap);
   }
 
