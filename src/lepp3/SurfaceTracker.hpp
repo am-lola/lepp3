@@ -223,9 +223,10 @@ model_id_t SurfaceTracker<PointT>::nextModelId() {
 /*!!!!!min_dist definition, should be checked !!!! */
 template<class PointT>
 model_id_t SurfaceTracker<PointT>::getMatchByDistance(
-		SurfaceModelPtr SurfaceModel) {
+		SurfaceModelPtr newSurface) {
 
-	Coordinate const query_point = SurfaceModel->centerpoint();
+	Coordinate const query_point = newSurface->centerpoint();
+	size_t newSurfaceSize = newSurface->get_cloud()->size();
 
 	bool found = false;
 	double min_dist = 1e10;
@@ -246,7 +247,10 @@ model_id_t SurfaceTracker<PointT>::getMatchByDistance(
 
 		//std::cout << "Distance was " << dist << " ";
 
-		if (dist <= 0.05) {
+		size_t trackedSurfaceSize = it->second->get_cloud()->size();
+
+		if ((dist <= 0.05) && (std::abs((1.0*trackedSurfaceSize/newSurfaceSize) - 1) < 0.5))
+		{
 			//std::cout << " accept";
 			if (!found)
 				min_dist = dist;
