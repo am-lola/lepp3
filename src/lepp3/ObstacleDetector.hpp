@@ -75,8 +75,8 @@ bool ObstacleDetector<PointT>::isValidObstacle(FrameDataPtr frameData, int obsta
   {
     const pcl::ModelCoefficients &coeff = frameData->surfaces[i]->get_planeCoefficients();
     double projZ = (-coeff.values[0] * center.x - coeff.values[1] * center.y - coeff.values[3]) / coeff.values[2];
-    // if the obstacle is above the plane, PAY ATTENTION TO THE Z-COORDINATE DIRECTION!
-    if (projZ > center.z)
+    // if the obstacle is above the plane
+    if (projZ < center.z)
       continue;
 
     // if distance to hull is smaller than delta, return false

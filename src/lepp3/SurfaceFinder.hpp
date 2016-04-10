@@ -204,15 +204,14 @@ void SurfaceFinder<PointT>::addNonGroundPlanes(
 	std::vector<PointCloudPtr> &planes)
 {
 	// compute centroid for each plane and find minimum
-	double minHeight = std::numeric_limits<double>::lowest();
+	double minHeight = std::numeric_limits<double>::max();
 	double planeHeights[planes.size()];
 	for (size_t i = 0; i < planes.size(); i++)
 	{
 		Eigen::Vector4f centroid;
 		pcl::compute3DCentroid (*planes[i], centroid);
 		planeHeights[i] = centroid[2];
-		// pay attention to the orientation of the z-axis! Axis is inverted!
-		if (planeHeights[i] > minHeight)
+		if (planeHeights[i] < minHeight)
 			minHeight = planeHeights[i];
 	}		
 	

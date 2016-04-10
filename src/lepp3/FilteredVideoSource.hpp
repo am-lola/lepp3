@@ -155,7 +155,7 @@ private:
   /*
   * Transform all points given in the point cloud to world coordinates.
   */
-  void transformToWorldCoordinates(PointCloudT &cloud);
+  void transformToWorldCoordinates(PointCloudPtr &cloud);
 
   /**
   * Remove all points from the given point cloud that are too far away from Lola.
@@ -176,18 +176,18 @@ void FilteredVideoSource<PointT>::open() {
 * Transform all points given in the point cloud to world coordinates.
 */
 template<class PointT>
-void FilteredVideoSource<PointT>::transformToWorldCoordinates(PointCloudT &cloud)
+void FilteredVideoSource<PointT>::transformToWorldCoordinates(PointCloudPtr &cloud)
 {
   float theta = M_PI/4;
   Eigen::Affine3f transform_2 = Eigen::Affine3f::Identity();
-  
+  transform_2(2,2) = -1;
   transform_2.rotate (Eigen::AngleAxisf (theta, Eigen::Vector3f::UnitX()));
   transform_2.translation() << 0.0, 0.0, -1.78;
 
   PointCloudPtr transformed_cloud (new PointCloudT());
   // You can either apply transform_1 or transform_2; they are the same
-  pcl::transformPointCloud (cloud, *transformed_cloud, transform_2);
-  cloud = *transformed_cloud;
+  pcl::transformPointCloud (*cloud, *transformed_cloud, transform_2);
+  cloud = transformed_cloud;
 }
 
 
@@ -269,7 +269,7 @@ void FilteredVideoSource<PointT>::updateFrame(
 
   // Now we obtain the fully filtered cloud...
   this->getFiltered(filtered);
-  this->transformToWorldCoordinates(filtered); 
+  this->transformToWorldCoordinates(cloud_filtered); 
   this->removeBackground(cloud_filtered);
 
   // ...and we're done!
