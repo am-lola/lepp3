@@ -21,9 +21,9 @@ public:
 	/**
 	 * Create a new `BlendVisitor` will update the given surface in the argument using the class parameters.
 	 */
-	BlendVisitors(model_id_t id, Coordinate translation_vec, PointCloudConstPtr hull, 
+	BlendVisitors(model_id_t id, mesh_handle_t mh, Coordinate translation_vec, PointCloudConstPtr hull, 
 		pcl::ModelCoefficients oldCoefficients) :
-			id(id), 
+			id(id), mh(mh),
 			translation_vec(translation_vec), 
 			hull(hull), 
 			oldCoefficients(oldCoefficients) {
@@ -32,6 +32,9 @@ public:
 	{
 		// set id of new plane
 		newPlane.set_id(id);
+
+		// copy mesh handle to new plane
+		newPlane.set_meshHandle(mh);
 
 		// update center point
 		newPlane.translateCenterPoint(translation_vec);
@@ -48,6 +51,7 @@ public:
 
 private:
 	model_id_t id;
+	mesh_handle_t mh;
 	Coordinate const translation_vec;
 	PointCloudConstPtr hull;
 	pcl::ModelCoefficients oldCoefficients;
@@ -360,7 +364,7 @@ void SurfaceTracker<PointT>::adaptTracked(
 		Coordinate const translation_vec = (oldSurfaceModel->centerpoint() - new_surfaces[i]->centerpoint()) / 2;
 
 		// Blend the old surface into the new one
-		BlendVisitors blender(oldSurfaceModel->id(), translation_vec, oldSurfaceModel->get_hull(), 
+		BlendVisitors blender(oldSurfaceModel->id(), oldSurfaceModel->get_meshHandle() ,translation_vec, oldSurfaceModel->get_hull(), 
 			oldSurfaceModel->get_planeCoefficients());
 
 		tracked_models_[model_id]->accept(blender);

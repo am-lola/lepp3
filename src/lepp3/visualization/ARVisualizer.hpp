@@ -19,7 +19,7 @@ namespace lepp
 class ModelDrawer : public ModelVisitor 
 {
 public:
-  ModelDrawer(ar::ARVisualizer *arvis) : arvis(arvis) {}
+  ModelDrawer(ar::ARVisualizer *arvis, std::vector<mesh_handle_t> &visHandles) : arvis(arvis), visHandles(visHandles) {}
   virtual ~ModelDrawer() {}
 
   /**
@@ -31,7 +31,19 @@ public:
     double centerPoint[3] = {center.x, center.y, center.z};
     double radius = sphere.radius();
     ar::Sphere obstacle(centerPoint, radius, ar::Color(0,127,127,0.3));
-    arvis->Add(obstacle);
+
+    // sphere was not drawn before
+    if (sphere.get_meshHandle() == -1)
+    {
+      mesh_handle_t mh = arvis->Add(obstacle);
+      sphere.set_meshHandle(mh);
+    }
+    // update sphere
+    else
+      arvis->Update(sphere.get_meshHandle(), obstacle);
+
+    // add handle to visHandles
+    visHandles.push_back(sphere.get_meshHandle());
   }
 
   /**
@@ -43,8 +55,19 @@ public:
     double center1[3] = {capsule.first().x, capsule.first().y, capsule.first().z};
     double center2[3] = {capsule.second().x, capsule.second().y, capsule.second().z};
     double radius = capsule.radius();
-    ar::Capsule cap(center1, center2, radius, ar::Color(127,0,127,0.3));
-    arvis->Add(cap);
+    ar::Capsule obstacle(center1, center2, radius, ar::Color(127,0,127,0.3));
+    // capsule was not drawn before
+    if (capsule.get_meshHandle() == -1)
+    {
+      mesh_handle_t mh = arvis->Add(obstacle);
+      capsule.set_meshHandle(mh);
+    }
+    // update capsule
+    else
+      arvis->Update(capsule.get_meshHandle(), obstacle);
+
+    // add handle to visHandles
+    visHandles.push_back(capsule.get_meshHandle());
   }
 
 private:
@@ -52,6 +75,11 @@ private:
   * The instance to which the drawer will draw all models.
   */
   ar::ARVisualizer *arvis;
+
+  /**
+  * Vector of all handles that are visualized in this frame.
+  */
+  std::vector<mesh_handle_t> &visHandles;
 };
 
 
@@ -62,7 +90,8 @@ private:
 class SurfaceDrawer : public SurfaceVisitor
 {
 public:
-  SurfaceDrawer(ar::ARVisualizer *arvis) : arvis(arvis), surfaceCount(0) {}
+  SurfaceDrawer(ar::ARVisualizer *arvis, std::vector<mesh_handle_t> &visHandles) : 
+    arvis(arvis), surfaceCount(0), visHandles(visHandles) {}
   virtual ~SurfaceDrawer() {}
 
   /**
@@ -83,7 +112,19 @@ public:
     int colorID = surfaceCount % 6;
     surfaceCount++;
     ar::Polygon surfPoly(points, numPoints, ar::Color(r[colorID],g[colorID],b[colorID],1));
-    arvis->Add(surfPoly);
+
+    // plane was not drawn before
+    if (plane.get_meshHandle() == -1)
+    {
+      mesh_handle_t mh = arvis->Add(surfPoly);
+      plane.set_meshHandle(mh);
+    }
+    // update plane
+    else
+      arvis->Update(plane.get_meshHandle(), surfPoly);
+
+    // add handle to visHandles
+    visHandles.push_back(plane.get_meshHandle());
   }
 private:
   /**
@@ -98,6 +139,11 @@ private:
 
   // count how many surfaces have been drawn so far to adapt colors.
   int surfaceCount;
+
+  /**
+  * Vector of all handles that are visualized in this frame.
+  */
+  std::vector<mesh_handle_t> &visHandles;
 };
 
 const int SurfaceDrawer::r[6] = {255,   0,   0, 255, 255,   0};
@@ -148,12 +194,12 @@ private:
   /**
   * Visualize convex hulls of surfaces in given vector with ARVisualizer.
   */
-  void drawSurfaces(std::vector<SurfaceModelPtr> surfaces);
+  void drawSurfaces(std::vector<SurfaceModelPtr> surfaces, std::vector<mesh_handle_t> &visHandles);
 
   /**
   * Visualize obstacles in given vector with ARVisualizer.
   */
-  void drawObstacles(std::vector<ObjectModelPtr> obstacles);
+  void drawObstacles(std::vector<ObjectModelPtr> obstacles, std::vector<mesh_handle_t> &visHandles);
 
   /**
   * Output the number of the frame.
@@ -161,16 +207,24 @@ private:
   void outputFrameNum(const long &frameNum, const long &surfaceFrameNum, 
     const long &surfaceReferenceFrameNum);
 
+  /**
+  * Remove old obstacles and surfaces that are no longer visualized.
+  */
+  void removeOldSurfObst(std::vector<mesh_handle_t> &visHandles);
+
   // visulize obstacles and surfaces only if options were chosen in config file
   bool visualizeSurfaces;
   bool visualizeObstacles;
+
+  // vector that holds the handles to all obstacles and surfaces that were visualized in the previous frame
+  std::vector<mesh_handle_t> oldHandles;
 };
 
 
-void ARVisualizer::drawSurfaces(std::vector<SurfaceModelPtr> surfaces)
+void ARVisualizer::drawSurfaces(std::vector<SurfaceModelPtr> surfaces, std::vector<mesh_handle_t> &visHandles)
 {
   // create surface drawer object
-  SurfaceDrawer sd(arvis);
+  SurfaceDrawer sd(arvis, visHandles);
 
   // draw surfaces
   for (size_t i = 0; i < surfaces.size(); i++)
@@ -178,10 +232,10 @@ void ARVisualizer::drawSurfaces(std::vector<SurfaceModelPtr> surfaces)
 }
 
 
-void ARVisualizer::drawObstacles(std::vector<ObjectModelPtr> obstacles)
+void ARVisualizer::drawObstacles(std::vector<ObjectModelPtr> obstacles, std::vector<mesh_handle_t> &visHandles)
 {
   // create model drawer object
-  ModelDrawer md(arvis);
+  ModelDrawer md(arvis, visHandles);
 
   // draw obstacles
   for (size_t i = 0; i < obstacles.size(); i++)
@@ -209,16 +263,33 @@ void ARVisualizer::outputFrameNum(const long &frameNum, const long &surfaceFrame
 }
 
 
+void ARVisualizer::removeOldSurfObst(std::vector<mesh_handle_t> &visHandles)
+{
+  // compare the newly visualized handles with the old ones. Remove all handles that appear
+  // in the old handle list but not in the new one.
+  std::sort(visHandles.begin(), visHandles.end());
+  for (mesh_handle_t &mh : oldHandles)
+  {
+    // if mesh handle is not contained in newly visualized handles, remove it from visualizer
+    if (!std::binary_search(visHandles.begin(), visHandles.end(), mh))
+      arvis->Remove(mh);
+  }
+  oldHandles = visHandles;
+}
+
+
 void ARVisualizer::updateFrame(FrameDataPtr frameData)
 {
-  // remove all objects drawn with the visualizer on the previous frame.
-	arvis->RemoveAll();
-
+  // visualize all obstacles and surfaces and store their handles
+  std::vector<mesh_handle_t> visHandles;
   if (visualizeObstacles)
-    drawObstacles(frameData->obstacles);
+    drawObstacles(frameData->obstacles, visHandles);
 
   if (visualizeSurfaces)
-    drawSurfaces(frameData->surfaces);
+    drawSurfaces(frameData->surfaces, visHandles);
+
+  // Remove old obstacles and surfaces that are no longer visualized
+  removeOldSurfObst(visHandles);
 
   // output frame num and surface frame num
   outputFrameNum(frameData->frameNum, frameData->surfaceFrameNum, 

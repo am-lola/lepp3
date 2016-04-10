@@ -24,6 +24,7 @@ namespace lepp
 	typedef boost::shared_ptr<ObjectModel> ObjectModelPtr;
 	typedef boost::shared_ptr<RGBData> RGBDataPtr;
 	typedef boost::shared_ptr<SurfaceData> SurfaceDataPtr;
+	typedef unsigned int mesh_handle_t;
 }
 
 #endif

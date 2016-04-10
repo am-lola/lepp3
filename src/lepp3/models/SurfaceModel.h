@@ -23,7 +23,7 @@ public:
 		cloud(surfaceCloud), 
 		planeCoefficients(planeCoefficients), 
 		hull(new PointCloudT()),
-		id_(0) 
+		id_(0), mh_(-1)
 	{
 		computeCenterpoint();
 	}
@@ -41,6 +41,7 @@ public:
 	PointCloudConstPtr get_cloud() const {return cloud;}
 	PointCloudConstPtr get_hull() const {return hull;}
 	const pcl::ModelCoefficients& get_planeCoefficients() const {return planeCoefficients;}
+	int get_meshHandle() const {return mh_;}
 
 	/**
 	* Setters for class variables.
@@ -51,6 +52,7 @@ public:
 	void set_hull(PointCloudConstPtr &new_hull) {hull = new_hull;}
 	void set_id(int id) {id_ = id;}
 	void set_planeCoefficients(pcl::ModelCoefficients &new_coefficients) {planeCoefficients = new_coefficients;}
+	void set_meshHandle(mesh_handle_t mh) {mh_ = mh;}
 
 	/**
 	* Translate center point by given coordinate.
@@ -62,6 +64,7 @@ public:
 
 private:
 	int id_;
+	mesh_handle_t mh_;
 	PointCloudConstPtr cloud;
 	pcl::ModelCoefficients planeCoefficients;
 	PointCloudConstPtr hull;

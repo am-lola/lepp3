@@ -17,7 +17,7 @@ class CapsuleModel;
  */
 class ObjectModel {
 public:
-  ObjectModel() : id_(0) {}
+  ObjectModel() : id_(0), mh_(-1) {}
 
   virtual void accept(ModelVisitor& visitor) = 0;
   virtual Coordinate center_point() const = 0;
@@ -30,6 +30,13 @@ public:
    * Therefore, 0 is the default value returned, unless `set_id` is called.
    */
   int id() const { return id_; }
+
+  /**
+  * Getter and setter for the mesh handle of the current object model (needed for visualizer)
+  */
+  int get_meshHandle() const {return mh_;}
+  void set_meshHandle(mesh_handle_t mh) {mh_ = mh;}
+
   /**
    * Sets the object's ID.
    */
@@ -38,7 +45,9 @@ public:
   friend std::ostream& operator<<(std::ostream& out, ObjectModel const& model);
 private:
   int id_;
+  mesh_handle_t mh_;
 };
+
 
 class ModelVisitor {
 public:
@@ -46,6 +55,7 @@ public:
   virtual void visitSphere(SphereModel& sphere) = 0;
   virtual void visitCapsule(CapsuleModel& capsule) = 0;
 };
+
 
 /**
  * Model class representing a sphere.
