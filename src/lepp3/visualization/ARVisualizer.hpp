@@ -204,8 +204,7 @@ private:
   /**
   * Output the number of the frame.
   */
-  void outputFrameNum(const long &frameNum, const long &surfaceFrameNum, 
-    const long &surfaceReferenceFrameNum);
+  void outputFrameNum(FrameDataPtr frameData);
 
   /**
   * Remove old obstacles and surfaces that are no longer visualized.
@@ -243,22 +242,21 @@ void ARVisualizer::drawObstacles(std::vector<ObjectModelPtr> obstacles, std::vec
 }
 
 
-void ARVisualizer::outputFrameNum(const long &frameNum, const long &surfaceFrameNum, 
-  const long &surfaceReferenceFrameNum)
+void ARVisualizer::outputFrameNum(FrameDataPtr frameData)
 {
-  if (visualizeObstacles)
-  {
-    std::cout << "Frame " << frameNum;
-    if (visualizeSurfaces)
-      std::cout << "    ";
-    else
-      std::cout << std::endl;
-  }
+  std::cout << "Frame " << frameData->frameNum << "    " 
+    << "Ransac " << frameData->planeCoeffsIteration << "    " 
+    << "RansacRef " << frameData->planeCoeffsReferenceFrameNum;
+  if (visualizeSurfaces)
+    std::cout << "    ";
+  else
+    std::cout << std::endl;
+  
   
   if (visualizeSurfaces)
   {
-    std::cout << "SurfaceFrame " << surfaceFrameNum << "    "
-      << "SurfaceReference " << surfaceReferenceFrameNum << std::endl;
+    std::cout << "Surfaces " << frameData->surfaceDetectionIteration << "    "
+      << "SurfacesRef " << frameData->surfaceReferenceFrameNum << std::endl;
   }
 }
 
@@ -292,8 +290,7 @@ void ARVisualizer::updateFrame(FrameDataPtr frameData)
   removeOldSurfObst(visHandles);
 
   // output frame num and surface frame num
-  outputFrameNum(frameData->frameNum, frameData->surfaceFrameNum, 
-    frameData->surfaceReferenceFrameNum);
+  outputFrameNum(frameData);
 }
 
 
