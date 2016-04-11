@@ -16,6 +16,7 @@
 #include "lepp3/MomentOfInertiaApproximator.hpp"
 #include "lepp3/FrameData.hpp"
 #include "lepp3/RGBData.hpp"
+#include "lepp3/PlaneInlierFinder.hpp"
 
 #include "lepp3/visualization/EchoObserver.hpp"
 #include "lepp3/visualization/Visualizer.hpp"

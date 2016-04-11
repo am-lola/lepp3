@@ -161,6 +161,11 @@ private:
   * Remove all points from the given point cloud that are too far away from Lola.
   */
   void removeBackground(PointCloudPtr &cloudPtr);
+
+  /**
+  * Remove NaN points from input cloud.
+  */
+  void preprocessCloud(PointCloudPtr &cloud);
 };
 
 template<class PointT>
@@ -171,6 +176,20 @@ void FilteredVideoSource<PointT>::open() {
   source_->open();
 }
 
+/**
+* Remove NaN points from input cloud.
+*/
+template<class PointT>
+void FilteredVideoSource<PointT>::preprocessCloud(PointCloudPtr &cloud) {
+  // Remove NaN points from the input cloud.
+  // The pcl API forces us to pass in a reference to the vector, even if we have
+  // no use of it later on ourselves.
+  PointCloudPtr cloud_filtered(new PointCloudT());
+  std::vector<int> index;
+  pcl::removeNaNFromPointCloud<PointT>(*cloud, *cloud_filtered, index);
+
+  cloud = cloud_filtered;
+}
 
 /*
 * Transform all points given in the point cloud to world coordinates.
@@ -271,6 +290,7 @@ void FilteredVideoSource<PointT>::updateFrame(
   this->getFiltered(filtered);
   this->transformToWorldCoordinates(cloud_filtered); 
   this->removeBackground(cloud_filtered);
+  this->preprocessCloud(cloud_filtered);
 
   // ...and we're done!
   t.stop();

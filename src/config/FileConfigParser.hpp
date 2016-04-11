@@ -7,6 +7,7 @@
 #include "Parser.h"
 #include "lepp3/SurfaceTracker.hpp"
 
+
 #include "deps/toml.h"
 
 #include "lepp3/util/FileManager.hpp"
@@ -280,10 +281,16 @@ protected:
 
       // connect convex hull detector back to surfaceDetector (close the loop)
       convex_hull_detector_->SurfaceDataSubject::attachObserver(surface_detector_);
+
+      std::cout << "initialized surface detector" << std::endl;
     }
 
     if (obstacleDetectorActive)
     {
+      // Setup plane inlier finder
+      inlier_finder_.reset(new PlaneInlierFinder<PointT>());
+      surface_detector_->FrameDataSubject::attachObserver(inlier_finder_);
+      
       // Prepare the approximator that the detector is to use.
       // First, the simple approximator...
       boost::shared_ptr<ObjectApproximator<PointT> > simple_approx(
@@ -297,7 +304,7 @@ protected:
           new SplitObjectApproximator<PointT>(simple_approx, splitter));
 
       base_obstacle_detector_.reset(new ObstacleDetector<PointT>(approx, surfaceDetectorActive));
-      surface_detector_->FrameDataSubject::attachObserver(base_obstacle_detector_);
+      inlier_finder_->FrameDataSubject::attachObserver(base_obstacle_detector_);
 
       // Smooth out the basic detector by applying a smooth detector to it
       boost::shared_ptr<SmoothObstacleAggregator> smooth_detector(
@@ -306,7 +313,10 @@ protected:
       // Now the detector that is exposed via the context is a smoothed-out
       // base detector.
       this->detector_ = smooth_detector;
+
+      std::cout << "initialized obstacle detector" << std::endl;
     }
+
   }
 
 
@@ -464,6 +474,7 @@ private:
   boost::shared_ptr<SurfaceTracker<PointT> > surface_tracker_;
   boost::shared_ptr<ConvexHullDetector> convex_hull_detector_;
   boost::shared_ptr<ARVisualizer> ar_visualizer_;
+  boost::shared_ptr<PlaneInlierFinder<PointT> > inlier_finder_;
 
   bool surfaceDetectorActive;
   bool obstacleDetectorActive;

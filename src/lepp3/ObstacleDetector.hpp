@@ -122,18 +122,20 @@ void ObstacleDetector<PointT>::filterInvalidObstacles(FrameDataPtr frameData)
 template<class PointT>
 void ObstacleDetector<PointT>::updateFrame(FrameDataPtr frameData) 
 {
-  segmenter_->segment(frameData);
-
-  // Iteratively approximate the segments
-  for (size_t i = 0; i < frameData->obstacleClouds.size(); i++) 
+  if (frameData->cloudMinusSurfaces->size() != 0)
   {
-    frameData->obstacles.push_back(approximator_->approximate(frameData->obstacleClouds[i]));
+    segmenter_->segment(frameData);
+
+    // Iteratively approximate the segments
+    for (size_t i = 0; i < frameData->obstacleClouds.size(); i++) 
+    {
+      frameData->obstacles.push_back(approximator_->approximate(frameData->obstacleClouds[i]));
+    }
+    
+    // remove invalid obstacles
+    if (surfaceDetectorActive)
+      filterInvalidObstacles(frameData);
   }
-  
-  // remove invalid obstacles
-  if (surfaceDetectorActive)
-    filterInvalidObstacles(frameData);
-  
   notifyObservers(frameData);
 }
 

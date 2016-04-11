@@ -23,19 +23,11 @@ public:
     * from the input cloud and store the remaining cloud in 'cloudMinusSurfaces'.
     */
 	void findSurfaces(
-		FrameDataPtr frameData, 
+		PointCloudPtr cloud,
 		std::vector<PointCloudPtr> &planes, 
 		std::vector<pcl::ModelCoefficients> &planeCoefficients);
 
 private:
-	/**
-	* Performs some initial preprocessing and filtering appropriate for the
-	* segmentation algorithm.
-	* Takes the original cloud as a parameter and returns a pointer to a newly
-	* created (and allocated) cloud containing the result of the filtering.
-	*/
-	PointCloudPtr preprocessCloud(PointCloudConstPtr const& cloud);
-
 	/**
 	* Detect all planes in the given point cloud and store those and their 
 	* coefficients in the given vectors.
@@ -46,15 +38,11 @@ private:
 
 	/**
 	* If surface detector is disabled, only the ground has to be removed but all other
-	* planes have to stay in place. To make sure that the whole ground is removed,
-	* planes are detected and classified and all removed from the given point cloud.
-	* In a second step all non-ground planes are added back to the point cloud.
-	* This is done by removing the lowest plane (which is the ground) and all other planes
-	* that are less than a few centimeters apart from the plane.
+	* planes have to stay in place. For this only one plane (the ground) and its coefficients
+	* are passed on to the PlaneInlierFinder where the ground is removed from the point cloud.
 	*/
-	void addNonGroundPlanes(PointCloudPtr &cloud_filtered, 
-		std::vector<PointCloudPtr> &planes);
-
+	void removeNonGroundCoefficients(std::vector<PointCloudPtr> &planes, 
+		std::vector<pcl::ModelCoefficients>  &planeCoefficients);
 
 	/**
 	* Several planes corresponding to the same surface might be detected.
@@ -96,18 +84,6 @@ SurfaceFinder<PointT>::SurfaceFinder(bool surfaceDetectorActive) :
 	segmentation_.setDistanceThreshold(0.02);
 }
 
-template<class PointT>
-PointCloudPtr SurfaceFinder<PointT>::preprocessCloud(
-		PointCloudConstPtr const& cloud) {
-	// Remove NaN points from the input cloud.
-	// The pcl API forces us to pass in a reference to the vector, even if we have
-	// no use of it later on ourselves.
-	PointCloudPtr cloud_filtered(new PointCloudT());
-	std::vector<int> index;
-	pcl::removeNaNFromPointCloud<PointT>(*cloud, *cloud_filtered, index);
-
-	return cloud_filtered;
-}
 
 
 template<class PointT> 
@@ -199,49 +175,46 @@ void SurfaceFinder<PointT>::findPlanes(
 
 
 template<class PointT>
-void SurfaceFinder<PointT>::addNonGroundPlanes(
-	PointCloudPtr &cloud_filtered, 
-	std::vector<PointCloudPtr> &planes)
+void SurfaceFinder<PointT>::removeNonGroundCoefficients(
+	std::vector<PointCloudPtr> &planes, 
+	std::vector<pcl::ModelCoefficients>  &planeCoefficients)
 {
 	// compute centroid for each plane and find minimum
 	double minHeight = std::numeric_limits<double>::max();
-	double planeHeights[planes.size()];
+	size_t minIndex = -1;
 	for (size_t i = 0; i < planes.size(); i++)
 	{
 		Eigen::Vector4f centroid;
 		pcl::compute3DCentroid (*planes[i], centroid);
-		planeHeights[i] = centroid[2];
-		if (planeHeights[i] < minHeight)
-			minHeight = planeHeights[i];
+		if (centroid[2] < minHeight)
+		{
+			minHeight = centroid[2];
+			minIndex = i;
+		}
 	}		
-	
-	// add all planes back that are further than Xcm apart from the ground
-	for (size_t i = 0; i < planes.size(); i++)
-	{
-		if (std::abs(planeHeights[i] - minHeight) > 0.05)
-			*cloud_filtered += *planes[i];
-	}
+
+	// replace planes and plane coefficients by new vectors that only include the ground
+	std::vector<PointCloudPtr> ground;
+	ground.push_back(planes[minIndex]);
+	planes = ground;
+	std::vector<pcl::ModelCoefficients> groundCoeff;
+	groundCoeff.push_back(planeCoefficients[minIndex]);
+	planeCoefficients = groundCoeff;
 }
 
 
 template<class PointT>
 void SurfaceFinder<PointT>::findSurfaces(
-	FrameDataPtr frameData, 
+	PointCloudPtr cloud,
 	std::vector<PointCloudPtr> &planes, 
-	std::vector<pcl::ModelCoefficients> &planeCoefficients) 
+	std::vector<pcl::ModelCoefficients>  &planeCoefficients) 
 {
-	frameData->cloudMinusSurfaces = preprocessCloud(frameData->cloud);
-
     // extract those planes that are considered as surfaces and put them in cloud_surfaces_
-    findPlanes(frameData->cloudMinusSurfaces, planes, planeCoefficients);
+  	findPlanes(cloud, planes, planeCoefficients);
 
     if (!surfaceDetectorActive)
-    {
-    	// add all planes beside the ground back to the point cloud
-		addNonGroundPlanes(frameData->cloudMinusSurfaces, planes);
-		// do not cluster and process planes if surface detector was disabled
-    	return;
-    }
+		// remove all coefficients from planeCoefficients except for the ground coefficients
+		removeNonGroundCoefficients(planes, planeCoefficients);
 }
 
 } // namespace lepp

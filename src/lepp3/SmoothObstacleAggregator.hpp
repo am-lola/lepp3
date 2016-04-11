@@ -363,14 +363,17 @@ void SmoothObstacleAggregator::materializeFoundObjects() {
 
 void SmoothObstacleAggregator::updateFrame(FrameDataPtr frameData) 
 {
-  std::map<model_id_t, size_t> correspondence = matchToPrevious(frameData->obstacles);
-  updateLostAndFound(correspondence);
-  adaptTracked(correspondence, frameData->obstacles, frameData->frameNum);
-  dropLostObjects();
-  materializeFoundObjects();
-   // copy materialized models   
-  std::vector<ObjectModelPtr> materializedModelsCopy(materialized_models_.begin(), materialized_models_.end()); 
-  frameData->obstacles = materializedModelsCopy;
+  if (frameData->cloudMinusSurfaces->size() != 0)
+  {
+    std::map<model_id_t, size_t> correspondence = matchToPrevious(frameData->obstacles);
+    updateLostAndFound(correspondence);
+    adaptTracked(correspondence, frameData->obstacles, frameData->frameNum);
+    dropLostObjects();
+    materializeFoundObjects();
+     // copy materialized models   
+    std::vector<ObjectModelPtr> materializedModelsCopy(materialized_models_.begin(), materialized_models_.end()); 
+    frameData->obstacles = materializedModelsCopy;
+  }
   notifyObservers(frameData);
 }
 

@@ -13,7 +13,7 @@ struct FrameData
 {
 	FrameData(long num) : frameNum(num), 
 		cloudMinusSurfaces(new PointCloudT()), 
-		surfaceFrameNum(-1) {}
+		surfaceFrameNum(-1), surfaceReferenceFrameNum(-1) {}
 	long 							frameNum;
 	long 							surfaceFrameNum;
 	long							surfaceReferenceFrameNum;
@@ -22,6 +22,7 @@ struct FrameData
 	std::vector<SurfaceModelPtr>	surfaces;
 	std::vector<ObjectModelPtr> 	obstacles;
 	std::vector<PointCloudPtr>		obstacleClouds;
+	std::vector<pcl::ModelCoefficients> planeCoefficients;
 };
 
 
