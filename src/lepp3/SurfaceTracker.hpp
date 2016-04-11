@@ -9,6 +9,7 @@
 #include <list>
 #include <vector>
 #include <map>
+#include <limits>
 
 namespace lepp {
 
@@ -85,7 +86,13 @@ public:
 	/**
 	 * Creates a new `SurfaceTracker`.
 	 */
-	SurfaceTracker();
+	SurfaceTracker(std::vector<double> &surfaceTrackerParameters) :
+		next_model_id_(0),
+		LOST_LIMIT(surfaceTrackerParameters[0]),
+		FOUND_LIMIT(surfaceTrackerParameters[1]),
+		MAX_CENTER_DISTANCE(surfaceTrackerParameters[2]),
+		MAX_CLOUD_SIZE_DEVIATION(surfaceTrackerParameters[3])
+	{}
 
 	/**
 	 * The member function that all concrete aggregators need to implement in
@@ -210,14 +217,15 @@ private:
 	 */
 	std::map<model_id_t, std::list<SurfaceModelPtr>::iterator> model_idx_in_list_;
 
-	static const int LOST_LIMIT = 5;
-	static const int FOUND_LIMIT = 5;
-};
+	// set the number of consecutive frames needed in order to detect/lose a plane 
+	const int LOST_LIMIT;
+	const int FOUND_LIMIT;
 
-template<class PointT>
-SurfaceTracker<PointT>::SurfaceTracker() :
-		next_model_id_(0) {
-}
+	// maximum center distance of two planes in order to be tracked
+	const double MAX_CENTER_DISTANCE;
+	// maximum percentual deviation of two planes in order to be tracked
+	const double MAX_CLOUD_SIZE_DEVIATION;
+};
 
 template<class PointT>
 model_id_t SurfaceTracker<PointT>::nextModelId() {
@@ -233,7 +241,7 @@ model_id_t SurfaceTracker<PointT>::getMatchByDistance(
 	size_t newSurfaceSize = newSurface->get_cloud()->size();
 
 	bool found = false;
-	double min_dist = 1e10;
+	double min_dist = std::numeric_limits<double>::max();
 
 	model_id_t match = 0;
 
@@ -253,7 +261,7 @@ model_id_t SurfaceTracker<PointT>::getMatchByDistance(
 
 		size_t trackedSurfaceSize = it->second->get_cloud()->size();
 
-		if ((dist <= 0.05) && (std::abs((1.0*trackedSurfaceSize/newSurfaceSize) - 1) < 0.5))
+		if ((dist <= MAX_CENTER_DISTANCE) && (std::abs((1.0*trackedSurfaceSize/newSurfaceSize) - 1) < MAX_CLOUD_SIZE_DEVIATION))
 		{
 			//std::cout << " accept";
 			if (!found)

@@ -121,6 +121,11 @@ public:
 class ConvexHullDetector : public SurfaceDataObserver, public SurfaceDataSubject
 {
 public:
+	ConvexHullDetector(std::vector<double> convexHullParameters) :
+		NUM_HULL_POINTS(convexHullParameters[0]),
+		MERGE_UPDATE_PERCENTAGE(convexHullParameters[1])
+	{}
+
 	// inherited from the SurfaceAggregator interface
 	virtual void updateSurfaces(SurfaceDataPtr surfaceData);
 
@@ -135,16 +140,20 @@ public:
 	static void projectPointOntoLineSegment(const PointT &seg1, const PointT &seg2, const PointT &p, PointT &projVec);
 
 private:
-	static constexpr int NUM_HULL_POINTS = 8;
-	static constexpr double MERGE_UPDATE_PERCENTAGE = 0.8;
+	// after PCL detected a convex hull, it is shrinked to at most NUM_HULL_POINTS
+	const int NUM_HULL_POINTS;
+
+	// When a new convex hull is merged with an old convex hull, all points of the new convex hull are
+	// moved mergeUpdatePercentage percent along the vector pointing to the closest boundary point of 
+	// the old convex hull. All points of the old convex hull are moved 1-mergeUpdatePercentage percent 
+	// along the vector pointing to the closest boundary point of the new convex hull.
+	const double MERGE_UPDATE_PERCENTAGE;
 
 	// reduce the number of points in the given hull to 'numPoints'
 	void reduceConvHullPoints(PointCloudPtr &hull, int numPoints);
 
 	// uses the pcl function to compute the convex hull of the given point cloud.
 	void detectConvexHull(PointCloudConstPtr surface, PointCloudPtr &hull);
-
-
 
 	/**
 	* Function gets a point cloud and a convex hull. It projects each point of the given cloud onto the 
@@ -335,11 +344,11 @@ void ConvexHullDetector::mergeConvexHulls(PointCloudConstPtr oldHull, PointCloud
 {
 	// Project points of old hull onto new hull
 	PointCloudPtr projNewOntoOld(new PointCloudT());
-	projectCloudOntoHull(newHull, oldHull, projNewOntoOld, MERGE_UPDATE_PERCENTAGE);
+	projectCloudOntoHull(newHull, oldHull, projNewOntoOld, 1-MERGE_UPDATE_PERCENTAGE);
 
 	// Project points of new hull onto old hull
 	PointCloudPtr projOldOntoNew(new PointCloudT());
-	projectCloudOntoHull(oldHull, newHull, projOldOntoNew, 1-MERGE_UPDATE_PERCENTAGE);
+	projectCloudOntoHull(oldHull, newHull, projOldOntoNew, MERGE_UPDATE_PERCENTAGE);
 
 	// merge both projections
 	PointCloudPtr combinedProj(new PointCloudT());

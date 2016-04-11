@@ -258,25 +258,71 @@ protected:
     return split_strat;
   }
 
+  void loadSurfaceFinderParameters(std::vector<double> &surfFinderParameters)
+  {
+    surfFinderParameters.push_back(toml_tree_.find("RANSAC.maxIterations")->as<int>());
+    surfFinderParameters.push_back(toml_tree_.find("RANSAC.distanceThreshold")->as<double>());
+    surfFinderParameters.push_back(toml_tree_.find("RANSAC.minFilterPercentage")->as<double>());
+    surfFinderParameters.push_back(toml_tree_.find("Classification.deviationAngle")->as<double>());
+  }
+
+  void loadPlaneInlierFinderParameters(std::vector<double> &planeInlierFinderParameters)
+  {
+    planeInlierFinderParameters.push_back(toml_tree_.find("InlierFinder.minDistToPlane")->as<double>());
+  }
+
+
+  void loadSurfaceClustererParameters(std::vector<double> &surfaceClusterParameters)
+  {
+    surfaceClusterParameters.push_back(toml_tree_.find("Clustering.clusterTolerance")->as<double>());
+    surfaceClusterParameters.push_back(toml_tree_.find("Clustering.minClusterSize")->as<int>());
+    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.voxelSize_X")->as<double>());
+    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.voxelSize_Y")->as<double>());
+    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.voxelSize_Z")->as<double>());
+  }
+
+
+  void loadSurfaceTrackerParameters(std::vector<double> &surfaceTrackerParameters)
+  {
+    surfaceTrackerParameters.push_back(toml_tree_.find("SurfaceTracking.lostLimit")->as<int>());
+    surfaceTrackerParameters.push_back(toml_tree_.find("SurfaceTracking.foundLimit")->as<int>());
+    surfaceTrackerParameters.push_back(toml_tree_.find("SurfaceTracking.maxCenterDistance")->as<double>());
+    surfaceTrackerParameters.push_back(toml_tree_.find("SurfaceTracking.maxCloudSizeDiviation")->as<double>());
+  }
+
+  void loadConvexHullParameters(std::vector<double> &convexHullParameters)
+  {
+    convexHullParameters.push_back(toml_tree_.find("ConvexHullApproximation.numHullPoints")->as<int>());
+    convexHullParameters.push_back(toml_tree_.find("ConvexHullApproximation.mergeUpdatePercentage")->as<double>());
+  }
+
 
   void initSurfObstDetector()
   {
     // surfaceDetector is always active because ground is always removed
-    surface_detector_.reset(new SurfaceDetector<PointT>(surfaceDetectorActive));
+    std::vector<double> surfFinderParameters;
+    loadSurfaceFinderParameters(surfFinderParameters);
+    surface_detector_.reset(new SurfaceDetector<PointT>(surfaceDetectorActive,surfFinderParameters));
     this->source()->FrameDataSubject::attachObserver(surface_detector_);
 
     if (surfaceDetectorActive)
     {
       // initialize surface clusterer
-      surface_clusterer_.reset(new SurfaceClusterer<PointT>());
+      std::vector<double> surfaceClusterParameters;
+      loadSurfaceClustererParameters(surfaceClusterParameters);
+      surface_clusterer_.reset(new SurfaceClusterer<PointT>(surfaceClusterParameters));
       surface_detector_->SurfaceDataSubject::attachObserver(surface_clusterer_);
 
       // initialize tracking of surfaces
-      surface_tracker_.reset(new SurfaceTracker<PointT>());
+      std::vector<double> surfaceTrackerParameters;
+      loadSurfaceTrackerParameters(surfaceTrackerParameters);
+      surface_tracker_.reset(new SurfaceTracker<PointT>(surfaceTrackerParameters));
       surface_clusterer_->SurfaceDataSubject::attachObserver(surface_tracker_);
 
       // initialize convex hull detector
-      convex_hull_detector_.reset(new ConvexHullDetector());
+      std::vector<double> convexHullParameters;
+      loadConvexHullParameters(convexHullParameters);
+      convex_hull_detector_.reset(new ConvexHullDetector(convexHullParameters));
       surface_tracker_->SurfaceDataSubject::attachObserver(convex_hull_detector_);
 
       // connect convex hull detector back to surfaceDetector (close the loop)
@@ -288,7 +334,9 @@ protected:
     if (obstacleDetectorActive)
     {
       // Setup plane inlier finder
-      inlier_finder_.reset(new PlaneInlierFinder<PointT>());
+      std::vector<double> planeInlierFinderParameters;
+      loadPlaneInlierFinderParameters(planeInlierFinderParameters);
+      inlier_finder_.reset(new PlaneInlierFinder<PointT>(planeInlierFinderParameters));
       surface_detector_->FrameDataSubject::attachObserver(inlier_finder_);
       
       // Prepare the approximator that the detector is to use.

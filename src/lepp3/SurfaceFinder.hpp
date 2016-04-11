@@ -15,7 +15,7 @@ template<class PointT>
 class SurfaceFinder 
 {
 public:
-    SurfaceFinder(bool surfaceDetectorActive);
+    SurfaceFinder(bool surfaceDetectorActive, std::vector<double> &ransacParameters);
 
     /**
     * Segment the given cloud into surfaces. Store the found surfaces and surface model 
@@ -64,24 +64,36 @@ private:
 	*/
 	pcl::SACSegmentation<PointT> segmentation_;
 
-	/*Segmentation ratio*/
+	//max number of RANSAC iterations
+	const double MAX_ITERATIONS;
+
+	//How close a point must be to the model in order to be considered an inlier
+	const double DISTANCE_THRESHOLD;
+
+	//How small the left (extracted) pointcloud should be for termination of the plane segmentation 
 	const double MIN_FILTER_PERCENTAGE;
+
+	// The function to classify segmented planes according to deviation in their normals
+	const double DEVIATION_ANGLE;
 
 	// boolean indicating whether the surface detector was activated in config file
 	bool surfaceDetectorActive;
 };
 
 template<class PointT>
-SurfaceFinder<PointT>::SurfaceFinder(bool surfaceDetectorActive) :
-        MIN_FILTER_PERCENTAGE(0.08),
-        surfaceDetectorActive(surfaceDetectorActive) 
+SurfaceFinder<PointT>::SurfaceFinder(bool surfaceDetectorActive, std::vector<double> &surfFinderParameters) :
+		surfaceDetectorActive(surfaceDetectorActive),
+        MAX_ITERATIONS(surfFinderParameters[0]),
+        DISTANCE_THRESHOLD(surfFinderParameters[1]),
+        MIN_FILTER_PERCENTAGE(surfFinderParameters[2]),
+        DEVIATION_ANGLE(surfFinderParameters[3])
 { //, cloud_surfaces_(new PointCloudT()) {
 	// Parameter initialization of the plane segmentation
 	segmentation_.setOptimizeCoefficients(true);
 	segmentation_.setModelType(pcl::SACMODEL_PLANE);
 	segmentation_.setMethodType(pcl::SAC_RANSAC);
-	segmentation_.setMaxIterations(200); // value recognized by Irem
-	segmentation_.setDistanceThreshold(0.02);
+	segmentation_.setMaxIterations(MAX_ITERATIONS); // value recognized by Irem
+	segmentation_.setDistanceThreshold(DISTANCE_THRESHOLD);
 }
 
 
@@ -114,7 +126,7 @@ void SurfaceFinder<PointT>::classify(
 		// to the groud is roughly the same and if their 'height' (intersectionf of plane with z-axis)
 		// is roughly the same. Note, that the 'height' is given by ax + by + cz + d = 0 where x=y=0,
 		// i.e. by z = -d/c
-		if ((angle < 3 || angle > 177) && 
+		if ((angle < DEVIATION_ANGLE || angle > 180-DEVIATION_ANGLE) && 
 			(std::abs(coeffs.values[3]/coeffs.values[2] - 
 				planeCoefficients.at(i).values[3]/planeCoefficients.at(i).values[2]) < 0.01)) {
 			*planes.at(i) += *cloud_planar_surface;

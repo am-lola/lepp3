@@ -16,6 +16,8 @@ template<class PointT>
 class PlaneInlierFinder : public FrameDataObserver, public FrameDataSubject
 {
 public:
+	PlaneInlierFinder(std::vector<double> planeInlierFinderParameters) : 
+		MIN_DIST_TO_PLANE(planeInlierFinderParameters[0]) {}
 
 	/**
 	* Update observer with new frame data.
@@ -23,7 +25,7 @@ public:
 	virtual void updateFrame(FrameDataPtr frameData);
 
 private:
-	const double minDistToPlane = 0.04;
+	const double MIN_DIST_TO_PLANE;
 
 	/**
 	* Filter out all points that belong to a plane in the given cloud. 
@@ -63,7 +65,7 @@ void PlaneInlierFinder<PointT>::filterInliers(PointCloudConstPtr cloud,
 				pcl::ModelCoefficients &coeffs = planeCoefficients[j];
 				double dist = pointToPlaneDistance(p, coeffs.values[0], 
 					coeffs.values[1], coeffs.values[2], coeffs.values[3]);
-				if (dist < minDistToPlane)
+				if (dist < MIN_DIST_TO_PLANE)
 				{
 					// push cloud index of a point that belongs to a plane into a vector
 					threadPlaneIndices.push_back(i);

@@ -18,9 +18,9 @@ class SurfaceDetector : public FrameDataObserver, public FrameDataSubject,
                         public SurfaceDataObserver, public SurfaceDataSubject
 {
  public:
-    SurfaceDetector(bool surfaceDetectorActive)
+    SurfaceDetector(bool surfaceDetectorActive, std::vector<double> &surfFinderParameters)
       : surfaceDetectorActive(surfaceDetectorActive),
-        finder_(new SurfaceFinder<PointT>(surfaceDetectorActive)),
+        finder_(new SurfaceFinder<PointT>(surfaceDetectorActive, surfFinderParameters)),
         frameNum(0), surfaceFrameNum(0), surfaceReferenceFrameNum(0), 
         exchangeCloud(PointCloudPtr(new PointCloudT())), newInputCloud(false)
     {

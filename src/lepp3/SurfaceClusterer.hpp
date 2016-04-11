@@ -17,7 +17,13 @@ template<class PointT>
 class SurfaceClusterer : public SurfaceDataObserver, public SurfaceDataSubject
 {
 public:
-    SurfaceClusterer() {}
+    SurfaceClusterer(std::vector<double> &clusterParameters) : 
+    	CLUSTER_TOLERANCE(clusterParameters[0]),
+    	MIN_CLUSTER_SIZE(clusterParameters[1]),
+    	VOXEL_SIZE_X(clusterParameters[2]),
+    	VOXEL_SIZE_Y(clusterParameters[3]),
+    	VOXEL_SIZE_Z(clusterParameters[4])
+    {}
 
     /**
     * Cluster the given surfaces into planes. Store the found surfaces and surface model 
@@ -62,6 +68,15 @@ private:
 	* Project given surfaces on plane specified by the corresponding plane coefficients.
 	*/
 	void projectOnPlane(SurfaceModelPtr surface);
+
+	// constant variables for clustering
+	const double CLUSTER_TOLERANCE;
+	const int MIN_CLUSTER_SIZE;
+
+	// side length of a voxel when applying voxelgridfilter
+	const double VOXEL_SIZE_X;
+	const double VOXEL_SIZE_Y;
+	const double VOXEL_SIZE_Z;
 };
 
 
@@ -71,7 +86,7 @@ void SurfaceClusterer<PointT>::downSample(PointCloudPtr &cloud)
   PointCloudPtr cloud_filtered(new PointCloudT());
   pcl::VoxelGrid<PointT> sor;
   sor.setInputCloud (cloud);
-  sor.setLeafSize (0.01, 0.01, 0.01);
+  sor.setLeafSize (VOXEL_SIZE_X, VOXEL_SIZE_Y, VOXEL_SIZE_Z);
   sor.filter (*cloud_filtered);
   cloud = cloud_filtered;
 }
