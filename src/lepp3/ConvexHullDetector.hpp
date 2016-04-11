@@ -136,7 +136,7 @@ public:
 
 private:
 	static constexpr int NUM_HULL_POINTS = 8;
-	static constexpr double MERGE_UPDATE_PERCENTAGE = 0.5;
+	static constexpr double MERGE_UPDATE_PERCENTAGE = 0.8;
 
 	// reduce the number of points in the given hull to 'numPoints'
 	void reduceConvHullPoints(PointCloudPtr &hull, int numPoints);
@@ -339,7 +339,7 @@ void ConvexHullDetector::mergeConvexHulls(PointCloudConstPtr oldHull, PointCloud
 
 	// Project points of new hull onto old hull
 	PointCloudPtr projOldOntoNew(new PointCloudT());
-	projectCloudOntoHull(oldHull, newHull, projOldOntoNew, MERGE_UPDATE_PERCENTAGE);
+	projectCloudOntoHull(oldHull, newHull, projOldOntoNew, 1-MERGE_UPDATE_PERCENTAGE);
 
 	// merge both projections
 	PointCloudPtr combinedProj(new PointCloudT());

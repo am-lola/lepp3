@@ -8,6 +8,7 @@
 #include <pcl/ModelCoefficients.h>
 
 #include <vector>
+#include <omp.h>
 
 namespace lepp {
 
@@ -48,24 +49,35 @@ void PlaneInlierFinder<PointT>::filterInliers(PointCloudConstPtr cloud,
 
 	std::vector<int> planeIndices;
 	// iterate over all points of point cloud
-	for (size_t i = 0; i < cloud->size(); i++)
+	#pragma omp parallel
 	{
-		const PointT &p = cloud->at(i);
-		// iterate over all planes
-		for (size_t j = 0; j < planeCoefficients.size(); j++)
+		std::vector<int> threadPlaneIndices;
+		#pragma omp for schedule(guided)
+		for (size_t i = 0; i < cloud->size(); i++)
 		{
-			// compute distance of point to the currently considered plane
-			pcl::ModelCoefficients &coeffs = planeCoefficients[j];
-			double dist = pointToPlaneDistance(p, coeffs.values[0], 
-				coeffs.values[1], coeffs.values[2], coeffs.values[3]);
-			if (dist < minDistToPlane)
+			const PointT &p = cloud->at(i);
+			// iterate over all planes
+			for (size_t j = 0; j < planeCoefficients.size(); j++)
 			{
-				// push cloud index of a point that belongs to a plane into a vector
-				planeIndices.push_back(i);
-				break;
+				// compute distance of point to the currently considered plane
+				pcl::ModelCoefficients &coeffs = planeCoefficients[j];
+				double dist = pointToPlaneDistance(p, coeffs.values[0], 
+					coeffs.values[1], coeffs.values[2], coeffs.values[3]);
+				if (dist < minDistToPlane)
+				{
+					// push cloud index of a point that belongs to a plane into a vector
+					threadPlaneIndices.push_back(i);
+					break;
+				}
 			}
 		}
-	}
+
+		// every thread copies his own thread indices into the global plane indices
+		#pragma omp critical
+		{
+			planeIndices.insert(std::end(planeIndices), std::begin(threadPlaneIndices), std::end(threadPlaneIndices));
+		}
+	}	
 
 	// filter out all points from the cloud that belong to a plane
 	pcl::ExtractIndices<PointT> extract;
