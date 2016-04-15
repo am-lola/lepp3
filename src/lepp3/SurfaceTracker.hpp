@@ -22,9 +22,9 @@ public:
 	/**
 	 * Create a new `BlendVisitor` will update the given surface in the argument using the class parameters.
 	 */
-	BlendVisitors(model_id_t id, mesh_handle_t mh, Coordinate translation_vec, PointCloudConstPtr hull, 
+	BlendVisitors(model_id_t id, mesh_handle_t mh, int colorID, Coordinate translation_vec, PointCloudConstPtr hull, 
 		pcl::ModelCoefficients oldCoefficients) :
-			id(id), mh(mh),
+			id(id), mh(mh), colorID(colorID),
 			translation_vec(translation_vec), 
 			hull(hull), 
 			oldCoefficients(oldCoefficients) {
@@ -33,6 +33,9 @@ public:
 	{
 		// set id of new plane
 		newPlane.set_id(id);
+
+		// set the color ID of the new plane
+		newPlane.set_colorID(colorID);
 
 		// copy mesh handle to new plane
 		newPlane.set_meshHandle(mh);
@@ -52,6 +55,7 @@ public:
 
 private:
 	model_id_t id;
+	int colorID;
 	mesh_handle_t mh;
 	Coordinate const translation_vec;
 	PointCloudConstPtr hull;
@@ -91,7 +95,7 @@ public:
 		LOST_LIMIT(surfaceTrackerParameters[0]),
 		FOUND_LIMIT(surfaceTrackerParameters[1]),
 		MAX_CENTER_DISTANCE(surfaceTrackerParameters[2]),
-		MAX_CLOUD_SIZE_DEVIATION(surfaceTrackerParameters[3])
+		MAX_RADIUS_DEVIATION_PERCENTAGE(surfaceTrackerParameters[3])
 	{}
 
 	/**
@@ -224,7 +228,7 @@ private:
 	// maximum center distance of two planes in order to be tracked
 	const double MAX_CENTER_DISTANCE;
 	// maximum percentual deviation of two planes in order to be tracked
-	const double MAX_CLOUD_SIZE_DEVIATION;
+	const double MAX_RADIUS_DEVIATION_PERCENTAGE;
 };
 
 template<class PointT>
@@ -238,7 +242,6 @@ model_id_t SurfaceTracker<PointT>::getMatchByDistance(
 		SurfaceModelPtr newSurface) {
 
 	Coordinate const query_point = newSurface->centerpoint();
-	size_t newSurfaceSize = newSurface->get_cloud()->size();
 
 	bool found = false;
 	double min_dist = std::numeric_limits<double>::max();
@@ -258,10 +261,7 @@ model_id_t SurfaceTracker<PointT>::getMatchByDistance(
 				+ (p.z - query_point.z) * (p.z - query_point.z);
 
 		//std::cout << "Distance was " << dist << " ";
-
-		size_t trackedSurfaceSize = it->second->get_cloud()->size();
-
-		if ((dist <= MAX_CENTER_DISTANCE) && (std::abs((1.0*trackedSurfaceSize/newSurfaceSize) - 1) < MAX_CLOUD_SIZE_DEVIATION))
+		if ((dist <= MAX_CENTER_DISTANCE) && (std::abs(1 - newSurface->get_radius()/it->second->get_radius()) < MAX_RADIUS_DEVIATION_PERCENTAGE))
 		{
 			//std::cout << " accept";
 			if (!found)
@@ -372,9 +372,8 @@ void SurfaceTracker<PointT>::adaptTracked(
 		Coordinate const translation_vec = (oldSurfaceModel->centerpoint() - new_surfaces[i]->centerpoint()) / 2;
 
 		// Blend the old surface into the new one
-		BlendVisitors blender(oldSurfaceModel->id(), oldSurfaceModel->get_meshHandle() ,translation_vec, oldSurfaceModel->get_hull(), 
-			oldSurfaceModel->get_planeCoefficients());
-
+		BlendVisitors blender(oldSurfaceModel->id(), oldSurfaceModel->get_meshHandle(), oldSurfaceModel->get_colorID(), 
+			translation_vec, oldSurfaceModel->get_hull(), oldSurfaceModel->get_planeCoefficients());
 		tracked_models_[model_id]->accept(blender);
 	}
 }

@@ -90,8 +90,12 @@ private:
 class SurfaceDrawer : public SurfaceVisitor
 {
 public:
-  SurfaceDrawer(ar::ARVisualizer *arvis, std::vector<mesh_handle_t> &visHandles) : 
-    arvis(arvis), surfaceCount(0), visHandles(visHandles) {}
+  SurfaceDrawer(ar::ARVisualizer *arvis, std::vector<mesh_handle_t> &visHandles,
+    std::vector<int> &usedColors) : 
+    arvis(arvis), visHandles(visHandles), usedColors(usedColors) 
+  {
+    computeUnusedColors();
+  }
   virtual ~SurfaceDrawer() {}
 
   /**
@@ -109,19 +113,33 @@ public:
       points[3*i+1] = p.y;
       points[3*i+2] = p.z;
     }
-    int colorID = surfaceCount % 6;
-    surfaceCount++;
-    ar::Polygon surfPoly(points, numPoints, ar::Color(r[colorID],g[colorID],b[colorID],1));
 
     // plane was not drawn before
     if (plane.get_meshHandle() == -1)
     {
+      int colorID = 0;
+      // if there is still an unused color
+      if (unusedColors.size() > 0)
+      {
+        colorID = unusedColors.back();
+        unusedColors.pop_back();
+      }
+      ar::Polygon surfPoly(points, numPoints, ar::Color(r[colorID],g[colorID],b[colorID],1));
       mesh_handle_t mh = arvis->Add(surfPoly);
       plane.set_meshHandle(mh);
+      plane.set_colorID(colorID);
+      std::cout << "Draw new with color " << colorID << std::endl;
     }
     // update plane
     else
+    {
+      int colorID = plane.get_colorID();
+      if (colorID == -1)
+        std::cout << "ERROR" << std::endl;
+      std::cout << "Redraw with color " << colorID << std::endl;
+      ar::Polygon surfPoly(points, numPoints, ar::Color(r[colorID],g[colorID],b[colorID],1));
       arvis->Update(plane.get_meshHandle(), surfPoly);
+    }
 
     // add handle to visHandles
     visHandles.push_back(plane.get_meshHandle());
@@ -133,22 +151,32 @@ private:
   ar::ARVisualizer *arvis;
 
   // predefine colors
-  static const int r[6];
-  static const int b[6];
-  static const int g[6];
-
-  // count how many surfaces have been drawn so far to adapt colors.
-  int surfaceCount;
+  static const int numColors = 6;
+  static const int r[numColors];
+  static const int b[numColors];
+  static const int g[numColors];
 
   /**
   * Vector of all handles that are visualized in this frame.
   */
   std::vector<mesh_handle_t> &visHandles;
+
+  // vector of all color IDs of visualized surfaces
+  std::vector<int> &usedColors;
+  std::vector<int> unusedColors;
+
+
+  void computeUnusedColors()
+  {
+    for (int i = 0; i < numColors; i++)
+      if (std::find(usedColors.begin(), usedColors.end(), i) == usedColors.end())
+        unusedColors.push_back(i);
+  }
 };
 
-const int SurfaceDrawer::r[6] = {255,   0,   0, 255, 255,   0};
-const int SurfaceDrawer::b[6] = {  0, 255,   0, 255,   0, 255};
-const int SurfaceDrawer::g[6] = {  0,   0, 255,   0, 255, 255};
+const int SurfaceDrawer::r[numColors] = {255,   0,   0, 255, 255,   0};
+const int SurfaceDrawer::b[numColors] = {  0, 255,   0, 255,   0, 255};
+const int SurfaceDrawer::g[numColors] = {  0,   0, 255,   0, 255, 255};
 
 
 
@@ -222,8 +250,13 @@ private:
 
 void ARVisualizer::drawSurfaces(std::vector<SurfaceModelPtr> surfaces, std::vector<mesh_handle_t> &visHandles)
 {
+  std::vector<int> usedColors;
+  for (size_t i = 0; i < surfaces.size(); i++)
+    if (surfaces[i]->get_colorID() != -1)
+      usedColors.push_back(surfaces[i]->get_colorID());
+
   // create surface drawer object
-  SurfaceDrawer sd(arvis, visHandles);
+  SurfaceDrawer sd(arvis, visHandles, usedColors);
 
   // draw surfaces
   for (size_t i = 0; i < surfaces.size(); i++)

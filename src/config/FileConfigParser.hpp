@@ -276,9 +276,13 @@ protected:
   {
     surfaceClusterParameters.push_back(toml_tree_.find("Clustering.clusterTolerance")->as<double>());
     surfaceClusterParameters.push_back(toml_tree_.find("Clustering.minClusterSize")->as<int>());
-    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.voxelSize_X")->as<double>());
-    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.voxelSize_Y")->as<double>());
-    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.voxelSize_Z")->as<double>());
+    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.coarseVoxelSize_X")->as<double>());
+    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.coarseVoxelSize_Y")->as<double>());
+    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.coarseVoxelSize_Z")->as<double>());
+    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.fineVoxelSize_X")->as<double>());
+    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.fineVoxelSize_Y")->as<double>());
+    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.fineVoxelSize_Z")->as<double>());
+    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.coarseFineLimit")->as<int>());
   }
 
 
@@ -287,7 +291,7 @@ protected:
     surfaceTrackerParameters.push_back(toml_tree_.find("SurfaceTracking.lostLimit")->as<int>());
     surfaceTrackerParameters.push_back(toml_tree_.find("SurfaceTracking.foundLimit")->as<int>());
     surfaceTrackerParameters.push_back(toml_tree_.find("SurfaceTracking.maxCenterDistance")->as<double>());
-    surfaceTrackerParameters.push_back(toml_tree_.find("SurfaceTracking.maxCloudSizeDiviation")->as<double>());
+    surfaceTrackerParameters.push_back(toml_tree_.find("SurfaceTracking.maxRadiusDeviationPercentage")->as<double>());
   }
 
   void loadConvexHullParameters(std::vector<double> &convexHullParameters)
