@@ -103,6 +103,7 @@ public:
   */
   virtual void visitSurface(SurfaceModel &plane)
   {
+    // create data array that is passed to ARVisualizer
     PointCloudConstPtr hull = plane.get_hull();
     int numPoints = static_cast<unsigned int>(hull->size());
     double points[numPoints * 3];
@@ -114,32 +115,21 @@ public:
       points[3*i+2] = p.z;
     }
 
+    // compute color ID for surface to be drawn
+    int colorID = computeColorID(plane);
+    
+    // create polygon object with correct color
+    ar::Polygon surfPoly(points, numPoints, ar::Color(r[colorID],g[colorID],b[colorID],1));
+ 
     // plane was not drawn before
     if (plane.get_meshHandle() == -1)
     {
-      int colorID = 0;
-      // if there is still an unused color
-      if (unusedColors.size() > 0)
-      {
-        colorID = unusedColors.back();
-        unusedColors.pop_back();
-      }
-      ar::Polygon surfPoly(points, numPoints, ar::Color(r[colorID],g[colorID],b[colorID],1));
       mesh_handle_t mh = arvis->Add(surfPoly);
       plane.set_meshHandle(mh);
-      plane.set_colorID(colorID);
-      std::cout << "Draw new with color " << colorID << std::endl;
     }
     // update plane
     else
-    {
-      int colorID = plane.get_colorID();
-      if (colorID == -1)
-        std::cout << "ERROR" << std::endl;
-      std::cout << "Redraw with color " << colorID << std::endl;
-      ar::Polygon surfPoly(points, numPoints, ar::Color(r[colorID],g[colorID],b[colorID],1));
       arvis->Update(plane.get_meshHandle(), surfPoly);
-    }
 
     // add handle to visHandles
     visHandles.push_back(plane.get_meshHandle());
@@ -151,7 +141,7 @@ private:
   ar::ARVisualizer *arvis;
 
   // predefine colors
-  static const int numColors = 6;
+  static const int numColors = 8;
   static const int r[numColors];
   static const int b[numColors];
   static const int g[numColors];
@@ -165,18 +155,52 @@ private:
   std::vector<int> &usedColors;
   std::vector<int> unusedColors;
 
-
+  /**
+  * From the list of used colors given to the constructor, compute a list
+  * of indices that refer to unused colors.
+  */
   void computeUnusedColors()
   {
     for (int i = 0; i < numColors; i++)
       if (std::find(usedColors.begin(), usedColors.end(), i) == usedColors.end())
         unusedColors.push_back(i);
   }
+
+  /**
+  * Given a Surface, compute the color ID of the surface.
+  */
+  int computeColorID(SurfaceModel &plane)
+  {
+    // use existing color ID if possible
+    int colorID = plane.get_colorID();
+
+    // if plane is the ground
+    if (plane.get_radius() > 4)
+        colorID = 0;
+    // if current surface has no color assigned
+    else if (colorID == -1)
+    {
+      // if there is still an unused non-ground color, use it
+      if (unusedColors.size() > 1)
+      {
+        colorID = unusedColors.back();
+        unusedColors.pop_back();
+      }
+      // use "random" used color for new plane. Color 0 is reserved for ground.
+      else
+        colorID = (plane.id() % numColors == 0) ? 1 : plane.id() % numColors;
+
+      // set color ID of plane
+      plane.set_colorID(colorID);
+    }
+    return colorID;
+  }
 };
 
-const int SurfaceDrawer::r[numColors] = {255,   0,   0, 255, 255,   0};
-const int SurfaceDrawer::b[numColors] = {  0, 255,   0, 255,   0, 255};
-const int SurfaceDrawer::g[numColors] = {  0,   0, 255,   0, 255, 255};
+// first color is reserved for ground
+const int SurfaceDrawer::r[numColors] = {100, 0, 255, 255,   0, 255,   0,   0};
+const int SurfaceDrawer::g[numColors] = {100, 0, 255,   0, 255,   0, 255,   0};
+const int SurfaceDrawer::b[numColors] = {100, 0,   0, 255, 255,   0,   0, 255};
 
 
 
