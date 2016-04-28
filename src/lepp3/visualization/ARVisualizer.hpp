@@ -30,7 +30,7 @@ public:
     Coordinate const& center = sphere.center();
     double centerPoint[3] = {center.x, center.y, center.z};
     double radius = sphere.radius();
-    ar::Sphere obstacle(centerPoint, radius, ar::Color(0,127,127,0.3));
+    ar::Sphere obstacle(centerPoint, radius, ar::Color(0,0.5,0.5,0.3));
 
     // sphere was not drawn before
     if (sphere.get_meshHandle() == -1)
@@ -55,7 +55,7 @@ public:
     double center1[3] = {capsule.first().x, capsule.first().y, capsule.first().z};
     double center2[3] = {capsule.second().x, capsule.second().y, capsule.second().z};
     double radius = capsule.radius();
-    ar::Capsule obstacle(center1, center2, radius, ar::Color(127,0,127,0.3));
+    ar::Capsule obstacle(center1, center2, radius, ar::Color(0.5,0,0.5,0.3));
     // capsule was not drawn before
     if (capsule.get_meshHandle() == -1)
     {
@@ -141,10 +141,10 @@ private:
   ar::ARVisualizer *arvis;
 
   // predefine colors
-  static const int numColors = 8;
-  static const int r[numColors];
-  static const int b[numColors];
-  static const int g[numColors];
+  static const int numColors = 11;
+  static const double r[numColors];
+  static const double b[numColors];
+  static const double g[numColors];
 
   /**
   * Vector of all handles that are visualized in this frame.
@@ -198,9 +198,9 @@ private:
 };
 
 // first color is reserved for ground
-const int SurfaceDrawer::r[numColors] = {100, 0, 255, 255,   0, 255,   0,   0};
-const int SurfaceDrawer::g[numColors] = {100, 0, 255,   0, 255,   0, 255,   0};
-const int SurfaceDrawer::b[numColors] = {100, 0,   0, 255, 255,   0,   0, 255};
+const double SurfaceDrawer::r[numColors] = {1, 0, 0.6, 0.6, 0.0, 1, 1, 0, 1, 0, 0};
+const double SurfaceDrawer::g[numColors] = {1, 0, 0.6, 0.0, 0.6, 1, 0, 1, 0, 1, 0};
+const double SurfaceDrawer::b[numColors] = {1, 0, 0.0, 0.6, 0.6, 0, 1, 1, 0, 0, 1};
 
 
 

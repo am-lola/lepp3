@@ -359,8 +359,8 @@ protected:
       inlier_finder_->FrameDataSubject::attachObserver(base_obstacle_detector_);
 
       // Smooth out the basic detector by applying a smooth detector to it
-      boost::shared_ptr<SmoothObstacleAggregator> smooth_detector(
-          new SmoothObstacleAggregator);
+      boost::shared_ptr<ObstacleTracker> smooth_detector(
+          new ObstacleTracker);
       base_obstacle_detector_->attachObserver(smooth_detector);
       // Now the detector that is exposed via the context is a smoothed-out
       // base detector.

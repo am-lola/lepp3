@@ -84,7 +84,7 @@ split_axis = "middle"
 #max number of ransac iterations
 maxIterations = 200
 # How close a point must be to the model in order to be considered an inlier
-distanceThreshold = 0.02
+distanceThreshold = 0.03
 #How small the left (extracted) pointcloud should be for termination of the plane segmentation 
 minFilterPercentage = 0.08
 
@@ -108,7 +108,7 @@ coarseFineLimit = 11000
 [Clustering]
 #Euclidean clustering to cluster (separate) detected surfaces
 clusterTolerance = 0.05
-minClusterSize = 700
+minClusterSize = 750
 
 [SurfaceTracking]
 #How many times an unmaterialized surface should be lost to be completely removed from tracking 

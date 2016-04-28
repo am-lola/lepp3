@@ -11,7 +11,7 @@
 #include "lepp3/GrabberVideoSource.hpp"
 #include "lepp3/VideoSource.hpp"
 #include "lepp3/FilteredVideoSource.hpp"
-#include "lepp3/SmoothObstacleAggregator.hpp"
+#include "lepp3/ObstacleTracker.hpp"
 #include "lepp3/SplitApproximator.hpp"
 #include "lepp3/MomentOfInertiaApproximator.hpp"
 #include "lepp3/FrameData.hpp"
