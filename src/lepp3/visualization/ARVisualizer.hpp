@@ -215,7 +215,8 @@ public:
 	ARVisualizer(bool visualizeSurfaces, bool visualizeObstacles) : 
     arvis(new ar::ARVisualizer()),
     visualizeSurfaces(visualizeSurfaces),
-    visualizeObstacles(visualizeObstacles)
+    visualizeObstacles(visualizeObstacles),
+    cloudHandle(-1)
 	{  
     // Updates the camera parameters used for rendering.
     // @position Position of the camera in world-coordinates
@@ -263,12 +264,21 @@ private:
   */
   void removeOldSurfObst(std::vector<mesh_handle_t> &visHandles);
 
+
+  /**
+  * Visualize the input point cloud.
+  */
+  void visualizePointCloud(PointCloudConstPtr cloud);
+
   // visulize obstacles and surfaces only if options were chosen in config file
   bool visualizeSurfaces;
   bool visualizeObstacles;
 
   // vector that holds the handles to all obstacles and surfaces that were visualized in the previous frame
   std::vector<mesh_handle_t> oldHandles;
+
+  // handle for the point cloud
+  mesh_handle_t cloudHandle;
 };
 
 
@@ -333,6 +343,18 @@ void ARVisualizer::removeOldSurfObst(std::vector<mesh_handle_t> &visHandles)
 }
 
 
+void ARVisualizer::visualizePointCloud(PointCloudConstPtr cloud)
+{
+  int numPoints = static_cast<unsigned int>(cloud->size());
+  const PointT* data = &cloud->points[0];
+  ar::PointCloudData cloudData(reinterpret_cast<const void*>(data), numPoints, ar::PointCloudDataType::PCL_PointXYZ);
+  if (cloudHandle == -1)
+    cloudHandle = arvis->Add(cloudData);
+  else
+    arvis->Update(cloudHandle, cloudData);
+}
+
+
 void ARVisualizer::updateFrame(FrameDataPtr frameData)
 {
   // visualize all obstacles and surfaces and store their handles
@@ -348,6 +370,9 @@ void ARVisualizer::updateFrame(FrameDataPtr frameData)
 
   // output frame num and surface frame num
   outputFrameNum(frameData);
+
+  // visualize point cloud
+  //visualizePointCloud(frameData->cloud);
 }
 
 
