@@ -27,14 +27,38 @@ namespace {
 * directory.
 **/
 std::string get_dir_name() {
+  std::string const rec_dir = "../recordings";
   std::stringstream ss;
   time_t t = time(0);   // get time now
   struct tm * now = localtime( & t );
-  ss << "rec_"
-     << (now->tm_year + 1900) << '-'
-     << (now->tm_mon + 1) << '-'
-     <<  now->tm_mday << '_'
-     << now->tm_hour << now->tm_min << now->tm_sec;
+  ss << rec_dir << "/rec_"
+     << (now->tm_year + 1900) << '-';
+
+  if (0 < now->tm_mon + 1 && now->tm_mon + 1 < 10)
+    ss << "0" << now->tm_mon + 1 << '-';
+  else
+    ss << now->tm_mon + 1 << '-';
+
+  if (0 < now->tm_mday && now->tm_mday < 10)
+    ss << "0" << now->tm_mday << '_';
+  else
+    ss << now->tm_mday << '_';
+
+  if (0 < now->tm_hour && now->tm_hour < 10)
+    ss << "0" << now->tm_hour;
+  else
+    ss << now->tm_hour;
+
+  if (0 < now->tm_min && now->tm_min < 10)
+    ss << "0" << now->tm_min;
+  else
+    ss << now->tm_min;
+
+  if (0 < now->tm_sec && now->tm_sec < 10)
+    ss << "0" << now->tm_sec;
+  else
+    ss << now->tm_sec;
+
   return ss.str();
 }
 
@@ -180,8 +204,8 @@ void VideoRecorder<PointT>::setMode(bool cloud,
                                     bool rgb,
                                     bool pose) {
   record_cloud_ = cloud;
-  record_rgb_ = rgb;
-  record_pose_ = pose;
+  record_rgb_   = rgb;
+  record_pose_  = pose;
 }
 
 template<class PointT>
@@ -270,9 +294,21 @@ void VideoRecorder<PointT>::NotifyNewPose(
 
 template<class PointT>
 void VideoRecorder<PointT>::savePointCloud() {
+
   std::stringstream ss;
-  ss << "cloud_" << cloud_idx_ << ".pcd";
+  if (0 <= cloud_idx_ && cloud_idx_< 10)
+    ss << "cloud_000" << cloud_idx_ << ".pcd";
+  if (10 <= cloud_idx_ && cloud_idx_< 100)
+    ss << "cloud_00" << cloud_idx_ << ".pcd";
+  if (100 <= cloud_idx_ && cloud_idx_< 1000)
+    ss << "cloud_0" << cloud_idx_ << ".pcd";
+  if (1000 <= cloud_idx_ && cloud_idx_< 10000)
+    ss << "cloud_" << cloud_idx_ << ".pcd";
+  if (image_idx_ > 10000) {
+    throw "reached max size for saving point clouds!";
+  }
   const std::string file_name = ss.str();
+
   Timer t;
   t.start();
   pcl::io::savePCDFileBinary (file_name, *cloud_);
