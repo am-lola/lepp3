@@ -132,7 +132,7 @@ public:
  * A convenience class for an offline stream captured from a sequence of files.
  *
  * This class is in direct connection with lepp::VideoRecorder, where the input
- * is recorded in a customzied way (seuqnce of point clouds, RGB Images and a
+ * is recorded in a customzied way (sequence of point clouds, RGB Images and a
  * file containing all kinematics.)
  */
 template<class PointT>
@@ -165,7 +165,7 @@ OfflineVideoSource<PointT>::OfflineVideoSource(
       rgb_interface_(vc) {
   // Subscription to cloud and image (a.k.a internal receive_cloud_ and
   // receive_image_) is already taken care of by default in
-  // GeneralGrabberVideoSource's ctor
+  // GeneralGrabberVideoSource::setOptions
 }
 
 template<class PointT>
@@ -179,7 +179,6 @@ OfflineVideoSource<PointT>::~OfflineVideoSource() {
 template<class PointT>
 void OfflineVideoSource<PointT>::cloud_cb_(
     const typename pcl::PointCloud<PointT>::ConstPtr& cloud) {
-  std::cout << "entered OfflineVideoSource::cloud_cb_" << std::endl;
 
   this->setNextFrame(cloud);
 
