@@ -417,17 +417,52 @@ protected:
       this->detector_->attachObserver(getAggregator(v));
     }
   }
+void loadARVisualizerParams(double position[],double up[],double forward[])
+  {
+    std::string type= toml_tree_.find("ARVisualizer.frame")->as<std::string>();
+      if (type == "pcl") {
+        position[0]=toml_tree_.find("ARVisualizer.pcl_positionx")->as<int>();
+	position[1]=toml_tree_.find("ARVisualizer.pcl_positiony")->as<int>();
+        position[2]=toml_tree_.find("ARVisualizer.pcl_positionz")->as<int>();
+	up[0]=toml_tree_.find("ARVisualizer.pcl_upx")->as<int>();
+        up[1]=toml_tree_.find("ARVisualizer.pcl_upy")->as<int>();
+	up[2]=toml_tree_.find("ARVisualizer.pcl_upz")->as<int>();
+        forward[0]=toml_tree_.find("ARVisualizer.pcl_forwardx")->as<int>();
+	forward[1]=toml_tree_.find("ARVisualizer.pcl_forwardy")->as<int>();
+        forward[2]=toml_tree_.find("ARVisualizer.pcl_forwardz")->as<int>();
+      }
+       else if (type == "lola") {
+       position[0]=toml_tree_.find("ARVisualizer.lola_positionx")->as<int>();
+	position[1]=toml_tree_.find("ARVisualizer.lola_positiony")->as<int>();
+        position[2]=toml_tree_.find("ARVisualizer.lola_positionz")->as<int>();
+	up[0]=toml_tree_.find("ARVisualizer.lola_upx")->as<int>();
+        up[1]=toml_tree_.find("ARVisualizer.lola_upy")->as<int>();
+	up[2]=toml_tree_.find("ARVisualizer.lola_upz")->as<int>();
+        forward[0]=toml_tree_.find("ARVisualizer.lola_forwardx")->as<int>();
+	forward[1]=toml_tree_.find("ARVisualizer.lola_forwardy")->as<int>();
+        forward[2]=toml_tree_.find("ARVisualizer.lola_forwardz")->as<int>();
+      
+      } else {
+        throw "Unknown AR frame condition given.";
+      }
+  }
 
   void initVisualizer() 
   {
+    double position[3]={0};
+    double forward[3]={0};
+    double up[3]={0};
+   
+    loadARVisualizerParams(position,up,forward);
+    
     if (surfaceDetectorActive && !obstacleDetectorActive)
     {
-      ar_visualizer_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive));
+      ar_visualizer_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive, position,forward,up));
       surface_detector_->FrameDataSubject::attachObserver(ar_visualizer_);
     }
     else if (obstacleDetectorActive)
     {
-      ar_visualizer_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive));
+      ar_visualizer_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive,position,forward,up));
       this->detector_->FrameDataSubject::attachObserver(ar_visualizer_);
     }
 

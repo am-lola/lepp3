@@ -116,7 +116,10 @@ protected:
     // Factor out to a member ...
     bool visualization = true;
     if (visualization) {
-      this->visualizer_.reset(new ARVisualizer(false, false));
+      double position[3]={0,0,0};
+      double forward[3]={0,0,1};
+      double up[3]={0,-1,0};
+      this->visualizer_.reset(new ARVisualizer(false, false,position,forward,up));
       // Attach the visualizer to both the point cloud source...
       this->source()->FrameDataSubject::attachObserver(this->visualizer_);
       // ...as well as to the obstacle detector

@@ -212,7 +212,7 @@ const double SurfaceDrawer::b[numColors] = {1, 0, 0.0, 0.6, 0.6, 0, 1, 1, 0, 0, 
 class ARVisualizer : public FrameDataObserver  
 {
 public:
-	ARVisualizer(bool visualizeSurfaces, bool visualizeObstacles) : 
+	ARVisualizer(bool visualizeSurfaces, bool visualizeObstacles,double position[],double forward[],double up[]) : 
     arvis(new ar::ARVisualizer()),
     visualizeSurfaces(visualizeSurfaces),
     visualizeObstacles(visualizeObstacles),
@@ -227,7 +227,7 @@ public:
     //double up[3] = {0,0,1};
     
 		arvis->Start();
-    //arvis->SetCameraPose(position, forward, up);   
+                arvis->SetCameraPose(position, forward, up);   
 	}
 	~ARVisualizer()
 	{

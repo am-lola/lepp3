@@ -7,7 +7,8 @@
 #   - `type`: stream, oni, pcd, am_offline
 # `oni` and `pcd` types require an additional parameter: file_path
 # `am_offline` type requires an additional parameters: dir_path
-type = "stream"
+type = "oni"
+file_path="../Videos/Stairs.oni"
 
 [FilteredVideoSource]
 # type = simple|prob|pt1
@@ -142,3 +143,33 @@ minDistToPlane = 0.04
 # `rgb` = true|false   ---- visualize the rgb image
 cloud = true
 rgb = true
+
+[ARVisualizer]
+#When the robot runs, frame can be changed to "lola"
+#frame=lola|pcl
+
+frame="pcl"
+
+#lola
+#lola_positionx = 0
+#lola_positiony = 0
+#lola_positionz = 0
+#lola_forwardx = 1
+#lola_forwardy = 0
+#lola_forwardz= 0
+#lola_upx = 0
+#lola_upy = 0
+#lola_upz = 1
+
+#PCL 
+pcl_positionx = 0
+pcl_positiony = 0
+pcl_positionz = 0
+pcl_forwardx = 0
+pcl_forwardy = 0
+pcl_forwardz= 1
+pcl_upx = 0
+pcl_upy = -1
+pcl_upz = 0
+
+
