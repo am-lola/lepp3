@@ -1,7 +1,8 @@
 build
 recordings
+oni
 *~
 *.oni
+*.pcd
 *.txt.user*
 .idea/*
-*~
