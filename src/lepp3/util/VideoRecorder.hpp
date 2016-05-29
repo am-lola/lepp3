@@ -18,52 +18,17 @@
 #include "lola/PoseObserver.hpp"
 #include "lepp3/VideoObserver.hpp"
 
+#include "lepp3/util/util.h"
 #include "lepp3/debug/timer.hpp"
 
 
 namespace {
-/**
-* Generate a name based on current timestamp which will be used to create a
-* directory.
-**/
-std::string get_dir_name() {
-  std::string const rec_dir = "../recordings";
-  std::stringstream ss;
-  time_t t = time(0);   // get time now
-  struct tm * now = localtime( & t );
-  ss << rec_dir << "/rec_"
-     << (now->tm_year + 1900) << '-';
-
-  if (0 < now->tm_mon + 1 && now->tm_mon + 1 < 10)
-    ss << "0" << now->tm_mon + 1 << '-';
-  else
-    ss << now->tm_mon + 1 << '-';
-
-  if (0 < now->tm_mday && now->tm_mday < 10)
-    ss << "0" << now->tm_mday << '_';
-  else
-    ss << now->tm_mday << '_';
-
-  if (0 < now->tm_hour && now->tm_hour < 10)
-    ss << "0" << now->tm_hour;
-  else
-    ss << now->tm_hour;
-
-  if (0 < now->tm_min && now->tm_min < 10)
-    ss << "0" << now->tm_min;
-  else
-    ss << now->tm_min;
-
-  if (0 < now->tm_sec && now->tm_sec < 10)
-    ss << "0" << now->tm_sec;
-  else
-    ss << now->tm_sec;
-
-  return ss.str();
+  std::string get_dir() {
+    std::stringstream ss;
+    ss << "../recordings/rec_" << lepp::get_current_timestamp();
+    return ss.str();
+  }
 }
-
-} // namespace anonymous
-
 /**
   * A recorder module that receives a point cloud, an RGB image and a pose
   * (LolaKinematics) from the camera and the robot and saves them alongside
@@ -162,7 +127,7 @@ private:
 
 template<class PointT>
 VideoRecorder<PointT>::VideoRecorder()
-  : path_( get_dir_name() ),
+  : path_( get_dir() ),
     params_file_name_("params.txt"),
     record_cloud_(true),
     record_rgb_(false),
