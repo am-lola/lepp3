@@ -1,6 +1,7 @@
 build
 recordings
 oni
+evaluation
 *~
 *.oni
 *.pcd
