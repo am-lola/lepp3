@@ -8,6 +8,7 @@
 
 #include "deps/toml.h"
 
+#include "lepp3/ObstacleEvaluator.hpp"
 #include "lepp3/util/FileManager.hpp"
 
 /**
@@ -114,7 +115,7 @@ protected:
       const std::vector<std::string> file_names = fm.getFileNames(".pcd");
       boost::shared_ptr<pcl::Grabber> pcd_interface(new pcl::PCDGrabber<PointT>(
         file_names,
-        30., // frame rate
+        30, // frame rate
         true)); // video loop
       // Prepare the filename sequence for cv::VideoCapture
       std::stringstream ss;
@@ -124,7 +125,7 @@ protected:
           new cv::VideoCapture(ss.str()));
 
       this->raw_source_ = boost::shared_ptr<OfflineVideoSource<PointT> >(
-          new OfflineVideoSource<PointT>(pcd_interface, img_interface));
+          new OfflineVideoSource<PointT>(pcd_interface, NULL));
     } else {
       throw "Invalid VideoSource configuration";
     }
@@ -385,6 +386,10 @@ private:
 
       return boost::shared_ptr<RobotAggregator>(
           new RobotAggregator(*this->robot_service(), frame_rate, *this->robot()));
+    } else if (type == "ObstacleEvaluator") {
+      int const ref_volume = v.find("ref_volume")->as<int>();
+      return boost::shared_ptr<ObstacleEvaluator>(
+          new ObstacleEvaluator(ref_volume));
     } else {
       std::cerr << "Unknown aggregator type `" << type << "`" << std::endl;
       throw "Unknown aggregator type";
