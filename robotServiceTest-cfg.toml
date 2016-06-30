@@ -2,6 +2,22 @@
 # it with the `--cfg` flag).
 # The config file is in the [toml](https://github.com/toml-lang/toml) format,
 
+[PoseService]
+ip = "127.0.0.1"
+# (The hex port value is equal to the decimal below) port = 0xd001
+port = 53249
+
+[RobotService]
+ip = "127.0.0.1"
+port = 61448
+# Delay is given in milliseconds. 0 is a valid value.
+delay = 10
+
+#[Robot]
+# The size of the "bubble" in which no modifications or deletions of objects
+# are sent to the robot. **In meters**
+#bubble_size = 1.2
+
 [VideoSource]
 # Common options:
 #   - `type`: stream, oni, pcd, am_offline
@@ -34,6 +50,10 @@ type = "ObstacleDetector"
 
 #[[observers]]
 #type = "SurfaceDetector"
+
+[[aggregators]]
+type = "RobotAggregator"
+frame_rate = 3
 
 [SplitStrategy]
 # split_axis = largest|middle|smallest

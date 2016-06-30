@@ -7,6 +7,7 @@
 
 #include "lola/RobotService.h"
 #include "lola/Robot.h"
+#include "VisionMessage.h"
 
 #include <boost/array.hpp>
 #include <boost/asio.hpp>

@@ -7,21 +7,21 @@
 # THEREFORE, when writing custom config files, MAKE SURE that the ordering of
 # the various parameters is as shown in this sample.
 
-[PoseService]
-ip = 192.168.0.8
+#[PoseService]
+#ip = 192.168.0.8
 # (The hex port value is equal to the decimal below) port = 0xd001
-port = 53249
+#port = 53249
 
-[RobotService]
-ip = 192.168.0.7
-port = 61448
+#[RobotService]
+#ip = 192.168.0.7
+#port = 61448
 # Delay is given in milliseconds. 0 is a valid value.
-delay = 10
+#delay = 10
 
-[Robot]
+#[Robot]
 # The size of the "bubble" in which no modifications or deletions of objects
 # are sent to the robot. **In meters**
-bubble_size = 1.2
+#bubble_size = 1.2
 
 [VideoSource]
 # Available types: stream, oni, pcd
