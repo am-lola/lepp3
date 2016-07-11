@@ -16,9 +16,9 @@ class CalibrationAggregator {
 public:
   /**
    * The member function that all concrete aggregators need to implement in
-   * order to be able to process the newly detected plane.
+   * order to be able to process the new calibration parameters.
    */
-  virtual void updateLargestPlane(
+  virtual void updateCalibrationParams(
     typename pcl::PointCloud<PointT>::Ptr const& largest_plane,
     const float& mean_z,
     const float& var_z) = 0;

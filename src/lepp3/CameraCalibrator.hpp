@@ -35,7 +35,7 @@ protected:
   /**
    * Notifies any observers about the newly detected plane.
    */
-  void notifyLargestPlane(
+  void notifyCalibrationParams(
       typename pcl::PointCloud<PointT>::Ptr const& plane,
       const float& mean_z,
       const float& var_z);
@@ -164,7 +164,7 @@ void CameraCalibrator<PointT>::notifyNewFrame(
   computeMeanVarZ(largest_plane, mean_z, var_z);
   // Notify any observer (i.e. the visualizer) of the largest found plane and
   // its mean+variance values.
-  notifyLargestPlane(largest_plane, mean_z, var_z);
+  updateCalibrationParams(largest_plane, mean_z, var_z);
 }
 
 template<class PointT>
@@ -174,14 +174,14 @@ void CameraCalibrator<PointT>::attachCalibrationAggregator(
 }
 
 template<class PointT>
-void CameraCalibrator<PointT>::notifyLargestPlane(
+void CameraCalibrator<PointT>::notifyCalibrationParams(
     typename pcl::PointCloud<PointT>::Ptr const& plane,
     const float& mean_z,
     const float& var_z) {
 
   size_t sz = aggregators_.size();
   for (size_t i = 0; i < sz; ++i) {
-    aggregators_[i]->updateLargestPlane(plane, mean_z, var_z);
+    aggregators_[i]->updateCalibrationParams(plane, mean_z, var_z);
   }
 }
 
