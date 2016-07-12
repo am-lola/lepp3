@@ -8,6 +8,7 @@
 # `oni` and `pcd` types require an additional parameter: file_path
 # `am_offline` type requires an additional parameters: dir_path
 type = "stream"
+#file_path="../Videos/Stairs.oni"
 
 [FilteredVideoSource]
 # type = simple|prob|pt1
@@ -32,8 +33,8 @@ type = "simple"
 [[observers]]
 type = "ObstacleDetector"
 
-#[[observers]]
-#type = "SurfaceDetector"
+[[observers]]
+type = "SurfaceDetector"
 
 [SplitStrategy]
 # split_axis = largest|middle|smallest
@@ -136,18 +137,18 @@ mergeUpdatePercentage = 0.2
 minDistToPlane = 0.04
 
 
-#[Visualization]
+[Visualization]
 # Whether the results are visualized **locally**
 # `cloud` = true|false ---- visualize the point cloud
 # `rgb` = true|false   ---- visualize the rgb image
-#cloud = true
-#rgb = true
+cloud = true
+rgb = true
 
-#[ARVisualizer]
+[ARVisualizer]
 #When the robot runs, frame can be changed to "lola"
 #frame=lola|pcl
 
-#frame="pcl"
+frame="pcl"
 
 #lola
 #lola_positionx = 0
@@ -170,5 +171,3 @@ pcl_forwardz= 1
 pcl_upx = 0
 pcl_upy = -1
 pcl_upz = 0
-
-
