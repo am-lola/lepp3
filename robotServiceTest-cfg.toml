@@ -13,10 +13,10 @@ port = 61448
 # Delay is given in milliseconds. 0 is a valid value.
 delay = 10
 
-#[Robot]
+[Robot]
 # The size of the "bubble" in which no modifications or deletions of objects
 # are sent to the robot. **In meters**
-#bubble_size = 1.2
+bubble_size = 1.2
 
 [VideoSource]
 # Common options:
