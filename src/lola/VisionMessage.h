@@ -2,18 +2,7 @@
 #define LOLA_VISION_MESSAGE_H__
 
 // #include "deps/easylogging++.h"
-
-// The macro creates an ID for a Robot message.
-// The macro is taken from the LOLA source base.
-// TODO Once C++11 can be used, make this a `constexpr` function, instead of a macro.
-#define __MSG_ID_DEF_GLOBAL(dom,sig)  (0x80000000 | ((dom&0xFF)<<0x10) | (sig&0xFFFF))
-
-  // IDs for particular vision operations.
-  static uint32_t const SET_SSV    =  __MSG_ID_DEF_GLOBAL(0x4, 0x203);
-  static uint32_t const MODIFY_SSV =  __MSG_ID_DEF_GLOBAL(0x4, 0x206);
-  static uint32_t const REMOVE_SSV_DEL_WHOLE_SEGMENT_FLAG =  __MSG_ID_DEF_GLOBAL(0x4, 0x207);
-  static uint32_t const REMOVE_SSV_DEL_ONLY_PART_FLAG     =  __MSG_ID_DEF_GLOBAL(0x4, 0x209); // TODO: MAKE SURE THIS IS OK!
-
+#include <iface_sig_wpatt.hpp>
 
 enum Message_Type
 {
@@ -50,7 +39,7 @@ struct ObstacleMessage {
     std::cout << "Constructing delete full message with object_id = " << model_id;
     ObstacleMessage msg;
 
-    msg.action = REMOVE_SSV_DEL_WHOLE_SEGMENT_FLAG;
+    msg.action = am2b::iface::REMOVE_SSV_WHOLE_SEGMENT;
     msg.model_id = model_id;
 
     return msg;
@@ -67,7 +56,7 @@ struct ObstacleMessage {
       ObstacleMessage msg;
       msg.model_id = model_id;
       msg.part_id = part_id;
-      msg.action = REMOVE_SSV_DEL_ONLY_PART_FLAG;
+      msg.action = am2b::iface::REMOVE_SSV_ONLY_PART;
 
       return msg;
   }
@@ -80,7 +69,7 @@ struct ObstacleMessage {
   {
       std::cout << "Constructing set message with (model_id, part_id) = (" << model_id << ", " << part_id << ")";
       ObstacleMessage msg;
-      msg.action = SET_SSV;
+      msg.action = am2b::iface::SET_SSV;
       msg.type = (ObstacleType)type_id;
       msg.model_id = model_id;
       msg.part_id = part_id;
@@ -102,7 +91,7 @@ struct ObstacleMessage {
     std::cout << "Constructing set message with (model_id, part_id) = (" << model_id << ", " << part_id << ")";
     
     ObstacleMessage msg;
-    msg.action = MODIFY_SSV;
+    msg.action = am2b::iface::MODIFY_SSV;
     msg.type = (ObstacleType)type_id;
     msg.model_id = model_id;
     msg.part_id = part_id;
