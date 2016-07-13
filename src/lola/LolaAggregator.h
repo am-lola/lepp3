@@ -7,12 +7,16 @@
 
 #include "lola/RobotService.h"
 #include "lola/Robot.h"
-#include "VisionMessage.h"
+#include <iface_vision_msg.hpp>
 
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
 
 using namespace lepp;
+using am2b::iface::VisionMessage;
+using am2b::iface::ObstacleMessage;
+using am2b::iface::SurfaceMessage;
+using am2b::iface::Message_Type;
 
 /**
  * A LOLA-specific implementation of an `FrameDataObserver`.
