@@ -60,7 +60,9 @@ void AsyncRobotService::inner_send(VisionMessage const& next_message) {
   // Synchronously send the message, i.e. block until the send is complete.
   try {
     socket_.send(
-        boost::asio::buffer(buf, sizeof(VisionMessage)));
+        boost::asio::buffer(buf, sizeof(VisionMessageHeader)));
+    socket_.send(
+        boost::asio::buffer(next_message.content, next_message.header.len));
   } catch (...) {
     LERROR << "AsyncRobotService: Error sending message.";
   }
