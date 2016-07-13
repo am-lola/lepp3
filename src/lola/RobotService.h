@@ -4,7 +4,9 @@
 #include <boost/asio.hpp>
 #include <cstring>
 #include <iostream>
-#include "VisionMessage.h"
+#include "iface_vision_msg.hpp"
+
+using am2b::iface::VisionMessage;
 
 /**
  * An interface that needs to be implemented by concrete classes that can
