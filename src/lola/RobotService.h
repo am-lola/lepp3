@@ -7,6 +7,7 @@
 #include "iface_vision_msg.hpp"
 
 using am2b::iface::VisionMessage;
+using am2b::iface::VisionMessageHeader;
 
 /**
  * An interface that needs to be implemented by concrete classes that can
