@@ -47,6 +47,9 @@ endif()
 if(LEPP_BUILD_NETWORK_TOOLS)
     file(GLOB net_mock_server_src network_tools/mock_server/main.cpp)
     add_executable(lola_mock_server ${net_mock_server_src})
+
+    file(GLOB net_mock_client_src network_tools/mock_client/main.cpp)
+    add_executable(lola_mock_client ${net_mock_client_src})
 endif()
 
 # Uncomment to make the header files visible in QtCreator
