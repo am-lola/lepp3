@@ -278,8 +278,8 @@ std::vector<ObjectModel*> RobotAggregator::getPrimitives(ObjectModel& model) con
 void RobotAggregator::sendNew(ObjectModel& new_model, int model_id, int part_id) {
   CoefsVisitor coefs;
   new_model.accept(coefs);
- 
-  VisionMessage msg = VisionMessage(Message_Type::Obstacle, ObstacleMessage::SetMessage(
+
+  VisionMessage msg = VisionMessage(ObstacleMessage::SetMessage(
       coefs.type_id(), model_id, part_id, coefs.radius(), coefs.coefs()));
   LINFO << "RobotAggregator: Creating new primitive ["
         << "type = " << coefs.type_id()
@@ -290,21 +290,21 @@ void RobotAggregator::sendNew(ObjectModel& new_model, int model_id, int part_id)
 void RobotAggregator::sendDelete(int id) {
   LINFO << "RobotAggregator: Deleting a primitive id = "
         << id;
-  VisionMessage del = VisionMessage(Message_Type::Obstacle, ObstacleMessage::DeleteMessage(id));
+  VisionMessage del = VisionMessage(ObstacleMessage::DeleteMessage(id));
   service_.sendMessage(del);
 }
 
 void RobotAggregator::sendDeletePart(int model_id, int part_id) {
   LINFO << "RobotAggregator: Deleting a primitive id = "
         << part_id;
-  VisionMessage del = VisionMessage(Message_Type::Obstacle, ObstacleMessage::DeletePartMessage(model_id, part_id));
+  VisionMessage del = VisionMessage(ObstacleMessage::DeletePartMessage(model_id, part_id));
   service_.sendMessage(del);
 }
 
 void RobotAggregator::sendModify(ObjectModel& model, int model_id, int part_id) {
   CoefsVisitor coefs;
   model.accept(coefs);
-  VisionMessage msg = VisionMessage(Message_Type::Obstacle, ObstacleMessage::ModifyMessage(
+  VisionMessage msg = VisionMessage(ObstacleMessage::ModifyMessage(
       coefs.type_id(), model_id, part_id, coefs.radius(), coefs.coefs()));
   LINFO << "RobotAggregator: Modifying existing primitive ["
             << "type = " << coefs.type_id()

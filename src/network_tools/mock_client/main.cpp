@@ -196,12 +196,12 @@ void transmit(int s, bool verbose)
   std::vector<double> sphere_coeffs  = {2.0, 2.0, 0.0,  0.0,  0.0,  0.0, 0.0, 0.0, 0.0};
   std::vector<double> capsule_coeffs = {1.0, 1.0, 1.0, -1.0, -1.0, -1.0, 0.0, 0.0, 0.0};
   std::vector<VisionMessage> messages = {
-    VisionMessage(Message_Type::Obstacle, ObstacleMessage::SetMessage(ObstacleType::Sphere, 0, 1, 0.1, sphere_coeffs)),
-    VisionMessage(Message_Type::Obstacle, ObstacleMessage::SetMessage(ObstacleType::Capsule, 1, 1, 0.15, capsule_coeffs)),
-    VisionMessage(Message_Type::Obstacle, ObstacleMessage::ModifyMessage(ObstacleType::Sphere, 0, 1, 0.2, sphere_coeffs)),
-    VisionMessage(Message_Type::Obstacle, ObstacleMessage::ModifyMessage(ObstacleType::Capsule, 1, 1, 0.05, capsule_coeffs)),
-    VisionMessage(Message_Type::Obstacle, ObstacleMessage::DeleteMessage(0)),
-    VisionMessage(Message_Type::Obstacle, ObstacleMessage::DeleteMessage(1))
+    VisionMessage(ObstacleMessage::SetMessage(ObstacleType::Sphere, 0, 1, 0.1, sphere_coeffs)),
+    VisionMessage(ObstacleMessage::SetMessage(ObstacleType::Capsule, 1, 1, 0.15, capsule_coeffs)),
+    VisionMessage(ObstacleMessage::ModifyMessage(ObstacleType::Sphere, 0, 1, 0.2, sphere_coeffs)),
+    VisionMessage(ObstacleMessage::ModifyMessage(ObstacleType::Capsule, 1, 1, 0.05, capsule_coeffs)),
+    VisionMessage(ObstacleMessage::DeleteMessage(0)),
+    VisionMessage(ObstacleMessage::DeleteMessage(1))
   };
 
   // loop over messages, sending one each iteration, and repeating once we reach the end of the list
