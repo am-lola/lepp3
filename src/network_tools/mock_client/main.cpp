@@ -28,11 +28,10 @@ using am2b::iface::SurfaceMessage;
 /**
  * A tool for testing network communication between LEPP and other components
  *
- * This server will listen on a given port for a TCP connection from LEPP,
- * and once connected will receive and decode VisionMessages containing
- * obstacles, surfaces, etc.
+ * This client will connect to a server at a given address and port,
+ * and once connected will begin sending VisionMessages are regular intervals.
  *
- * This can be used to verify if data is being sent correctly, or as a reference
+ * This can be used to verify if data is being received correctly, or as a reference
  * when implementing other components which need to receive VisionMessage data.
  *
  *
