@@ -29,10 +29,9 @@ SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAG
 
 option(LEPP_BUILD_EXAMPLES "Build LEPP examples" FALSE)
 option(LEPP_BUILD_LOLA "Build an obstacle detector for LOLA" TRUE)
-option(LEPP_BUILD_NETWORK_TOOLS "Build tools for testing network communication between LEPP and other components" FALSE)
 
 include_directories("../src")
-include_directories("./lola/iface/")
+include_directories("./lola/iface/iface/")
 
 if(LEPP_BUILD_EXAMPLES)
     include(examples/Examples.txt)
@@ -42,14 +41,6 @@ if(LEPP_BUILD_LOLA)
     file(GLOB detector_src lepp3/detector/*.cc lola/*.cpp)
     add_executable(lola ${detector_src})
     target_link_libraries(lola ${PCL_LIBRARIES} ${OpenCV_LIBS} ${am2b-arvis_LIBRARY})
-endif()
-
-if(LEPP_BUILD_NETWORK_TOOLS)
-    file(GLOB net_mock_server_src network_tools/mock_server/main.cpp)
-    add_executable(lola_mock_server ${net_mock_server_src})
-
-    file(GLOB net_mock_client_src network_tools/mock_client/main.cpp)
-    add_executable(lola_mock_client ${net_mock_client_src})
 endif()
 
 # Uncomment to make the header files visible in QtCreator
