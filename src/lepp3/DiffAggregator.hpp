@@ -30,12 +30,17 @@ public:
   typedef boost::function<void (ObjectModel&)> ModifiedObstacleCallback;
   typedef boost::function<bool (ObjectModel&)> DeletedObstacleCallback;
 
+  typedef boost::function<void (SurfaceModel&)> NewSurfaceCallback;
+  typedef boost::function<void (SurfaceModel&)> ModifiedSurfaceCallback;
+  typedef boost::function<bool (SurfaceModel&)> DeletedSurfaceCallback;
+
+
   /**
    * Create a new `DiffAggregator` that will output the diff between frames
    * after every `frequency` frames.
    */
   DiffAggregator(int frequency)
-      : freq_(frequency), new_cb_(0), mod_cb_(0), del_cb_(0) {}
+      : freq_(frequency), new_cb_(0), mod_cb_(0), del_cb_(0),new_surface_cb_(0), mod_surface_cb_(0), del_surface_cb_(0) {}
 
   /**
    * Sets a function that will be called for every new obstacle.
@@ -49,6 +54,17 @@ public:
    * Sets a function that will be called for every deleted obstacle.
    */
   void set_deleted_callback(DeletedObstacleCallback del_cb) { del_cb_ = del_cb; }
+
+//////////////////////////////////////////////////////////////////////////
+  void set_new_surface_callback(NewSurfaceCallback new_surface_cb) { new_surface_cb_ = new_surface_cb; }
+  /**
+   * Sets a function that will be called for every modified obstacle.
+   */
+  void set_modified_surface_callback(ModifiedSurfaceCallback mod_surface_cb) { mod_surface_cb_ = mod_surface_cb; }
+  /**
+   * Sets a function that will be called for every deleted obstacle.
+   */
+  void set_deleted_surface_callback(DeletedSurfaceCallback del_surface_cb) { del_surface_cb_ = del_surface_cb; }
   /**
    * Implementation of the `FrameDataObserver` interface.
    */
@@ -67,6 +83,8 @@ private:
    * A set of model IDs found in the previous snapshot.
    */
   std::set<int> previous_ids_;
+  std::set<int> previous_surface_ids_;
+
 
   /**
    * Maps the ID of an obstacle to its ObjectModel smart pointer.
@@ -74,16 +92,25 @@ private:
    * about.
    */
   std::map<int, ObjectModelPtr> current_obstacles_;
+    std::map<int, SurfaceModelPtr> current_surfaces_;
+
 
   // Callbacks that are invoked in the appropriate event.
   NewObstacleCallback new_cb_;
   ModifiedObstacleCallback mod_cb_;
   DeletedObstacleCallback del_cb_;
+
+  //  Callbacks that are invoked in the appropriate event  
+  NewSurfaceCallback new_surface_cb_;
+  ModifiedSurfaceCallback mod_surface_cb_;
+  DeletedSurfaceCallback del_surface_cb_;
 };
 
 // TODO This is made inline to facilitate keeping lepp3 header-only for now.
 inline void DiffAggregator::updateFrame(FrameDataPtr frameData) {
   const std::vector<ObjectModelPtr> &obstacles = frameData->obstacles;
+  const std::vector<SurfaceModelPtr> &surfaces = frameData->surfaces;
+
   ++curr_;
   if (curr_ % freq_ != 0) return;
 
@@ -108,6 +135,26 @@ inline void DiffAggregator::updateFrame(FrameDataPtr frameData) {
     previous_ids_.insert(id);
   }
 
+  std::set<int> current_surface_ids;
+  size_t const sz_ = surfaces.size();
+  std::cout << "DiffAggregator::updateFrame> Surfaces: " << sz_ << std::endl;
+  for (size_t i = 0; i < sz_; ++i) {
+    int const id = surfaces[i]->id();
+    current_surface_ids.insert(id);
+    // Start tracking (or update) the obstacle model.
+    current_surfaces_[id] = surfaces[i];
+    // Check if the obstacle was found in the previous snapshot...
+    if (previous_surface_ids_.find(id) == previous_surface_ids_.end()) {
+      // This is a new obstacle.
+      if (new_surface_cb_) new_surface_cb_(*surfaces[i]);
+    } else {
+      // This is a modified obstacle.
+      if (mod_surface_cb_) mod_surface_cb_(*surfaces[i]);
+    }
+    // ..and now remember it for the future.
+    previous_surface_ids_.insert(id);
+  }
+
   // The ids that are in the previous set, but not the current ones are deleted
   // obstacles
   std::vector<int> deleted;
@@ -126,6 +173,25 @@ inline void DiffAggregator::updateFrame(FrameDataPtr frameData) {
       // was no callback set) then really finally drop it.
       current_obstacles_.erase(del_id);
       previous_ids_.erase(del_id);
+    }
+  }
+
+  std::vector<int> deleted_surfaces;
+  std::set_difference(previous_surface_ids_.begin(), previous_surface_ids_.end(),
+                      current_surface_ids.begin(), current_surface_ids.end(),
+                      std::back_inserter(deleted_surfaces));
+  for (size_t i = 0; i < deleted_surfaces.size(); ++i) {
+    bool drop = true;
+    int const del_id = deleted_surfaces[i];
+    if (del_surface_cb_) {
+      // Notify the callback that the object should be deleted
+      drop = del_surface_cb_(*current_surfaces_[del_id]);
+    }
+    if (drop) {
+      // If the callback says that the object should be deleted (or there
+      // was no callback set) then really finally drop it.
+      current_surfaces_.erase(del_id);
+      previous_surface_ids_.erase(del_id);
     }
   }
 }

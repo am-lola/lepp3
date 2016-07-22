@@ -48,8 +48,8 @@ type = "simple"
 [[observers]]
 type = "ObstacleDetector"
 
-#[[observers]]
-#type = "SurfaceDetector"
+[[observers]]
+type = "SurfaceDetector"
 
 [[aggregators]]
 type = "RobotAggregator"

@@ -78,7 +78,7 @@ void PoseService::service_thread() {
 
 void PoseService::queue_recv() {
   socket_.async_receive(
-      boost::asio::buffer(recv_buffer_), //, sizeof(HR_Pose_Red)),
+      boost::asio::buffer(recv_buffer_),
       boost::bind(&PoseService::read_handler, this, _1, _2));
 }
 

@@ -98,6 +98,24 @@ private:
    * when a model has been modified.
    */
   void mod_cb_(ObjectModel& model);
+
+  /**
+   * The function is passed as a callback to the underlying `DiffAggregator` for
+   * when new surfaces are discovered.
+   */
+  void new_surface_cb_(SurfaceModel& model);
+
+  /**
+   * The function is passed as a callback to the underlying `DiffAggregator` for
+   * when surfaces are discovered to be deleted.
+   */
+  bool del_surface_cb_(SurfaceModel& model);
+  /**
+   * The function is passed as a callback to the underlying `DiffAggregator` for
+   * when a surface has been modified.
+   */
+  void mod_surface_cb_(SurfaceModel& model);
+
   /**
    * Obtains a list of pointers to the primitives that the given model is
    * composed of.
@@ -110,6 +128,10 @@ private:
    */
   void sendNew(ObjectModel& new_model, int model_id, int part_id);
   /**
+   * Sends a message to the robot informing it of a new surface.
+   */
+  void sendNew(SurfaceModel& new_surface);
+  /**
    * Sends a message to the robot informing it of a deleted model.
    */
   void sendDelete(int id);
@@ -118,9 +140,17 @@ private:
    */
   void sendDeletePart(int model_id, int part_id);
   /**
+   * Sends a message to the robot informing it of a deleted surface.
+   */
+  void sendDeleteSurface(int id);
+  /**
    * Sends a message to the robot informing it of a modified model.
    */
   void sendModify(ObjectModel& model, int model_id, int part_id);
+  /**
+   * Sends a message to the robot informing it of a modified surface.
+   */
+  void sendModify(SurfaceModel& surface);
   /**
    * Obtains the next ID that should be used for a primitive that the robot is
    * notified of.

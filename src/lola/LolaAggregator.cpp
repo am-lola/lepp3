@@ -178,6 +178,10 @@ RobotAggregator::RobotAggregator(RobotService& service, int freq, Robot& robot)
   diff_.set_new_callback(boost::bind(&RobotAggregator::new_cb_, this, _1));
   diff_.set_modified_callback(boost::bind(&RobotAggregator::mod_cb_, this, _1));
   diff_.set_deleted_callback(boost::bind(&RobotAggregator::del_cb_, this, _1));
+
+  diff_.set_new_surface_callback(boost::bind(&RobotAggregator::new_surface_cb_, this, _1));
+  diff_.set_modified_surface_callback(boost::bind(&RobotAggregator::mod_surface_cb_, this, _1));
+  diff_.set_deleted_surface_callback(boost::bind(&RobotAggregator::del_surface_cb_, this, _1));
 }
 
 void RobotAggregator::new_cb_(ObjectModel& model) {
@@ -202,6 +206,9 @@ void RobotAggregator::new_cb_(ObjectModel& model) {
     }
   }
 }
+void RobotAggregator::new_surface_cb_(SurfaceModel& model) {
+      sendNew(model);    
+}
 
 bool RobotAggregator::del_cb_(ObjectModel& model) {
   // Disable any deletions of objects that are too close to the robot.
@@ -224,6 +231,19 @@ bool RobotAggregator::del_cb_(ObjectModel& model) {
   // Remove it from the map too.
   robot_ids_.erase(obj_id);
   // Signal the diff aggregator to definitely delete this object
+  return true;
+}
+
+bool RobotAggregator::del_surface_cb_(SurfaceModel& model) {
+  // Disable any deletions of objects that are too close to the robot.
+  // We don't want to confuse it by sending it delete commands
+  // for objects that it might be in the process of stepping over.
+  //@TODO ASK ARNE
+  // if (robot_.isInRobotBoundary(model)) {
+  //   return false;
+  // }
+
+  sendDeleteSurface(model.id());
   return true;
 }
 
@@ -269,6 +289,16 @@ void RobotAggregator::mod_cb_(ObjectModel& model) {
   }
 }
 
+void RobotAggregator::mod_surface_cb_(SurfaceModel& model) {
+  // Disable any modifications to models that are too close to the
+  // robot.
+  //@ASK  ARNE
+  // if (robot_.isInRobotBoundary(model)) {
+  //   return;
+  // }
+  sendModify(model);
+}
+
 std::vector<ObjectModel*> RobotAggregator::getPrimitives(ObjectModel& model) const {
   FlattenVisitor flattener;
   model.accept(flattener);
@@ -287,6 +317,24 @@ void RobotAggregator::sendNew(ObjectModel& new_model, int model_id, int part_id)
   service_.sendMessage(msg);
 }
 
+void RobotAggregator::sendNew(SurfaceModel& new_surface) {
+  std::vector<float> vertices;
+  std::vector<float> normal = {new_surface.get_planeCoefficients().values[0],new_surface.get_planeCoefficients().values[1],new_surface.get_planeCoefficients().values[2]};
+  for(auto point : new_surface.get_hull()->points)
+  {
+    vertices.push_back(point.x);
+    vertices.push_back(point.y);
+    vertices.push_back(point.z);
+  }
+
+  VisionMessage msg = VisionMessage(SurfaceMessage::SetMessage(new_surface.id(), normal, vertices));
+
+  LINFO << "RobotAggregator: Creating new surface ["
+        << "id = " << new_surface.id()
+        << "]";
+  service_.sendMessage(msg);
+}
+
 void RobotAggregator::sendDelete(int id) {
   LINFO << "RobotAggregator: Deleting a primitive id = "
         << id;
@@ -301,6 +349,13 @@ void RobotAggregator::sendDeletePart(int model_id, int part_id) {
   service_.sendMessage(del);
 }
 
+void RobotAggregator::sendDeleteSurface(int id)
+{
+  LINFO << "RobotAggregator: Deleting surface: " << id;
+  VisionMessage msg = VisionMessage(SurfaceMessage::DeleteMessage(id));
+  service_.sendMessage(msg);
+}
+
 void RobotAggregator::sendModify(ObjectModel& model, int model_id, int part_id) {
   CoefsVisitor coefs;
   model.accept(coefs);
@@ -309,5 +364,24 @@ void RobotAggregator::sendModify(ObjectModel& model, int model_id, int part_id) 
   LINFO << "RobotAggregator: Modifying existing primitive ["
             << "type = " << coefs.type_id()
             << "; id = " << part_id;
+  service_.sendMessage(msg);
+}
+
+void RobotAggregator::sendModify(SurfaceModel& surface)
+{
+  std::vector<float> vertices;
+  std::vector<float> normal = {surface.get_planeCoefficients().values[0],surface.get_planeCoefficients().values[1],surface.get_planeCoefficients().values[2]};
+  for(auto point : surface.get_hull()->points)
+  {
+    vertices.push_back(point.x);
+    vertices.push_back(point.y);
+    vertices.push_back(point.z);
+  }
+
+  VisionMessage msg = VisionMessage(SurfaceMessage::ModifyMessage(surface.id(), normal, vertices));
+
+  LINFO << "RobotAggregator: Modifying existing surface ["
+        << "id = " << surface.id()
+        << "]";
   service_.sendMessage(msg);
 }
