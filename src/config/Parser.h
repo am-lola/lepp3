@@ -7,16 +7,19 @@
 #include <pcl/io/openni2_grabber.h>
 #include <pcl/io/pcd_grabber.h>
 
-#include "lepp3/BaseObstacleDetector.hpp"
+#include "lepp3/ObstacleDetector.hpp"
 #include "lepp3/GrabberVideoSource.hpp"
-#include "lepp3/BaseVideoSource.hpp"
-#include "lepp3/VideoObserver.hpp"
+#include "lepp3/VideoSource.hpp"
 #include "lepp3/FilteredVideoSource.hpp"
 #include "lepp3/SmoothObstacleAggregator.hpp"
 #include "lepp3/SplitApproximator.hpp"
+#include "lepp3/MomentOfInertiaApproximator.hpp"
+#include "lepp3/FrameData.hpp"
+#include "lepp3/RGBData.hpp"
+#include "lepp3/PlaneInlierFinder.hpp"
 
-#include "lepp3/visualization/EchoObserver.hpp"
-#include "lepp3/visualization/ObstacleVisualizer.hpp"
+#include "lepp3/visualization/Visualizer.hpp"
+#include "lepp3/visualization/ARVisualizer.hpp"
 
 #include "lepp3/filter/TruncateFilter.hpp"
 #include "lepp3/filter/SensorCalibrationFilter.hpp"
@@ -60,10 +63,12 @@ public:
   boost::shared_ptr<PoseService> pose_service() { return pose_service_; }
   boost::shared_ptr<RobotService> robot_service() { return robot_service_; }
 
-  /// The obstacle detector accessor
-  boost::shared_ptr<IObstacleDetector> detector() { return detector_; }
+  /// The obstacle detector/tracker accessor
+  boost::shared_ptr<FrameDataSubject> detector() { return detector_; }
   /// The recorder accessor
   boost::shared_ptr<VideoRecorder<PointT> > recorder() { return recorder_; }
+
+  boost::shared_ptr<ARVisualizer> visualizer() { return visualizer_; }
 
 protected:
   /**
@@ -138,10 +143,9 @@ protected:
     return strat;
   }
 
-  /// Initialize the `ObstacleDetector`. Must set the `detector_` member.
-  virtual void initObstacleDetector() = 0;
-  /// Initialize the `StairDetector`. Must set the `surface_detector_` member.
-  virtual void initSurfaceDetector() = 0;
+  /// Initialize 'ObstacleDetector' and 'SurfaceDetector' if necessary.
+  virtual void initSurfObstDetector() = 0;
+
   /// Initialize the `Recorder`. Must set the `recorder_` member.
   virtual void initRecorder() = 0;
 
@@ -165,9 +169,9 @@ protected:
   boost::shared_ptr<RobotService> robot_service_;
   boost::shared_ptr<Robot> robot_;
 
-  boost::shared_ptr<IObstacleDetector> detector_;
+  boost::shared_ptr<FrameDataSubject> detector_;
   boost::shared_ptr<VideoRecorder<PointT> > recorder_;
-  boost::shared_ptr<ObstacleVisualizer<PointT> > visualizer_;
+  boost::shared_ptr<ARVisualizer> visualizer_;
 };
 
 #endif

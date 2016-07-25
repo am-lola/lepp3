@@ -3,7 +3,10 @@
 
 #include <vector>
 
+#include "lepp3/Typedefs.hpp"
+#include "lepp3/FrameData.hpp"
 #include <pcl/common/projection_matrix.h>
+#include <pcl/ModelCoefficients.h>
 
 namespace lepp {
 
@@ -22,8 +25,7 @@ public:
    * Returns a number of point clouds representing segments from the given
    * original point cloud.
    */
-  virtual std::vector<typename pcl::PointCloud<PointT>::ConstPtr> segment(
-      const typename pcl::PointCloud<PointT>::ConstPtr& cloud) = 0;
+  virtual void segment(FrameDataPtr frameData) = 0;
 };
 
 } // namespace lepp

@@ -16,7 +16,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include "lola/PoseObserver.hpp"
-#include "lepp3/VideoObserver.hpp"
+#include "lepp3/FrameData.hpp"
 
 #include "lepp3/util/util.h"
 #include "lepp3/debug/timer.hpp"
@@ -53,22 +53,23 @@ namespace {
   * the `setMode` method.
   */
 template<class PointT>
-class VideoRecorder : public VideoObserver<PointT>, public TFObserver {
+class VideoRecorder : public TFObserver, public FrameDataObserver {
 public:
   VideoRecorder();
   /**
-   * Implementation of the VideoObserver interface.
+   * Implementation of the FrameDataObserver interface.
   **/
-  virtual void notifyNewFrame(
-      int idx,
-      const typename pcl::PointCloud<PointT>::ConstPtr& cloud);
+  virtual void updateFrame(FrameDataPtr frameData);
+
   /**
-   * Implementation of the VideoObserver interface.
+   * Implementation of the FrameDataObserver interface.
   **/
+   /*
   virtual void notifyNewFrame(
       int idx,
       const typename boost::shared_ptr<openni_wrapper::Image>& image);
   void notifyNewFrame(int idx, const cv::Mat& image) {};
+  */
   /**
    * Implementation of the PoseObserver interface.
    */
@@ -174,17 +175,15 @@ void VideoRecorder<PointT>::setMode(bool cloud,
 }
 
 template<class PointT>
-void VideoRecorder<PointT>::notifyNewFrame(
-    int idx,
-    const typename pcl::PointCloud<PointT>::ConstPtr& cloud) {
-
+void VideoRecorder<PointT>::updateFrame(FrameDataPtr frameData)
+{
   // Save the point cloud if
   // 1. we are actually told to save it,
   // 2. there is no previous cloud waiting for the completion of the recording
   //    chain.
   if (record_cloud_) {
     if (!cloud_lk_) {
-      cloud_ = cloud;
+      cloud_ = frameData->cloud;
       cloud_idx_++;
       savePointCloud();
       // Set the cloud lock only if here is not the end of recording chain (if
@@ -195,6 +194,7 @@ void VideoRecorder<PointT>::notifyNewFrame(
   }
 }
 
+/*
 template<class PointT>
 void VideoRecorder<PointT>::notifyNewFrame(
     int idx,
@@ -225,7 +225,7 @@ void VideoRecorder<PointT>::notifyNewFrame(
         cloud_lk_ = false;
     }
   }
-}
+}*/
 
 template<class PointT>
 void VideoRecorder<PointT>::NotifyNewPose(
@@ -261,17 +261,7 @@ template<class PointT>
 void VideoRecorder<PointT>::savePointCloud() {
 
   std::stringstream ss;
-  if (0 <= cloud_idx_ && cloud_idx_< 10)
-    ss << "cloud_000" << cloud_idx_ << ".pcd";
-  if (10 <= cloud_idx_ && cloud_idx_< 100)
-    ss << "cloud_00" << cloud_idx_ << ".pcd";
-  if (100 <= cloud_idx_ && cloud_idx_< 1000)
-    ss << "cloud_0" << cloud_idx_ << ".pcd";
-  if (1000 <= cloud_idx_ && cloud_idx_< 10000)
-    ss << "cloud_" << cloud_idx_ << ".pcd";
-  if (image_idx_ > 10000) {
-    throw "reached max size for saving point clouds!";
-  }
+  ss << "cloud_" << cloud_idx_ << ".pcd";
   const std::string file_name = ss.str();
 
   Timer t;

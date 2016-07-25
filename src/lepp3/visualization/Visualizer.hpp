@@ -1,18 +1,22 @@
-#ifndef LEPP3_VISUALIZATION_OBSTACLE_VISUALIZER_H__
-#define LEPP3_VISUALIZATION_OBSTACLE_VISUALIZER_H__
+#ifndef LEPP3_VISUALIZATION_SURFOBST_VISUALIZER_H__
+#define LEPP3_VISUALIZATION_SURFOBST_VISUALIZER_H__
 
 #include <sstream>
+#include <vector>
 
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/geometry/planar_polygon.h>
+#include <string>
 
-#include "lepp3/VideoObserver.hpp"
-#include "lepp3/ObstacleAggregator.hpp"
+#include "lepp3/Typedefs.hpp"
 #include "lepp3/models/ObjectModel.h"
+#include "lepp3/ConvexHullDetector.hpp"
+#include "lepp3/FrameData.hpp"
 
 namespace lepp {
 
-/**
+/**c
  * A class that can draw `ObjectModel` instances onto a PCLVisualizer.
  * It is a `ModelVisitor` implementation and it draws each model that it visits.
  *
@@ -22,13 +26,13 @@ namespace lepp {
  * The `ModelDrawer` should be able to represent any `ObjectModel` instance.
  *
  */
-class ModelDrawer : public ModelVisitor {
+class ModelDrawerPCL : public ModelVisitor {
 public:
   /**
    * Creates a new `ModelDrawer` instance that will draw any models that it
    * visits onto the given viewer.
    */
-  ModelDrawer(pcl::visualization::PCLVisualizer& viewer)
+  ModelDrawerPCL(pcl::visualization::PCLVisualizer& viewer)
       : viewer_(viewer), total_(0) {}
 
   /**
@@ -48,7 +52,7 @@ private:
   int total_;
 };
 
-void ModelDrawer::visitSphere(lepp::SphereModel& sphere) {
+void ModelDrawerPCL::visitSphere(lepp::SphereModel& sphere) {
   // We count how many object have been drawn in total, in order to make sure
   // we don't use any duplicate names.
   // The drawer relies on there not being any objects with a prefix "obstacle"
@@ -72,7 +76,7 @@ void ModelDrawer::visitSphere(lepp::SphereModel& sphere) {
       name);
 }
 
-void ModelDrawer::visitCapsule(lepp::CapsuleModel& capsule) {
+void ModelDrawerPCL::visitCapsule(lepp::CapsuleModel& capsule) {
   ++total_;
   std::ostringstream ss; ss << "obstacle " << total_;
   std::string const name = ss.str();
@@ -119,50 +123,23 @@ void ModelDrawer::visitCapsule(lepp::CapsuleModel& capsule) {
 /**
  * Visualizes the obstacles detected by a particular obstacle detector by
  * overlaying them onto a point cloud feed coming from a video source.
- *
- * Implements the VideoObserver and ObstacleAggregator interfaces.
  */
 template<class PointT>
-class ObstacleVisualizer
-  : public VideoObserver<PointT>,
-    public ObstacleAggregator {
+class Visualizer : public FrameDataObserver {
 public:
-  ObstacleVisualizer() : viewer_("ObstacleVisualizer") {}
-
-  /**
-   * VideoObserver interface implementation: processes the current point cloud.
-   */
-  virtual void notifyNewFrame(
-      int idx,
-      const typename pcl::PointCloud<PointT>::ConstPtr& pointCloud) {
-    viewer_.showCloud(pointCloud);
-  }
-  /**
-   * VideoObserver interface implementation: processes the current RGB image.
-   */
-  virtual void notifyNewFrame(
-      int idx,
-      const typename boost::shared_ptr<openni_wrapper::Image>& image) {
-
-        // convert openni image to cv::Mat
-        cv::Mat frameRGB = cv::Mat(image->getHeight(), image->getWidth(), CV_8UC3);
-        image->fillRGB(frameRGB.cols,frameRGB.rows,frameRGB.data,frameRGB.step);
-        cv::Mat frameBGR;
-        cv::cvtColor(frameRGB,frameBGR,CV_RGB2BGR);
-
-        cv::Mat frame = frameBGR;
-
-        // display current video frame
-        imshow( "RGB CAM", frame );
-        cv::waitKey(30);
-  }
-  void notifyNewFrame(int idx, const cv::Mat& image) {};
+  Visualizer() : viewer_("Visualizer") {}
 
   /**
    * ObstacleAggregator interface implementation: processes detected obstacles.
    */
-  virtual void updateObstacles(std::vector<ObjectModelPtr> const& obstacles);
+  void updateObstacles(std::vector<ObjectModelPtr> const& obstacles);
 
+  /**
+  * Convex Hull Aggregator interface implementation: process detected convex hulls.
+  */
+  virtual void updateFrame(FrameDataPtr frameData);
+
+  
 private:
   /**
    * Used for the visualization of the scene.
@@ -175,17 +152,26 @@ private:
    */
   void drawShapes(std::vector<ObjectModelPtr> obstacles,
                   pcl::visualization::PCLVisualizer& viewer);
+
+
+  void drawSurfaces(
+            std::vector<SurfaceModelPtr> const& surfaces,
+      pcl::visualization::PCLVisualizer& viewer);
+
+
+  void drawConvexHulls(std::vector<PointCloudConstPtr> &hulls,
+    pcl::visualization::PCLVisualizer& pclViz);
 };
 
 template<class PointT>
-void ObstacleVisualizer<PointT>::drawShapes(
+void Visualizer<PointT>::drawShapes(
     std::vector<ObjectModelPtr> obstacles,
     pcl::visualization::PCLVisualizer& viewer) {
   // Remove all old shapes...
   viewer.removeAllShapes();
 
   // ...and draw all the new ones.
-  ModelDrawer drawer(viewer);
+  ModelDrawerPCL drawer(viewer);
   size_t const sz = obstacles.size();
   for (size_t i = 0; i < sz; ++i) {
     obstacles[i]->accept(drawer);
@@ -193,14 +179,54 @@ void ObstacleVisualizer<PointT>::drawShapes(
 }
 
 template<class PointT>
-void ObstacleVisualizer<PointT>::updateObstacles(
-    std::vector<ObjectModelPtr> const& obstacles) {
+void Visualizer<PointT>::updateObstacles(
+    std::vector<ObjectModelPtr> const& obstacles) 
+{
   pcl::visualization::CloudViewer::VizCallable obstacle_visualization =
-      boost::bind(&ObstacleVisualizer::drawShapes,
+      boost::bind(&Visualizer::drawShapes,
                   this, obstacles, _1);
   viewer_.runOnVisualizationThreadOnce(obstacle_visualization);
 }
 
-} // namespace lepp
 
+template<class PointT>
+void Visualizer<PointT>::drawConvexHulls(
+    std::vector<PointCloudConstPtr> &hulls,
+    pcl::visualization::PCLVisualizer& pclViz) {
+
+  double r[5] = {1,0,0,1,1};
+  double b[5] = {0,1,0,1,0};
+  double g[5] = {0,0,1,0,1};
+
+  std::string id("hull0");
+  int max = hulls.size() < 5 ? hulls.size() : 5;
+  for (int i = 0; i < max; i++)
+  {
+    pcl::PlanarPolygon<PointT> polygon;
+    polygon.setContour(*hulls[i]);
+    id[4] = i;
+    pclViz.removePointCloud(id,0);
+    pclViz.addPolygon(polygon, r[i], b[i], g[i], id);
+    pclViz.setRepresentationToSurfaceForAllActors();
+
+  }   
+}
+
+template<class PointT>
+void Visualizer<PointT>::updateFrame(FrameDataPtr frameData)
+{
+  std::vector<PointCloudConstPtr> hullsConst;
+  for (size_t i = 0; i < frameData->surfaces.size(); i++)
+    hullsConst.push_back(frameData->surfaces[i]->get_hull());
+
+  pcl::visualization::CloudViewer::VizCallable hull_visualization =
+            boost::bind(&Visualizer::drawConvexHulls, this, hullsConst, _1);
+
+  viewer_.runOnVisualizationThread(hull_visualization);
+
+  updateObstacles(frameData->obstacles);
+}
+
+
+} // namespace lepp
 #endif

@@ -71,7 +71,8 @@ LolaAggregator::~LolaAggregator() {
   socket_.close();
 }
 
-void LolaAggregator::updateObstacles(std::vector<ObjectModelPtr> const& obstacles) {
+void LolaAggregator::updateFrame(FrameDataPtr frameData) {
+  std::vector<ObjectModelPtr> const& obstacles = frameData->obstacles;
   LTRACE << "LolaViewer: Sending to " << remote_endpoint_;
 
   // Builds the payload: a raw byte buffer.

@@ -30,19 +30,19 @@ public:
   bool isLive() { return live_; }
 protected:
   /// Implementations of initialization of various parts of the pipeline.
-  void initRawSource() {
-    this->raw_source_ = GetVideoSource();
+  virtual void initRawSource() override {
+    this->raw_source_.reset(GetVideoSource());
     if (!this->raw_source_) {
       throw "Unable to initialize the video source";
     }
   }
 
-  void initFilteredVideoSource() {
+  virtual void initFilteredVideoSource() override {
     this->filtered_source_.reset(
         new SimpleFilteredVideoSource<PointT>(this->raw_source_));
   }
 
-  void addFilters() {
+  virtual void addFilters() override {
     {
       double const a = 1.0117;
       double const b = -0.0100851;
@@ -62,19 +62,20 @@ protected:
     }
   }
 
-  void initPoseService() {
+  virtual void initPoseService() override {
     this->pose_service_.reset(new PoseService("127.0.0.1", 5000));
     this->pose_service_->start();
   }
 
-  void initVisionService() {
+  virtual void initVisionService() override {
     boost::shared_ptr<AsyncRobotService> async_robot_service(
         new AsyncRobotService("127.0.0.1", 1337, 10));
     async_robot_service->start();
     this->robot_service_ = async_robot_service;
   }
 
-  void initObstacleDetector() {
+  virtual void initSurfObstDetector() override
+  {
     // Prepare the approximator that the detector is to use.
     // First, the simple approximator...
     boost::shared_ptr<ObjectApproximator<PointT> > simple_approx(
@@ -87,41 +88,39 @@ protected:
     boost::shared_ptr<ObjectApproximator<PointT> > approx(
         new SplitObjectApproximator<PointT>(simple_approx, splitter));
     // Prepare the base detector...
-    base_obstacle_detector_.reset(new BaseObstacleDetector<PointT>(approx));
+    base_obstacle_detector_.reset(new ObstacleDetector<PointT>(approx,false));
 
-    this->source()->attachObserver(base_obstacle_detector_);
+    this->source()->FrameDataSubject::attachObserver(base_obstacle_detector_);
     // Smooth out the basic detector by applying a smooth detector to it
     boost::shared_ptr<SmoothObstacleAggregator> smooth_detector(
         new SmoothObstacleAggregator);
-    base_obstacle_detector_->attachObstacleAggregator(smooth_detector);
+    base_obstacle_detector_->attachObserver(smooth_detector);
     // Now the detector that is exposed via the context is a smoothed-out
     // base detector.
     this->detector_ = smooth_detector;
   }
 
-  void initSurfaceDetector() {}
+  virtual void initRecorder() override {}
 
-  void initRecorder() {}
-
-  void addAggregators() {
+  virtual void addAggregators() override {
     boost::shared_ptr<LolaAggregator> lola_viewer(
         new LolaAggregator("127.0.0.1", 53250));
-    this->detector_->attachObstacleAggregator(lola_viewer);
+    this->detector_->attachObserver(lola_viewer);
 
     boost::shared_ptr<RobotAggregator> robot_aggregator(
         new RobotAggregator(*this->robot_service(), 30, *this->robot()));
-    this->detector_->attachObstacleAggregator(robot_aggregator);
+    this->detector_->attachObserver(robot_aggregator);
   }
 
-  void initVisualizer() {
+  virtual void initVisualizer() override {
     // Factor out to a member ...
     bool visualization = true;
     if (visualization) {
-      this->visualizer_.reset(new ObstacleVisualizer<PointT>());
+      this->visualizer_.reset(new ARVisualizer(false, false));
       // Attach the visualizer to both the point cloud source...
-      this->source()->attachObserver(this->visualizer_);
+      this->source()->FrameDataSubject::attachObserver(this->visualizer_);
       // ...as well as to the obstacle detector
-      this->detector_->attachObstacleAggregator(this->visualizer_);
+      this->detector_->attachObserver(this->visualizer_);
     }
   }
 
@@ -141,35 +140,32 @@ private:
   /**
    * Gets a `VideoSource` instance that corresponds to the CLI parameters.
    */
-  boost::shared_ptr<VideoSource<PointT> > GetVideoSource() {
+  VideoSource<PointT>* GetVideoSource() const {
     if (argc < 2) {
-      return boost::shared_ptr<VideoSource<PointT> >();
+      return nullptr;
     }
 
     std::string const option = argv[1];
     if (option == "--stream") {
-      return boost::shared_ptr<VideoSource<PointT> >(
-          new LiveStreamSource<PointT>());
+      return new LiveStreamSource<PointT>();
     } else if (option == "--pcd" && argc >= 3) {
       std::string const file_path = argv[2];
       boost::shared_ptr<pcl::Grabber> interface(new pcl::PCDGrabber<PointT>(
             file_path,
             20.,
             true));
-      return boost::shared_ptr<VideoSource<PointT> >(
-          new GeneralGrabberVideoSource<PointT>(interface));
+      return new GeneralGrabberVideoSource<PointT>(interface);
     } else if (option == "--oni" && argc >= 3) {
       std::string const file_path = argv[2];
       boost::shared_ptr<pcl::Grabber> interface(new pcl::io::OpenNI2Grabber(
             file_path,
             pcl::io::OpenNI2Grabber::OpenNI_Default_Mode,
             pcl::io::OpenNI2Grabber::OpenNI_Default_Mode));
-      return boost::shared_ptr<VideoSource<PointT> >(
-          new GeneralGrabberVideoSource<PointT>(interface));
+      return new GeneralGrabberVideoSource<PointT>(interface);
     }
 
-    // Unknown option: return a "null" pointer.
-    return boost::shared_ptr<VideoSource<PointT> >();
+    // Unknown option: return a nullptr.
+    return nullptr;
   }
 
   /// Private member variables
@@ -189,7 +185,7 @@ private:
    * reference to it to make sure it doesn't get destroyed, although it is
    * never exposed to any outside clients.
    */
-  boost::shared_ptr<BaseObstacleDetector<PointT> > base_obstacle_detector_;
+  boost::shared_ptr<ObstacleDetector<PointT> > base_obstacle_detector_;
 };
 
 #endif

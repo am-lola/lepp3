@@ -1,7 +1,10 @@
 #ifndef GRABBER_VIDEO_SOURCE_H_
 #define GRABBER_VIDEO_SOURCE_H_
 
-#include "BaseVideoSource.hpp"
+#include "lepp3/Typedefs.hpp"
+#include "lepp3/FrameData.hpp"
+#include "lepp3/RGBData.hpp"
+#include "VideoSource.hpp"
 
 #include <pcl/io/openni_grabber.h>
 
@@ -26,40 +29,48 @@ public:
    * Instantiate a video source which wraps the given Grabber instance.
    * The VideoSource instance takes ownership of the given Grabber instance.
    */
-  GeneralGrabberVideoSource(boost::shared_ptr<pcl::Grabber> interface);
+  GeneralGrabberVideoSource(boost::shared_ptr<pcl::Grabber> interface)
+      : interface_(interface),
+        rgb_viewer_enabled_(false),
+        frameCount(0),
+        receive_cloud_(true),
+       receive_image_(false) {}
+  GeneralGrabberVideoSource(boost::shared_ptr<pcl::Grabber> interface, bool rgb_enabled)
+      : interface_(interface),
+        rgb_viewer_enabled_(rgb_enabled),
+        receive_cloud_(true),
+        receive_image_(false),
+        frameCount(0) {}
+
   virtual ~GeneralGrabberVideoSource();
-  virtual void open();
+  virtual void open() override;
+  bool rgb_viewer_enabled_;
   /**
    * Implementation of VideoSource interface
    */
-  virtual void setOptions(std::map<std::string, bool> options);
+  virtual void setOptions(const std::map<std::string, bool>& options) override;
+
 protected:
+  /**
+  * A reference to the Grabber instance that the VideoSource wraps.
+  */
+  const boost::shared_ptr<pcl::Grabber> interface_;
+
   /**
    * Member function which is registered as a callback of the Grabber.
    * Acts as the bond between the VideoSource and the Grabber, allowing the
    * adaptation of the interface.
    */
-  virtual void cloud_cb_(
-    const typename pcl::PointCloud<PointT>::ConstPtr& cloud);
-private:
-  /**
-   * A reference to the Grabber instance that the VideoSource wraps.
-   */
-  const boost::shared_ptr<pcl::Grabber> interface_;
+  void cloud_cb_(const PointCloudConstPtr& cloud);
   void image_cb_ (const boost::shared_ptr<openni_wrapper::Image>& rgb);
+
+  long frameCount;
   /**
    * Boolean values which determine whether the interface subsribes to receive
    * the point cloud and/or image.
    */
   bool receive_cloud_, receive_image_;
 };
-
-template<class PointT>
-GeneralGrabberVideoSource<PointT>::GeneralGrabberVideoSource(
-  boost::shared_ptr<pcl::Grabber> interface)
-    : interface_(interface),
-      receive_cloud_(true),
-      receive_image_(false) {}
 
 template<class PointT>
 GeneralGrabberVideoSource<PointT>::~GeneralGrabberVideoSource() {
@@ -69,19 +80,24 @@ GeneralGrabberVideoSource<PointT>::~GeneralGrabberVideoSource() {
 
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::cloud_cb_(
-    const typename pcl::PointCloud<PointT>::ConstPtr& cloud) {
-  this->setNextFrame(cloud);
+    const PointCloudConstPtr& cloud) 
+{
+  FrameDataPtr frameData(new FrameData(++frameCount));
+  frameData->cloud = cloud;
+  this->setNextFrame(frameData);
 }
 
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::image_cb_ (
-    const typename boost::shared_ptr<openni_wrapper::Image>& rgb) {
-  this->setNextFrame(rgb);
+    const typename boost::shared_ptr<openni_wrapper::Image>& rgb) 
+{
+  RGBDataPtr rgbData(new RGBData(frameCount, rgb));
+  this->setNextFrame(rgbData);  
 }
 
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::setOptions(
-    std::map<std::string, bool> options) {
+    const std::map<std::string, bool>& options) {
   for (std::pair<std::string, bool> const& key_value : options) {
     if (key_value.first == "subscribe_cloud") {
       receive_cloud_ = key_value.second;
@@ -93,10 +109,12 @@ void GeneralGrabberVideoSource<PointT>::setOptions(
 }
 
 template<class PointT>
-void GeneralGrabberVideoSource<PointT>::open() {
+void GeneralGrabberVideoSource<PointT>::open() 
+{
   // Register the callback and start grabbing frames...
-  if (receive_cloud_) {
-    typedef void (callback_t)(const typename pcl::PointCloud<PointT>::ConstPtr&);
+  if (receive_cloud_) 
+  {
+    typedef void (callback_t)(const PointCloudConstPtr&);
     boost::function<callback_t> f = boost::bind(
         &GeneralGrabberVideoSource::cloud_cb_,
         this, _1);
@@ -132,7 +150,7 @@ public:
  * A convenience class for an offline stream captured from a sequence of files.
  *
  * This class is in direct connection with lepp::VideoRecorder, where the input
- * is recorded in a customzied way (sequence of point clouds, RGB Images and a
+ * is recorded in a customzied way (seuqnce of point clouds, RGB Images and a
  * file containing all kinematics.)
  */
 template<class PointT>
@@ -165,7 +183,7 @@ OfflineVideoSource<PointT>::OfflineVideoSource(
       rgb_interface_(vc) {
   // Subscription to cloud and image (a.k.a internal receive_cloud_ and
   // receive_image_) is already taken care of by default in
-  // GeneralGrabberVideoSource::setOptions
+  // GeneralGrabberVideoSource's ctor
 }
 
 template<class PointT>
@@ -179,6 +197,7 @@ OfflineVideoSource<PointT>::~OfflineVideoSource() {
 template<class PointT>
 void OfflineVideoSource<PointT>::cloud_cb_(
     const typename pcl::PointCloud<PointT>::ConstPtr& cloud) {
+  std::cout << "entered OfflineVideoSource::cloud_cb_" << std::endl;
 
   this->setNextFrame(cloud);
 

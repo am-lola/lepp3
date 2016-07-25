@@ -1,6 +1,7 @@
 #ifndef LEPP3_MOMENT_OF_INERTIA_APPROXIMATOR_H__
 #define LEPP3_MOMENT_OF_INERTIA_APPROXIMATOR_H__
 
+#include "lepp3/Typedefs.hpp"
 #include "lepp3/ObjectApproximator.hpp"
 
 #include <pcl/common/pca.h>
@@ -20,7 +21,7 @@ template<class PointT>
 class MomentOfInertiaObjectApproximator : public ObjectApproximator<PointT> {
 public:
   boost::shared_ptr<CompositeModel> approximate(
-      const typename pcl::PointCloud<PointT>::ConstPtr& point_cloud);
+      const PointCloudConstPtr& point_cloud);
 private:
   // Private helper member functions for fitting individual models.
   // Takes a pointer to a model and a descriptor and sets the parameters of the
@@ -31,11 +32,11 @@ private:
   // TODO Clean up the implementations of the functions (e.g. lots of unused variables)
   // TODO Refactor them in terms of the `ModelVisitor` API (`FittingVisitor`).
   void performFitting(boost::shared_ptr<SphereModel> sphere,
-                      const typename pcl::PointCloud<PointT>::ConstPtr& point_cloud,
+                      const PointCloudConstPtr& point_cloud,
                       Eigen::Vector3f mass_center,
                       std::vector <Eigen::Vector3f> const& axes);
   void performFitting(boost::shared_ptr<CapsuleModel> capsule,
-                      const typename pcl::PointCloud<PointT>::ConstPtr& point_cloud,
+                      const PointCloudConstPtr& point_cloud,
                       Eigen::Vector3f mass_center,
                       std::vector <Eigen::Vector3f> const& axes);
   /**
@@ -43,13 +44,13 @@ private:
    * of mass for the given point cloud.
    */
   Eigen::Vector3f estimateMassCenter(
-      const typename pcl::PointCloud<PointT>::ConstPtr& point_cloud);
+      const PointCloudConstPtr& point_cloud);
 };
 
 template<class PointT>
 boost::shared_ptr<CompositeModel>
 MomentOfInertiaObjectApproximator<PointT>::approximate(
-    const typename pcl::PointCloud<PointT>::ConstPtr& point_cloud) {
+    const PointCloudConstPtr& point_cloud) {
   // Firstly, obtain the principal component descriptors
   float major_value, middle_value, minor_value;
   pcl::PCA<PointT> pca;
@@ -93,7 +94,7 @@ MomentOfInertiaObjectApproximator<PointT>::approximate(
 
 template<class PointT>
 Eigen::Vector3f MomentOfInertiaObjectApproximator<PointT>::estimateMassCenter(
-    const typename pcl::PointCloud<PointT>::ConstPtr& point_cloud) {
+    const PointCloudConstPtr& point_cloud) {
   PointT min_pt;
   PointT max_pt;
   // TODO Is this really a good heuristic? (It comes from the legacy code)
@@ -109,7 +110,7 @@ Eigen::Vector3f MomentOfInertiaObjectApproximator<PointT>::estimateMassCenter(
 template<class PointT>
 void MomentOfInertiaObjectApproximator<PointT>::performFitting(
     boost::shared_ptr<SphereModel> sphere,
-    const typename pcl::PointCloud<PointT>::ConstPtr& point_cloud,
+    const PointCloudConstPtr& point_cloud,
     Eigen::Vector3f mass_center,
     std::vector <Eigen::Vector3f> const& axes) {
   Eigen::VectorXf  coeffs;
@@ -149,7 +150,7 @@ void MomentOfInertiaObjectApproximator<PointT>::performFitting(
 template<class PointT>
 void MomentOfInertiaObjectApproximator<PointT>::performFitting(
     boost::shared_ptr<CapsuleModel> capsule,
-    const typename pcl::PointCloud<PointT>::ConstPtr& point_cloud,
+    const PointCloudConstPtr& point_cloud,
     Eigen::Vector3f mass_center,
     std::vector <Eigen::Vector3f> const& axes) {
   Eigen::VectorXf  coeffs;

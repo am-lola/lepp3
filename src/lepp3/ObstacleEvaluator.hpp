@@ -5,7 +5,7 @@
 #include <iostream>
 #include <sstream>
 
-#include "lepp3/ObstacleAggregator.hpp"
+#include "lepp3/FrameData.hpp"
 #include "lepp3/util/util.h"
 
 /**
@@ -191,7 +191,7 @@ int VolumeEstimator::estimateVolume() {
 /**
  *
  */
-class ObstacleEvaluator : public ObstacleAggregator {
+class ObstacleEvaluator : public FrameDataObserver {
 public:
   ObstacleEvaluator();
   ObstacleEvaluator(int vol);
@@ -199,7 +199,7 @@ public:
   /**
    * ObstacleAggregator interface implementation: processes the current models.
    */
-  void updateObstacles(std::vector<ObjectModelPtr> const& obstacles);
+  void updateFrame(FrameDataPtr frameData);
 private:
   void init();
   bool evaluate(ObjectModelPtr const& model);
@@ -273,12 +273,10 @@ bool ObstacleEvaluator::evaluate(ObjectModelPtr const& model) {
   return true;
 }
 
-void ObstacleEvaluator::updateObstacles(
-    std::vector<ObjectModelPtr> const& obstacles) {
-
-  size_t sz = obstacles.size();
+void ObstacleEvaluator::updateFrame(FrameDataPtr frameData) {
+  size_t sz = frameData->obstacles.size();
   for (size_t i=0; i<sz; ++i) {
-    evaluate(obstacles[i]);
+    evaluate(frameData->obstacles[i]);
   }
 }
 
