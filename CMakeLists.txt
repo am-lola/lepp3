@@ -2,7 +2,12 @@ cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
 project(lepp3)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+# Compile with -g flag for debugging information needed for profiling.
+# compile and link with -fopenmp flag for enabling OpenMP which is needed for parallelization
+SET(GCC_COVERAGE_COMPILE_FLAGS "-Wall -Wno-reorder -std=c++11 -fopenmp -pthread -msse2")
+SET(GCC_COVERAGE_LINK_FLAGS    "-fopenmp")
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
+SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
 # WARNING: Debug build crashes during startup when C++ 11 is enabled, probably
 # a PCL bug:
 # crash in boost::math::lanczos::lanczos_initializer<
@@ -20,13 +25,6 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-
-# Compile with -g flag for debugging information needed for profiling.
-# compile and link with -fopenmp flag for enabling OpenMP which is needed for parallelization
-SET(GCC_COVERAGE_COMPILE_FLAGS "-Wall -Wno-reorder -std=c++11 -fopenmp -pthread -msse2")
-SET(GCC_COVERAGE_LINK_FLAGS    "-fopenmp")
-SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
-SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build")
 
