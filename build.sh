@@ -7,4 +7,8 @@ dirPlot="GnuPlots"
 echo "Building the project..."
 echo "Destination directory $dir"
 
-rm -r $dir && mkdir $dir && cd $dir && mkdir $dirPlot && cmake ../src && make -j4
+if [ -d "$dir" ]; then
+  rm -r $dir
+fi
+
+mkdir $dir && cd $dir && mkdir $dirPlot && cmake ../src && make -j4
