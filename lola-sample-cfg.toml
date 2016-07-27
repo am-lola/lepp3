@@ -83,11 +83,6 @@ split_axis = middle
 
 # The list of aggregators is also optional.
 # The order of the aggregators themselves IS NOT SIGNIFICANT.
-# [[aggregators]]
-# This sends the obstacles to the LOLA viewer
-# type = LolaAggregator
-# ip = 192.168.0.3
-# port = 53250
 
 [[aggregators]]
 # This sends the obstacles to LOLA itself.

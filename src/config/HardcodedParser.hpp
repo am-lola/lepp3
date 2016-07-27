@@ -74,7 +74,7 @@ protected:
     this->robot_service_ = async_robot_service;
   }
 
-  void initSurfObstDetector() 
+  void initSurfObstDetector()
   {
     // Prepare the approximator that the detector is to use.
     // First, the simple approximator...
@@ -103,10 +103,6 @@ protected:
   void initRecorder() {}
 
   void addAggregators() {
-    boost::shared_ptr<LolaAggregator> lola_viewer(
-        new LolaAggregator("127.0.0.1", 53250));
-    this->detector_->attachObserver(lola_viewer);
-
     boost::shared_ptr<RobotAggregator> robot_aggregator(
         new RobotAggregator(*this->robot_service(), 30, *this->robot()));
     this->detector_->attachObserver(robot_aggregator);

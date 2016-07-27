@@ -19,44 +19,6 @@ using am2b::iface::SurfaceMessage;
 using am2b::iface::Message_Type;
 
 /**
- * A LOLA-specific implementation of an `FrameDataObserver`.
- *
- * It serializes the received obstacles into a format where each obstacle is
- * represented by 11 integers. Each integer is serialized with machine-specific
- * endianess; no care is taken to perform integer serialization for network
- * transfer, i.e. big-endian. In general, this is not the safest assumption to
- * make, but the LOLA controller has been working under this assumption for now,
- * so enforcing a big-endian encoding would just introduce additional complexity.
- *
- * The serialized representation of each obstacle is packed into a single
- * datagram and sent over UDP to the remote host described by the initial
- * constructor parameters.
- */
-class LolaAggregator : public lepp::FrameDataObserver {
-public:
-  /**
-   * Creates a new `LolaAggregator` where the remote host to which the obstacle
-   * list is sent is identified by the given host name and port number.
-   */
-  LolaAggregator(std::string const& remote_host, int remote_port);
-  ~LolaAggregator();
-  /**
-   * `FrameDataObserver` interface implementation.
-   */
-  virtual void updateFrame(FrameDataPtr frameData);
-private:
-  /**
-   * A helper function that builds the datagram payload based on the given
-   * obstacles.
-   */
-  std::vector<char> buildPayload(std::vector<ObjectModelPtr> const& obstacles) const;
-
-  boost::asio::io_service io_service_;
-  boost::asio::ip::udp::socket socket_;
-  boost::asio::ip::udp::endpoint remote_endpoint_;
-};
-
-/**
  * An `FrameDataObserver` implementation that sends notifications to the robot
  * after every certain amount of frames, informing it of changes in the known
  * obstacles since the previous message.

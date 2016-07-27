@@ -1,131 +1,7 @@
-#include "lola/LolaAggregator.h"
+#include "lola/RobotAggregator.h"
 #include "deps/easylogging++.h"
 
 using namespace lepp;
-
-namespace {
-  /**
-   * A dummy WriteHandler for the asnchronous socket write.
-   *
-   * If send were to fail, there's no point in us retrying, so this handler is
-   * just a dummy.
-   */
-  void handler(
-      boost::system::error_code const& error,
-      std::size_t bytes_transferred) {}
-}
-
-
-namespace {
-/**
- * A `ModelVisitor` implementation used for the implementation of the
- * `LolaAggregator`. Allows us to obtain all information that is required to
- * assemble a message for the visualizer.
- */
-class ParametersVisitor : public lepp::ModelVisitor {
-public:
-  void visitSphere(SphereModel& sphere) {
-    params_.push_back(0); // type
-    params_.push_back(sphere.radius());
-    Coordinate const center = sphere.center();
-    params_.push_back(center.x);
-    params_.push_back(center.y);
-    params_.push_back(center.z);
-    // Now the rest is padding
-    for (size_t i = 0; i < 6; ++i) params_.push_back(0);
-  }
-
-  void visitCapsule(CapsuleModel& capsule) {
-    params_.push_back(1); // type
-    params_.push_back(capsule.radius());
-    Coordinate const first = capsule.first();
-    params_.push_back(first.x);
-    params_.push_back(first.y);
-    params_.push_back(first.z);
-    Coordinate const second = capsule.second();
-    params_.push_back(second.x);
-    params_.push_back(second.y);
-    params_.push_back(second.z);
-    // The rest is padding
-    for (size_t i = 0; i < 3; ++i) params_.push_back(0);
-  }
-
-  std::vector<double> params() const { return params_; }
-private:
-  std::vector<double> params_;
-};
-}  // namespace <anonymous>
-
-
-
-LolaAggregator::LolaAggregator(std::string const& remote_host, int remote_port)
-    : socket_(io_service_),
-      remote_endpoint_(
-        boost::asio::ip::address::from_string(remote_host.c_str()),
-        remote_port) {
-  socket_.open(boost::asio::ip::udp::v4());
-}
-
-LolaAggregator::~LolaAggregator() {
-  // RAII
-  socket_.close();
-}
-
-void LolaAggregator::updateFrame(FrameDataPtr frameData) {
-  std::vector<ObjectModelPtr> const& obstacles = frameData->obstacles;
-  LTRACE << "LolaViewer: Sending to " << remote_endpoint_;
-
-  // Builds the payload: a raw byte buffer.
-  std::vector<char> payload(buildPayload(obstacles));
-  // Once the payload is built, initiate an async send.
-  // We don't really care about the result, since there's no point in retrying.
-  socket_.async_send_to(
-      boost::asio::buffer(payload, payload.size()),
-      remote_endpoint_,
-      0,
-      handler);
-}
-
-std::vector<char> LolaAggregator::buildPayload(
-    std::vector<ObjectModelPtr> const& obstacles) const {
-  std::vector<char> payload;
-
-  size_t const sz = obstacles.size();
-  for (int i = 0; i < sz; ++i) {
-    ObjectModel& model = *obstacles[i];
-    // Get the "flattened" model representation.
-    ParametersVisitor parameterizer;
-    model.accept(parameterizer);
-    std::vector<double> params(parameterizer.params());
-
-    // Since the model could have been a composite, we may have more than 1
-    // model's representation in the vector, one after the other.
-    for (size_t model_idx = 0; model_idx < params.size() / 11; ++model_idx) {
-      // Pack each set of coefficients into a struct that should be shipped off
-      // to the viewer.
-      struct {
-        int type;
-        int radius;
-        int rest[9];
-      } obstacle;
-      memset(&obstacle, 0, sizeof(obstacle));
-      obstacle.type = params[11*model_idx + 0];
-      // LOLA expects the values to be in milimeters.
-      obstacle.radius = params[11*model_idx + 1] * 1000;
-      for (size_t i = 0; i < 9; ++i) {
-        obstacle.rest[i] = params[11*model_idx + 2 + i] * 1000;
-      }
-
-      // Now dump the raw bytes extracted from the struct into the payload.
-      char* raw = (char*)&obstacle;
-      for (size_t i = 0; i < sizeof(obstacle); ++i) {
-        payload.push_back(raw[i]);
-      }
-    }
-  }
-
-  return payload;
-}
 
 namespace {
 /**
@@ -207,7 +83,7 @@ void RobotAggregator::new_cb_(ObjectModel& model) {
   }
 }
 void RobotAggregator::new_surface_cb_(SurfaceModel& model) {
-      sendNew(model);    
+      sendNew(model);
 }
 
 bool RobotAggregator::del_cb_(ObjectModel& model) {

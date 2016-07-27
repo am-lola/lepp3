@@ -29,7 +29,7 @@
 
 #include "lola/OdoCoordinateTransformer.hpp"
 #include "lola/Splitters.hpp"
-#include "lola/LolaAggregator.h"
+#include "lola/RobotAggregator.h"
 #include "lola/PoseService.h"
 #include "lola/RobotService.h"
 

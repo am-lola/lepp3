@@ -178,26 +178,26 @@ protected:
     this->robot_service_ = async_robot_service;
   }
 
-  void addObservers() 
+  void addObservers()
   {
     std::cout << "entered addObservers" << std::endl;
     const toml::Value* available = toml_tree_.find("observers");
     if (!available)
       return;
     const toml::Array& obs_arr = available->as<toml::Array>();
-    for (const toml::Value& v : obs_arr) 
+    for (const toml::Value& v : obs_arr)
     {
       std::string const type = v.find("type")->as<std::string>();
       std::cout << "observer type: " << type << std::endl;
-      if (type == "ObstacleDetector") 
+      if (type == "ObstacleDetector")
       {
         obstacleDetectorActive = true;
-      } 
-      else if (type == "SurfaceDetector") 
+      }
+      else if (type == "SurfaceDetector")
       {
         surfaceDetectorActive = true;
-      } 
-      else if (type == "Recorder") 
+      }
+      else if (type == "Recorder")
       {
         initRecorder();
       }
@@ -342,7 +342,7 @@ protected:
       loadPlaneInlierFinderParameters(planeInlierFinderParameters);
       inlier_finder_.reset(new PlaneInlierFinder<PointT>(planeInlierFinderParameters));
       surface_detector_->FrameDataSubject::attachObserver(inlier_finder_);
-      
+
       // Prepare the approximator that the detector is to use.
       // First, the simple approximator...
       boost::shared_ptr<ObjectApproximator<PointT> > simple_approx(
@@ -441,20 +441,20 @@ void loadARVisualizerParams(double position[],double up[],double forward[])
         forward[0]=toml_tree_.find("ARVisualizer.lola_forwardx")->as<int>();
 	forward[1]=toml_tree_.find("ARVisualizer.lola_forwardy")->as<int>();
         forward[2]=toml_tree_.find("ARVisualizer.lola_forwardz")->as<int>();
-      
+
       } else {
         throw "Unknown AR frame condition given.";
       }
   }
 
-  void initVisualizer() 
+  void initVisualizer()
   {
     double position[3]={0};
     double forward[3]={0};
     double up[3]={0};
-   
+
     loadARVisualizerParams(position,up,forward);
-    
+
     if (surfaceDetectorActive && !obstacleDetectorActive)
     {
       ar_visualizer_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive, position,forward,up));
@@ -518,13 +518,7 @@ private:
   boost::shared_ptr<FrameDataObserver> getAggregator(toml::Value const& v) {
     std::string const type = v.find("type")->as<std::string>();
     std::cout << "agg type: " << type << std::endl;
-    if (type == "LolaAggregator") {
-      std::string const ip = v.find("ip")->as<std::string>();
-      int const port = v.find("port")->as<int>();
-
-      return boost::shared_ptr<LolaAggregator>(
-          new LolaAggregator(ip, port));
-    } else if (type == "RobotAggregator") {
+    if (type == "RobotAggregator") {
       int const frame_rate = v.find("frame_rate")->as<int>();
 
       return boost::shared_ptr<RobotAggregator>(
