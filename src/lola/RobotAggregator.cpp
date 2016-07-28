@@ -111,13 +111,12 @@ bool RobotAggregator::del_cb_(ObjectModel& model) {
 }
 
 bool RobotAggregator::del_surface_cb_(SurfaceModel& model) {
-  // Disable any deletions of objects that are too close to the robot.
+  // Disable any deletions of surfaces that are too close to the robot.
   // We don't want to confuse it by sending it delete commands
   // for objects that it might be in the process of stepping over.
-  //@TODO ASK ARNE
-  // if (robot_.isInRobotBoundary(model)) {
-  //   return false;
-  // }
+  if (robot_.isInRobotBoundary(model)) {
+     return false;
+  }
 
   sendDeleteSurface(model.id());
   return true;
