@@ -6,11 +6,10 @@
 ip = "127.0.0.1"
 # (The hex port value is equal to the decimal below) port = 0xd001
 port = 53249
-
 [RobotService]
 ip = "127.0.0.1"
 port = 61448
-# Delay is given in milliseconds. 0 is a valid value.
+#Delay is given in milliseconds. 0 is a valid value.
 delay = 10
 
 [Robot]
@@ -51,9 +50,41 @@ type = "ObstacleDetector"
 [[observers]]
 type = "SurfaceDetector"
 
+# aggregator to send data to visualizer
+#[[aggregators]]
+#type = "RobotAggregator"
+#frame_rate = 3
+#data = [ "obstacles", "surfaces" ]
+
+#[[aggregators.RobotService]]
+#target="Control"
+#ip = "192.168.0.7"  # control computer IP
+#port = 61449
+#delay = 1
+
 [[aggregators]]
 type = "RobotAggregator"
 frame_rate = 3
+#data = ["obstacles", "pointclouds"]
+
+[[aggregators.RobotService]]
+target="Vision"
+ip = "127.0.0.1"
+port = 61448
+delay = 10
+# Delay is given in milliseconds. 0 is a valid value.
+
+# aggregator to send data to QNX
+#[[aggregators]]
+#type = "RobotAggregator"
+#frame_rate = 3
+#data = [ "obstacles", "surfaces" ]
+#[[aggregators.RobotService]]
+#target="Qnx"
+#ip = "192.168.0.3"  # QNX computer IP
+#port = 61448
+#delay = 10
+
 
 [SplitStrategy]
 # split_axis = largest|middle|smallest
