@@ -13,10 +13,10 @@
 #include <boost/asio.hpp>
 
 using namespace lepp;
-using am2b::iface::VisionMessage;
-using am2b::iface::ObstacleMessage;
-using am2b::iface::SurfaceMessage;
-using am2b::iface::Message_Type;
+using am2b_iface::VisionMessage;
+using am2b_iface::ObstacleMessage;
+using am2b_iface::SurfaceMessage;
+using am2b_iface::Message_Type;
 
 /**
  * An `FrameDataObserver` implementation that sends notifications to the robot
