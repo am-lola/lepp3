@@ -5,18 +5,19 @@
 #include "lepp3/Typedefs.hpp"
 #include "lepp3/models/ObjectModel.h"
 #include "lepp3/models/SurfaceModel.h"
+#include "lepp3/CalibrationAggregator.hpp"
 
 #include <am2b-arvis/ARVisualizer.hpp>
 #include <vector>
 #include <algorithm>
-#include <iostream> 
+#include <iostream>
 
-namespace lepp 
+namespace lepp
 {
 /**
 * Visitor class for obstacles.
 */
-class ModelDrawer : public ModelVisitor 
+class ModelDrawer : public ModelVisitor
 {
 public:
   ModelDrawer(ar::ARVisualizer *arvis, std::vector<mesh_handle_t> &visHandles) : arvis(arvis), visHandles(visHandles) {}
@@ -92,7 +93,7 @@ private:
 class SurfaceDrawer : public SurfaceVisitor
 {
 public:
-  SurfaceDrawer(ar::ARVisualizer *arvis, std::vector<mesh_handle_t> &visHandles) : 
+  SurfaceDrawer(ar::ARVisualizer *arvis, std::vector<mesh_handle_t> &visHandles) :
     arvis(arvis), surfaceCount(0), visHandles(visHandles) {}
   virtual ~SurfaceDrawer() {}
 
@@ -159,7 +160,9 @@ const int SurfaceDrawer::g[6] = {  0,   0, 255,   0, 255, 255};
 /**
 * Wrapper class for ARVisualizer. Does communication with library visualizer.
 */
-class ARVisualizer : public FrameDataObserver  
+class ARVisualizer
+    : public FrameDataObserver,
+      public CalibrationAggregator<PointT>
 {
 public:
 	ARVisualizer(bool visualizeSurfaces, bool visualizeObstacles, int width = 0, int height = 0) :
@@ -167,7 +170,7 @@ public:
     visualizeSurfaces(visualizeSurfaces),
     visualizeObstacles(visualizeObstacles),
     pointCloudData(ar::PCL_PointXYZ)
-	{  
+	{
     // Updates the camera parameters used for rendering.
     // @position Position of the camera in world-coordinates
     // @forward  Vector pointing in the direction the camera is facing
@@ -202,6 +205,13 @@ public:
   * Visualize obstacles and surfaces of the given frame.
   */
   virtual void updateFrame(FrameDataPtr frameData);
+  /**
+   *
+   */
+  virtual void updateCalibrationParams(
+    typename pcl::PointCloud<PointT>::Ptr const& largest_plane,
+    const float& mean_z,
+    const float& var_z);
 
   ar::ARVisualizer* getVisualizer() const { return arvis; };
 
@@ -266,14 +276,14 @@ void ARVisualizer::drawObstacles(std::vector<ObjectModelPtr> obstacles, std::vec
 void ARVisualizer::outputFrameNum(FrameDataPtr frameData)
 {
   /*std::cout << "Frame " << frameData->frameNum << "    "
-    << "Ransac " << frameData->planeCoeffsIteration << "    " 
+    << "Ransac " << frameData->planeCoeffsIteration << "    "
     << "RansacRef " << frameData->planeCoeffsReferenceFrameNum;
   if (visualizeSurfaces)
     std::cout << "    ";
   else
     std::cout << std::endl;
-  
-  
+
+
   if (visualizeSurfaces)
   {
     std::cout << "Surfaces " << frameData->surfaceDetectionIteration << "    "
@@ -317,6 +327,15 @@ void ARVisualizer::updateFrame(FrameDataPtr frameData)
   pointCloudData.pointData = reinterpret_cast<const void*>(&(frameData->cloud->points[0]));
   pointCloudData.numPoints = frameData->cloud->size();
   arvis->Update(pointCloudHandle, pointCloudData);
+}
+
+void ARVisualizer::updateCalibrationParams(
+    typename pcl::PointCloud<PointT>::Ptr const& largest_plane,
+    const float& mean_z,
+    const float& var_z) {
+
+  // TODO: Add the TEXT (mean/variance) to the visualizer.
+
 }
 
 
