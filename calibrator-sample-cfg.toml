@@ -40,28 +40,5 @@ type = "simple"
 [[observers]]
 type = "CameraCalibrator"
 
-[[observers]]
+[[obsrevers]]
 type = "LegacyVisualizer"
-
-# [[observers]]
-# type = "ARVisualizer"
-#
-#   [[observers.visualizer]]
-#   data = "cloud"
-#   width = 1024
-#   height = 768
-#
-# [[observers]]
-# type = "ARVisualizer"
-#
-#   [[observers.visualizer]]
-#   data = "rgb"
-#   width = 640
-#   height = 480
-
-# [Visualization]
-# # Whether the results are visualized **locally**
-# # `cloud` = true|false ---- visualize the point cloud
-# # `rgb` = true|false   ---- visualize the rgb image
-# cloud = true
-# rgb = false
