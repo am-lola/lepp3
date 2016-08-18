@@ -206,6 +206,10 @@ protected:
       {
         initRecorder();
       }
+      else if (type == "CameraCalibrator")
+      {
+
+      }
     }
     // initialize obstacle and surface detector if necessary
     if (surfaceDetectorActive || obstacleDetectorActive)
@@ -370,7 +374,6 @@ protected:
   virtual void initRecorder() override {
     std::cout << "entered initRecorder" << std::endl;
     this->recorder_.reset(new VideoRecorder<PointT>());
-    std::cout << "recorder got reset!" << std::endl;
     const bool rec_cloud = toml_tree_.get<bool>("RecordingOptions.cloud");
     const bool rec_rgb = toml_tree_.get<bool>("RecordingOptions.rgb");
     const bool rec_pose = toml_tree_.get<bool>("RecordingOptions.pose");
@@ -394,7 +397,12 @@ protected:
       this->source()->FrameDataSubject::attachObserver(this->recorder());
     if (rec_pose)
       this->pose_service_->attachObserver(this->recorder());
+  }
 
+  virtual void initCamCalibrator() override {
+    std::cout << "entered initCamCalibrator" << std::endl;
+    this->cam_calibrator_.reset(new CameraCalibrator<PointT>);
+    this->source()->FrameDataSubject::attachObserver(this->cam_calibrator());
   }
 
   virtual void addAggregators() override {

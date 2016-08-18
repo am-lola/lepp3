@@ -5,7 +5,7 @@
 #include <pcl/filters/extract_indices.h>
 
 #include "lepp3/BaseSegmenter.hpp"
-#include "lepp3/VideoObserver.hpp"
+#include "lepp3/FrameData.hpp"
 #include "lepp3/CalibrationAggregator.hpp"
 
 
@@ -16,7 +16,7 @@ namespace lepp {
  * plane found in the scene.
  */
 template<class PointT>
-class CameraCalibrator : public VideoObserver<PointT> {
+class CameraCalibrator : public FrameDataObserver {
 public:
   CameraCalibrator();
   /**
@@ -26,11 +26,9 @@ public:
   void attachCalibrationAggregator(
       boost::shared_ptr<CalibrationAggregator<PointT> > aggregator);
   /**
-   * VideoObserver interface method implementation.
+   * FrameDataObserver interface method implementation.
    */
-  virtual void notifyNewFrame(
-      int idx,
-      const typename pcl::PointCloud<PointT>::ConstPtr& point_cloud);
+  virtual void updateFrame(FrameDataPtr frameData);
 protected:
   /**
    * Notifies any observers about the newly detected plane.
@@ -150,11 +148,8 @@ void CameraCalibrator<PointT>::computeMeanVarZ(
 }
 
 template<class PointT>
-void CameraCalibrator<PointT>::notifyNewFrame(
-    int idx,
-    const typename pcl::PointCloud<PointT>::ConstPtr& cloud) {
-
-  PointCloudPtr cloud_filtered = preprocessCloud(cloud);
+void CameraCalibrator<PointT>::updateFrame(FrameDataPtr frameData) {
+  PointCloudPtr cloud_filtered = preprocessCloud(frameData->cloud);
 
   PointCloudPtr largest_plane(new PointCloudT());
   // The result contains only one cloud: the largest plane found on scene
@@ -164,7 +159,11 @@ void CameraCalibrator<PointT>::notifyNewFrame(
   computeMeanVarZ(largest_plane, mean_z, var_z);
   // Notify any observer (i.e. the visualizer) of the largest found plane and
   // its mean+variance values.
-  updateCalibrationParams(largest_plane, mean_z, var_z);
+  notifyCalibrationParams(largest_plane, mean_z, var_z);
+  /// DEBUG: output the mean and variance
+  std::cout << "CALIBRATION:" << std::endl;
+  std::cout << "Mean_Z : " << mean_z << std::endl;
+  std::cout << "Var_Z : " << var_z << std::endl;
 }
 
 template<class PointT>

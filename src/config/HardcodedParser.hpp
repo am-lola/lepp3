@@ -101,6 +101,7 @@ protected:
   }
 
   virtual void initRecorder() override {}
+  virtual void initCamCalibrator() override {}
 
   virtual void addAggregators() override {
     boost::shared_ptr<LolaAggregator> lola_viewer(

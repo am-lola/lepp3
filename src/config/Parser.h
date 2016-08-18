@@ -25,6 +25,7 @@
 #include "lepp3/filter/SensorCalibrationFilter.hpp"
 
 #include "lepp3/util/VideoRecorder.hpp"
+#include "lepp3/CameraCalibrator.hpp"
 
 #include "lola/OdoCoordinateTransformer.hpp"
 #include "lola/Splitters.hpp"
@@ -67,7 +68,9 @@ public:
   boost::shared_ptr<FrameDataSubject> detector() { return detector_; }
   /// The recorder accessor
   boost::shared_ptr<VideoRecorder<PointT> > recorder() { return recorder_; }
-
+  /// The cam_calibrator accessor
+  boost::shared_ptr<CameraCalibrator<PointT> > cam_calibrator() { return cam_calibrator_; }
+  /// The visualizer accessor
   boost::shared_ptr<ARVisualizer> visualizer() { return visualizer_; }
 
 protected:
@@ -143,17 +146,19 @@ protected:
     return strat;
   }
 
+  /// Provide hooks for adding more observers and aggregators.
+  /// By default no extra observers or aggregators are added.
+  virtual void addObservers() {}
+  virtual void addAggregators() {}
+
   /// Initialize 'ObstacleDetector' and 'SurfaceDetector' if necessary.
   virtual void initSurfObstDetector() = 0;
 
   /// Initialize the `Recorder`. Must set the `recorder_` member.
   virtual void initRecorder() = 0;
 
-  /// Provide hooks for adding more observers and aggregators.
-  /// By default no extra observers or aggregators are added.
-  virtual void addObservers() {}
-  virtual void addAggregators() {}
-
+  /// Initialize the `CameraCalibrator`. Must set the `calibrator_` member.
+  virtual void initCamCalibrator() = 0;
   /// A hook for conveniently adding a visualizer, if required.
   /// Provides a default implementation that does not initialize any local
   /// visualization.
@@ -171,6 +176,7 @@ protected:
 
   boost::shared_ptr<FrameDataSubject> detector_;
   boost::shared_ptr<VideoRecorder<PointT> > recorder_;
+  boost::shared_ptr<CameraCalibrator<PointT> > cam_calibrator_;
   boost::shared_ptr<ARVisualizer> visualizer_;
 };
 
