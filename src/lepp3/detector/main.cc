@@ -62,15 +62,18 @@ int main(int argc, char* argv[]) {
   if (parser->source())
     parser->source()->open();
 
-  if (parser->visualizer())
-  {
-    parser->visualizer()->waitForClose();
-  }
-  else
-  {
-    while (!g_exitProgram)
-      boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-  }
+  // if (parser->visualizers())
+  // {
+  //   parser->visualizers()->waitForClose();
+  // }
+  // else
+  // {
+  //   while (!g_exitProgram)
+  //     boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+  // }
+  
+  while (true)
+      boost::this_thread::sleep(boost::posix_time::milliseconds(8000));
 
   return 0;
 }

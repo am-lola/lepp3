@@ -113,15 +113,15 @@ protected:
     this->detector_->attachObserver(robot_aggregator);
   }
 
-  virtual void initVisualizer() override {
+  virtual void initVisualizers() override {
     // Factor out to a member ...
     bool visualization = true;
     if (visualization) {
-      this->visualizer_.reset(new ARVisualizer(false, false));
+      this->visualizers_.reset(new ARVisualizer(false, false));
       // Attach the visualizer to both the point cloud source...
-      this->source()->FrameDataSubject::attachObserver(this->visualizer_);
+      this->source()->FrameDataSubject::attachObserver(this->visualizers_);
       // ...as well as to the obstacle detector
-      this->detector_->attachObserver(this->visualizer_);
+      this->detector_->attachObserver(this->visualizers_);
     }
   }
 

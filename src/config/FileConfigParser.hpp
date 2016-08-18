@@ -73,8 +73,8 @@ protected:
     // ...and additional observer processors.
     addAggregators();
     // Finally, optionally visualize everything in a local GUI
-    if (toml_tree_.find("Visualization"))
-      initVisualizer();
+    // if (toml_tree_.find("Visualization"))
+    //   initVisualizers();
   }
   virtual void initRobot() override {
     double bubble_size = toml_tree_.find("Robot.bubble_size")->as<double>();
@@ -209,6 +209,18 @@ protected:
       else if (type == "CameraCalibrator")
       {
         initCamCalibrator();
+      }
+      else if (type == "ARVisualizer")
+      {
+        initVisualizers();
+      }
+      else if (type == "LegacyVisualizer")
+      {
+        this->legacy_visualizer_.reset(new LegacyVisualizer<PointT>());
+        this->source()->FrameDataSubject::attachObserver(this->legacy_visualizer_);
+        if (this->cam_calibrator()) {
+          this->cam_calibrator()->attachCalibrationAggregator(this->legacy_visualizer_);
+        }
       }
     }
     // initialize obstacle and surface detector if necessary
@@ -418,20 +430,31 @@ protected:
     }
   }
 
-  virtual void initVisualizer() override
+  virtual void initVisualizers() override
   {
+    // NEW: Having multiple instances of visualizer
+    // const toml::Value* value = toml_tree_.find("observers.visualizer");
+    // if (value == nullptr)
+    //   return;
+    //
+    // const toml::Array& viz_array = value->as<toml::Array>();
+    // for (const toml::Value& v : viz_array) {
+    //   this->visualizers_.push_back(getVisualizer(v));
+    // }
+
+    // OLD: Only one instance of visualizer
     int width = toml_tree_.find("Visualization.width")->as<int>();
     int height = toml_tree_.find("Visualization.height")->as<int>();
 
     if (surfaceDetectorActive && !obstacleDetectorActive)
     {
-      this->visualizer_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive, width, height));
-      surface_detector_->FrameDataSubject::attachObserver(this->visualizer_);
+      this->visualizers_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive, width, height));
+      surface_detector_->FrameDataSubject::attachObserver(this->visualizers_);
     }
     else if (obstacleDetectorActive)
     {
-      this->visualizer_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive, width, height));
-      this->detector_->FrameDataSubject::attachObserver(this->visualizer_);
+      this->visualizers_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive, width, height));
+      this->detector_->FrameDataSubject::attachObserver(this->visualizers_);
     }
 
     bool viz_cloud = toml_tree_.find("Visualization.cloud")->as<bool>();
@@ -446,6 +469,7 @@ protected:
       // observer
     }
   }
+
 private:
   /// Helper functions for constructing parts of the pipeline.
   /**
@@ -476,6 +500,24 @@ private:
       std::cerr << "Unknown filter type `" << type << "`" << std::endl;
       throw "Unknown filter type";
     }
+  }
+
+  boost::shared_ptr<ARVisualizer> getVisualizer(toml::Value const& v) {
+    std::string const data = v.find("data")->as<std::string>();
+    if (data == "cloud") {
+
+    } else if (data == "rgb") {
+
+    } else {
+      std::cerr << "Unknown visualization data type `" << data << "`" << std::endl;
+      throw "Unknown viz data type";
+    }
+
+    int const width = v.find("width")->as<int>();
+    int const height = v.find("height")->as<int>();
+
+    return boost::shared_ptr<ARVisualizer>(
+      new ARVisualizer(false, false, width, height));
   }
 
   /**

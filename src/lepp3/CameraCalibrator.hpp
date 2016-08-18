@@ -141,8 +141,8 @@ void CameraCalibrator<PointT>::computeMeanVarZ(
   }
   mean_z = mean_z / sz;
   for(size_t i=0; i<sz; ++i) {
-      var_z += (plane->points[i].z + mean_z)
-               * (plane->points[i].z + mean_z);
+      var_z += (plane->points[i].z - mean_z)
+               * (plane->points[i].z - mean_z);
   }
   var_z = var_z / sz;
 }

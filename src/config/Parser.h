@@ -20,6 +20,7 @@
 
 #include "lepp3/visualization/Visualizer.hpp"
 #include "lepp3/visualization/ARVisualizer.hpp"
+#include "lepp3/visualization/LegacyVisualizer.hpp"
 
 #include "lepp3/filter/TruncateFilter.hpp"
 #include "lepp3/filter/SensorCalibrationFilter.hpp"
@@ -71,7 +72,8 @@ public:
   /// The cam_calibrator accessor
   boost::shared_ptr<CameraCalibrator<PointT> > cam_calibrator() { return cam_calibrator_; }
   /// The visualizer accessor
-  boost::shared_ptr<ARVisualizer> visualizer() { return visualizer_; }
+  // std::vector<boost::shared_ptr<ARVisualizer> > visualizers() { return visualizers_; }
+  boost::shared_ptr<ARVisualizer> visualizers() { return visualizers_; }
 
 protected:
   /**
@@ -162,7 +164,7 @@ protected:
   /// A hook for conveniently adding a visualizer, if required.
   /// Provides a default implementation that does not initialize any local
   /// visualization.
-  virtual void initVisualizer() {}
+  virtual void initVisualizers() {}
 
 protected:
   /// The members are exposed directly to concrete implementations for
@@ -177,7 +179,9 @@ protected:
   boost::shared_ptr<FrameDataSubject> detector_;
   boost::shared_ptr<VideoRecorder<PointT> > recorder_;
   boost::shared_ptr<CameraCalibrator<PointT> > cam_calibrator_;
-  boost::shared_ptr<ARVisualizer> visualizer_;
+  // std::vector<boost::shared_ptr<ARVisualizer> > visualizers_;
+  boost::shared_ptr<ARVisualizer> visualizers_;
+  boost::shared_ptr<LegacyVisualizer<PointT> > legacy_visualizer_;
 };
 
 #endif
