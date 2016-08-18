@@ -208,7 +208,7 @@ protected:
       }
       else if (type == "CameraCalibrator")
       {
-
+        initCamCalibrator();
       }
     }
     // initialize obstacle and surface detector if necessary
