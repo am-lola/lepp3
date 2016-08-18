@@ -8,12 +8,12 @@
 # the various parameters is as shown in this sample.
 
 [PoseService]
-ip = 192.168.0.8
+ip = "192.168.0.8"
 # (The hex port value is equal to the decimal below) port = 0xd001
 port = 53249
 
 [RobotService]
-ip = 192.168.0.7
+ip = "192.168.0.7"
 port = 61448
 # Delay is given in milliseconds. 0 is a valid value.
 delay = 10
@@ -26,7 +26,7 @@ bubble_size = 1.2
 [VideoSource]
 # Available types: stream, oni, pcd
 #   oni and pcd types require an additional parameter: file_path
-type = stream
+type = "stream"
 
 [RGBViewer]
 # Whether to show the camera's RGB stream
@@ -35,27 +35,27 @@ enabled = true
 
 [FilteredVideoSource]
 # type = simple|prob|pt1
-type = simple
+type = "simple"
 
   # The following list of filters is optional
   # The order of the filters themselves IS NOT SIGNIFICANT.
   [[FilteredVideoSource.filters]]
-    type = SensorCalibrationFilter
+    type = "SensorCalibrationFilter"
     a = 1.0117
     b = -0.0100851
 
   [[FilteredVideoSource.filters]]
     # The OdoTransformer knows to reference the PoseService found in the IOC
     # container automatically
-    type = RobotOdoTransformer
+    type = "RobotOdoTransformer"
 
   [[FilteredVideoSource.filters]]
-    type = TruncateFilter
+    type = "TruncateFilter"
     decimal_points = 2
 
 [SplitStrategy]
 # split_axis = largest|middle|smallest
-split_axis = middle
+split_axis = "middle"
 # A number of split conditions that need to be satisfied in order for an object
 # split to occur.
 # Care should be taken to define the conditions in a way that guarantees that
@@ -63,21 +63,21 @@ split_axis = middle
 # always include the DepthLimit condition with a fairly high depth limit).
 # If no split conditions are provided, the objects will never be split.
   [[SplitStrategy.conditions]]
-    type = DepthLimit
+    type = "DepthLimit"
     depth = 2
   [[SplitStrategy.conditions]]
-    type = SizeLimit
+    type = "SizeLimit"
     # size is a volume in [cm^3]
     size = 3000
   [[SplitStrategy.conditions]]
-    type = ShapeCondition
+    type = "ShapeCondition"
     # The threshold values to consider something "very much" a sphere
     sphere1 = .8
     sphere2 = .1
     # The threshold value to consider something "very much" a cylinder
     cylinder = .25
   [[SplitStrategy.conditions]]
-    type = DistanceThreshold
+    type = "DistanceThreshold"
     # Distance is in [cm]
     distance_threshold = 150
 
@@ -93,7 +93,7 @@ split_axis = middle
 # This sends the obstacles to LOLA itself.
 # It does not require additional configuration, as it will use the service
 # already defined before (RobotService).
-type = RobotAggregator
+type = "RobotAggregator"
 # ...every 3 frames
 frame_rate = 3
 
