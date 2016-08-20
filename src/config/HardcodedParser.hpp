@@ -104,7 +104,7 @@ protected:
 
   void addAggregators() {
     boost::shared_ptr<RobotAggregator> robot_aggregator(
-        new RobotAggregator(*this->robot_service(), 30, *this->robot()));
+        new RobotAggregator(this->robot_service(), 30, *this->robot()));
     this->detector_->attachObserver(robot_aggregator);
   }
 

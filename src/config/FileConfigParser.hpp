@@ -55,12 +55,6 @@ protected:
       initRobot();
     else
       std::cout << "No robot info found in config file." << std::endl;
-    // Make the robot service communication optional --> avoid stopping the parser.
-    // Compatibility for offline use.
-   if (toml_tree_.find("RobotService"))
-      initVisionService();
-    else
-      std::cout << "No robot service info found in config file." << std::endl;
 
     // Now get our video source ready...
     initRawSource();
@@ -79,54 +73,43 @@ protected:
     this->robot_.reset(new Robot(*this->pose_service(), bubble_size));
   }
 
-void addAggregators() {
-    std::cout << "entered addAggregators" << std::endl;
-    const toml::Value* available = toml_tree_.find("aggregators");
-    if (!available)
-      return;
+  void addAggregators() {
+      std::cout << "entered addAggregators" << std::endl;
+      const toml::Value* available = toml_tree_.find("aggregators");
+      if (!available)
+        return;
 
-    const toml::Array& agg_array = available->as<toml::Array>();
-    std::cout << "# aggregators : ";
-    std::cout << agg_array.size() << std::endl;
-    for (const toml::Value& v : agg_array) { 
+      const toml::Array& agg_array = available->as<toml::Array>();
+      std::cout << "# aggregators : ";
+      std::cout << agg_array.size() << std::endl;
+      for (const toml::Value& v : agg_array)
+      {
+        this->detector_->attachObserver(getAggregator(v));
+      }
+  }
 
-      this->detector_->attachObserver(getAggregator(v));
-          std::cout << "find robot service"<< std::endl;
-        
-       const toml::Value* available2= v.find("RobotService");
-    
-       if (!available2)
-          { 
-            std::cout << "#Not available RobotService: " << std::endl;
-            continue;
-          }
-          const toml::Array& cond_array = available2->as<toml::Array>();
-          std::cout << "# RobotService: " << cond_array.size() << std::endl;
-      
-          for (const toml::Value& t: cond_array){
-      //          addRobotService(t);
-               }
-        }
-}
-void addRobotService(toml::Value const& t)
-{      
-    const std::string target = t.find("target")->as<std::string>();
-    std::cout << "Target connection: " << target << std::endl;
-    std::string ip = t.find("ip")->as<std::string>();
-    
-    std::cout << "ip:" << ip << std::endl;
+  // constructs a RobotService from the parameters specified by t
+  boost::shared_ptr<AsyncRobotService> getRobotService(const toml::Value& t)
+  {
+      std::cout << "Constructing new RobotService" << std::endl;
 
-    int port = t.find("port")->as<int>();
-    std::cout << "# Port: " << port << std::endl;
+      const std::string target = t.find("target")->as<std::string>();
+      std::cout << "Target connection: " << target << std::endl;
 
-    int delay = t.find("delay")->as<int>();
-    std::cout << "# Delay: " << delay << std::endl;
+      std::string ip = t.find("ip")->as<std::string>();
+      std::cout << "\tip:    " << ip << std::endl;
 
-    boost::shared_ptr<AsyncRobotService> async_robot_service(
-    new AsyncRobotService(ip, port, delay));
-    async_robot_service->start();
-    this->robot_service_ = async_robot_service;
-}
+      int port = t.find("port")->as<int>();
+      std::cout << "\tPort:  " << port << std::endl;
+
+      int delay = t.find("delay")->as<int>();
+      std::cout << "\tDelay: " << delay << std::endl;
+
+      boost::shared_ptr<AsyncRobotService> async_robot_service(new AsyncRobotService(ip, target, port, delay));
+      async_robot_service->start();
+      return async_robot_service;
+  }
+
   /// Implementations of initialization of various parts of the pipeline.
   void initRawSource() {
     std::cout << "entered initRawSource" << std::endl;
@@ -213,17 +196,6 @@ void addRobotService(toml::Value const& t)
 
     this->pose_service_.reset(new PoseService(ip, port));
     this->pose_service_->start();
-  }
-
-  void initVisionService() {
-    std::string ip = toml_tree_.find("RobotService.ip")->as<std::string>();
-    int port = toml_tree_.find("RobotService.port")->as<int>();
-    int delay = toml_tree_.find("RobotService.delay")->as<int>();
-
-    boost::shared_ptr<AsyncRobotService> async_robot_service(
-        new AsyncRobotService(ip, port, delay));
-    async_robot_service->start();
-    this->robot_service_ = async_robot_service;
   }
 
   void addObservers()
@@ -453,48 +425,34 @@ void addRobotService(toml::Value const& t)
 
   }
 
-
-  /*void addAggregators() {
-    std::cout << "entered addAggregators" << std::endl;
-    const toml::Value* available = toml_tree_.find("aggregators");
-    if (!available)
-      return;
-    const toml::Array& agg_array = available->as<toml::Array>();
-    std::cout << "# aggregators : ";
-    std::cout << agg_array.size() << std::endl;
-    for (const toml::Value& v : agg_array) {
-      this->detector_->attachObserver(getAggregator(v));
+  void loadARVisualizerParams(double position[],double up[],double forward[])
+    {
+      std::string type= toml_tree_.find("ARVisualizer.frame")->as<std::string>();
+        if (type == "pcl") {
+          position[0]=toml_tree_.find("ARVisualizer.pcl_positionx")->as<int>();
+          position[1]=toml_tree_.find("ARVisualizer.pcl_positiony")->as<int>();
+          position[2]=toml_tree_.find("ARVisualizer.pcl_positionz")->as<int>();
+          up[0]=toml_tree_.find("ARVisualizer.pcl_upx")->as<int>();
+          up[1]=toml_tree_.find("ARVisualizer.pcl_upy")->as<int>();
+          up[2]=toml_tree_.find("ARVisualizer.pcl_upz")->as<int>();
+          forward[0]=toml_tree_.find("ARVisualizer.pcl_forwardx")->as<int>();
+          forward[1]=toml_tree_.find("ARVisualizer.pcl_forwardy")->as<int>();
+          forward[2]=toml_tree_.find("ARVisualizer.pcl_forwardz")->as<int>();
+        }
+         else if (type == "lola") {
+          position[0]=toml_tree_.find("ARVisualizer.lola_positionx")->as<int>();
+          position[1]=toml_tree_.find("ARVisualizer.lola_positiony")->as<int>();
+          position[2]=toml_tree_.find("ARVisualizer.lola_positionz")->as<int>();
+          up[0]=toml_tree_.find("ARVisualizer.lola_upx")->as<int>();
+          up[1]=toml_tree_.find("ARVisualizer.lola_upy")->as<int>();
+          up[2]=toml_tree_.find("ARVisualizer.lola_upz")->as<int>();
+          forward[0]=toml_tree_.find("ARVisualizer.lola_forwardx")->as<int>();
+          forward[1]=toml_tree_.find("ARVisualizer.lola_forwardy")->as<int>();
+          forward[2]=toml_tree_.find("ARVisualizer.lola_forwardz")->as<int>();
+        } else {
+          throw "Unknown AR frame condition given.";
+        }
     }
-  }*/
-void loadARVisualizerParams(double position[],double up[],double forward[])
-  {
-    std::string type= toml_tree_.find("ARVisualizer.frame")->as<std::string>();
-      if (type == "pcl") {
-        position[0]=toml_tree_.find("ARVisualizer.pcl_positionx")->as<int>();
-  position[1]=toml_tree_.find("ARVisualizer.pcl_positiony")->as<int>();
-        position[2]=toml_tree_.find("ARVisualizer.pcl_positionz")->as<int>();
-  up[0]=toml_tree_.find("ARVisualizer.pcl_upx")->as<int>();
-        up[1]=toml_tree_.find("ARVisualizer.pcl_upy")->as<int>();
-  up[2]=toml_tree_.find("ARVisualizer.pcl_upz")->as<int>();
-        forward[0]=toml_tree_.find("ARVisualizer.pcl_forwardx")->as<int>();
-  forward[1]=toml_tree_.find("ARVisualizer.pcl_forwardy")->as<int>();
-        forward[2]=toml_tree_.find("ARVisualizer.pcl_forwardz")->as<int>();
-      }
-       else if (type == "lola") {
-       position[0]=toml_tree_.find("ARVisualizer.lola_positionx")->as<int>();
-  position[1]=toml_tree_.find("ARVisualizer.lola_positiony")->as<int>();
-        position[2]=toml_tree_.find("ARVisualizer.lola_positionz")->as<int>();
-  up[0]=toml_tree_.find("ARVisualizer.lola_upx")->as<int>();
-        up[1]=toml_tree_.find("ARVisualizer.lola_upy")->as<int>();
-  up[2]=toml_tree_.find("ARVisualizer.lola_upz")->as<int>();
-        forward[0]=toml_tree_.find("ARVisualizer.lola_forwardx")->as<int>();
-  forward[1]=toml_tree_.find("ARVisualizer.lola_forwardy")->as<int>();
-        forward[2]=toml_tree_.find("ARVisualizer.lola_forwardz")->as<int>();
-
-      } else {
-        throw "Unknown AR frame condition given.";
-      }
-  }
 
   void initVisualizer()
   {
@@ -570,8 +528,26 @@ private:
     if (type == "RobotAggregator") {
       int const frame_rate = v.find("frame_rate")->as<int>();
 
+      std::cout << "find robot service..."<< std::endl;
+      const toml::Value* robotServiceEntry = v.find("RobotService");
+      if (!robotServiceEntry)
+      {
+        std::cout << "[[aggregators.RobotService]] not found!" << std::endl;
+        std::cout << "  Cannot create RobotAggregator without RobotService!" << std::endl;
+        exit(1);
+      }
+
+      const toml::Array& agg_array = robotServiceEntry->as<toml::Array>();
+      if (agg_array.size() != 1)
+      {
+        std::cout << "Expected exactly 1 RobotService entry, found: " << agg_array.size() << std::endl;
+        exit(1);
+      }
+
+      auto robotService = getRobotService(agg_array[0]);
+
       return boost::shared_ptr<RobotAggregator>(
-          new RobotAggregator(*this->robot_service(), frame_rate, *this->robot()));
+          new RobotAggregator(robotService, frame_rate, *this->robot()));
     } else {
       std::cerr << "Unknown aggregator type `" << type << "`" << std::endl;
       throw "Unknown aggregator type";
@@ -611,28 +587,3 @@ private:
 };
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    

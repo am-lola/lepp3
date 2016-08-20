@@ -84,13 +84,11 @@ protected:
   /// Robot initialization
   virtual void buildRobot() {
     initPoseService();
-    initVisionService();
     initRobot();
   }
   /// Initialize the PoseService. Must set the `pose_service_` member.
   virtual void initPoseService() = 0;
-  /// Initialize the `RobotService`. Must set the `robot_service_` member.
-  virtual void initVisionService() = 0;
+
   /**
    * Initialize the `Robot`. Must se the `robot_` member.
    * A default implementation pieces a default robot together based on the

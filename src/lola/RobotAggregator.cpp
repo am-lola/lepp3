@@ -47,9 +47,10 @@ private:
 };
 }  // namespace <anonymous>
 
-RobotAggregator::RobotAggregator(RobotService& service, int freq, Robot& robot)
+RobotAggregator::RobotAggregator(boost::shared_ptr<RobotService> service, int freq, Robot& robot)
     : service_(service), diff_(freq), next_id_(0),
       robot_(robot) {
+
   // Set up the callbacks that handle the particular cases.
   diff_.set_new_callback(boost::bind(&RobotAggregator::new_cb_, this, _1));
   diff_.set_modified_callback(boost::bind(&RobotAggregator::mod_cb_, this, _1));
@@ -189,7 +190,7 @@ void RobotAggregator::sendNew(ObjectModel& new_model, int model_id, int part_id)
   LINFO << "RobotAggregator: Creating new primitive ["
         << "type = " << coefs.type_id()
         << "; id = " << part_id;
-  service_.sendMessage(msg);
+  service_->sendMessage(msg);
 }
 
 void RobotAggregator::sendNew(SurfaceModel& new_surface) {
@@ -207,28 +208,28 @@ void RobotAggregator::sendNew(SurfaceModel& new_surface) {
   LINFO << "RobotAggregator: Creating new surface ["
         << "id = " << new_surface.id()
         << "]";
-  service_.sendMessage(msg);
+  service_->sendMessage(msg);
 }
 
 void RobotAggregator::sendDelete(int id) {
   LINFO << "RobotAggregator: Deleting a primitive id = "
         << id;
   VisionMessage del = VisionMessage(ObstacleMessage::DeleteMessage(id));
-  service_.sendMessage(del);
+  service_->sendMessage(del);
 }
 
 void RobotAggregator::sendDeletePart(int model_id, int part_id) {
   LINFO << "RobotAggregator: Deleting a primitive id = "
         << part_id;
   VisionMessage del = VisionMessage(ObstacleMessage::DeletePartMessage(model_id, part_id));
-  service_.sendMessage(del);
+  service_->sendMessage(del);
 }
 
 void RobotAggregator::sendDeleteSurface(int id)
 {
   LINFO << "RobotAggregator: Deleting surface: " << id;
   VisionMessage msg = VisionMessage(SurfaceMessage::DeleteMessage(id));
-  service_.sendMessage(msg);
+  service_->sendMessage(msg);
 }
 
 void RobotAggregator::sendModify(ObjectModel& model, int model_id, int part_id) {
@@ -239,7 +240,7 @@ void RobotAggregator::sendModify(ObjectModel& model, int model_id, int part_id) 
   LINFO << "RobotAggregator: Modifying existing primitive ["
             << "type = " << coefs.type_id()
             << "; id = " << part_id;
-  service_.sendMessage(msg);
+  service_->sendMessage(msg);
 }
 
 void RobotAggregator::sendModify(SurfaceModel& surface)
@@ -258,5 +259,5 @@ void RobotAggregator::sendModify(SurfaceModel& surface)
   LINFO << "RobotAggregator: Modifying existing surface ["
         << "id = " << surface.id()
         << "]";
-  service_.sendMessage(msg);
+  service_->sendMessage(msg);
 }

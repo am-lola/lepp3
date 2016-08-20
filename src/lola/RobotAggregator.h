@@ -35,7 +35,7 @@ public:
    * Create a new `RobotAggregator` that will use the given service to
    * communicate to the robot and send status updates after every `freq` frames.
    */
-  RobotAggregator(RobotService& service, int freq, Robot& robot);
+  RobotAggregator(boost::shared_ptr<RobotService> service, int freq, Robot& robot);
   /**
    * `FrameDataObserver` interface implementation.
    */
@@ -122,7 +122,7 @@ private:
   /**
    * A handle to the service that is used to send notifications to the robot.
    */
-  RobotService& service_;
+  boost::shared_ptr<RobotService> service_;
   /**
    * A handle to the robot facade.
    */

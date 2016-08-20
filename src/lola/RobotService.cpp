@@ -9,9 +9,9 @@ namespace {
    */
   void connect_handler(boost::system::error_code const& error) {
     if (!error) {
-      LINFO << "AsyncRobotService: Connected to the robot.";
+      LINFO << "AsyncRobotService: Connected to remote host.";
     } else {
-      LERROR << "AsyncRobotService: Failed to connect to the robot";
+      LERROR << "AsyncRobotService:  Failed to connect to the remote host.";
     }
   }
 
@@ -47,7 +47,7 @@ void AsyncRobotService::start() {
   // Start it up...
   boost::asio::ip::tcp::endpoint endpoint(
     boost::asio::ip::address::from_string(remote_), port_);
-  LINFO << "AsyncRobotService: Initiating a connection asynchronously...";
+  LINFO << "AsyncRobotService (" << remoteName_ << "): Initiating a connection asynchronously...";
   socket_.async_connect(endpoint, connect_handler);
   // Start the service thread in the background...
   boost::thread(boost::bind(service_thread, &io_service_));
@@ -55,7 +55,7 @@ void AsyncRobotService::start() {
 
 void AsyncRobotService::inner_send(VisionMessage const& next_message) {
   char const* buf = (char const*)&next_message;
-  LINFO << "AsyncRobotService: Sending a queued message: "
+  LINFO << "AsyncRobotService (" << remoteName_ << "): Sending a queued message: "
         << "msg == " << next_message;
   // Synchronously send the message, i.e. block until the send is complete.
   try {
@@ -64,7 +64,7 @@ void AsyncRobotService::inner_send(VisionMessage const& next_message) {
     socket_.send(
         boost::asio::buffer(next_message.content, next_message.header.len));
   } catch (...) {
-    LERROR << "AsyncRobotService: Error sending message.";
+    LERROR << "AsyncRobotService (" << remoteName_ << "): Error sending message.";
   }
   // After each sent message, we want to wait a pre-defined amount of time
   // before sending the next one.

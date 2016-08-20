@@ -6,11 +6,7 @@
 ip = "127.0.0.1"
 # (The hex port value is equal to the decimal below) port = 0xd001
 port = 53249
-[RobotService]
-ip = "127.0.0.1"
-port = 61448
-#Delay is given in milliseconds. 0 is a valid value.
-delay = 10
+
 
 [Robot]
 # The size of the "bubble" in which no modifications or deletions of objects
@@ -41,7 +37,7 @@ type = "simple"
 
 # Available `observer` types: ObstacleDetector|SurfaceDetector|Recorder
 #   ObstacleDetector requires *SplitStrategy*
-#   ObstacleDetector implies having a SurfaceDetector as well, so do not 
+#   ObstacleDetector implies having a SurfaceDetector as well, so do not
 #     specify an ObstacleDetector and a SurfaceDetector at the same time.
 #   Recorder requires RecordingOptions
 [[observers]]
@@ -65,25 +61,25 @@ type = "SurfaceDetector"
 [[aggregators]]
 type = "RobotAggregator"
 frame_rate = 3
-#data = ["obstacles", "pointclouds"]
+#data = ["obstacles"]
 
-[[aggregators.RobotService]]
-target="Vision"
-ip = "127.0.0.1"
-port = 61448
-delay = 10
-# Delay is given in milliseconds. 0 is a valid value.
+  [[aggregators.RobotService]]
+  target="Vision"
+  ip = "127.0.0.1"
+  port = 61448
+  delay = 10
+  # Delay is given in milliseconds. 0 is a valid value.
 
 # aggregator to send data to QNX
-#[[aggregators]]
-#type = "RobotAggregator"
-#frame_rate = 3
-#data = [ "obstacles", "surfaces" ]
-#[[aggregators.RobotService]]
-#target="Qnx"
-#ip = "192.168.0.3"  # QNX computer IP
-#port = 61448
-#delay = 10
+[[aggregators]]
+type = "RobotAggregator"
+frame_rate = 3
+data = [ "obstacles", "surfaces" ]
+  [[aggregators.RobotService]]
+  target="Qnx"
+  ip = "192.168.0.3"  # QNX computer IP
+  port = 61449
+  delay = 10
 
 
 [SplitStrategy]
@@ -114,21 +110,6 @@ split_axis = "middle"
   #  # Distance is in [cm]
   #  distance_threshold = 150
 
-# Uncomment if any information needs to be sent to the robot.
-# [RobotService]
-# ip = 192.168.0.7
-# port = 61448
-# # Delay is given in milliseconds. 0 is a valid value.
-# delay = 10
-
-# Uncomment in the presense of the robot
-# [Robot]
-# # The size of the "bubble" in which no modifications or deletions of objects
-# # are sent to the robot. **In meters**
-# bubble_size = 1.2
-
-
-
 #Parameters for Surface Segmentation
 #SurfaceFinder.hpp
 [RANSAC]
@@ -136,7 +117,7 @@ split_axis = "middle"
 maxIterations = 200
 # How close a point must be to the model in order to be considered an inlier
 distanceThreshold = 0.03
-#How small the left (extracted) pointcloud should be for termination of the plane segmentation 
+#How small the left (extracted) pointcloud should be for termination of the plane segmentation
 minFilterPercentage = 0.08
 
 [Classification]
@@ -162,7 +143,7 @@ clusterTolerance = 0.05
 minClusterSize = 750
 
 [SurfaceTracking]
-#How many times an unmaterialized surface should be lost to be completely removed from tracking 
+#How many times an unmaterialized surface should be lost to be completely removed from tracking
 lostLimit = 5
 #How many consecutive times a surface should be detected to be materialized
 foundLimit = 5
@@ -176,13 +157,13 @@ maxRadiusDeviationPercentage = 0.5
 #The number of vertice points of a surface, that is sent to the robot and to the visualizer
 numHullPoints = 8
 # When a new convex hull is merged with an old convex hull, all points of the new convex hull are
-# moved mergeUpdatePercentage percent along the vector pointing to the closest boundary point of 
-# the old convex hull. All points of the old convex hull are moved 1-mergeUpdatePercentage percent 
+# moved mergeUpdatePercentage percent along the vector pointing to the closest boundary point of
+# the old convex hull. All points of the old convex hull are moved 1-mergeUpdatePercentage percent
 # along the vector pointing to the closest boundary point of the new convex hull.
 mergeUpdatePercentage = 0.2
 
 [InlierFinder]
-# minimum distance a point must have to its projection onto a 
+# minimum distance a point must have to its projection onto a
 # plane in order to be considered an inlier on this plane
 minDistToPlane = 0.04
 
@@ -211,7 +192,7 @@ minDistToPlane = 0.04
 #lola_upy = 0
 #lola_upz = 1
 
-#PCL 
+#PCL
 pcl_positionx = 0
 pcl_positiony = 0
 pcl_positionz = 0
@@ -221,5 +202,3 @@ pcl_forwardz= 1
 pcl_upx = 0
 pcl_upy = -1
 pcl_upz = 0
-
-

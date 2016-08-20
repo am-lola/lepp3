@@ -53,6 +53,9 @@ public:
   AsyncRobotService(std::string const& remote, int port, int delay)
       : remote_(remote), port_(port), socket_(io_service_),
         message_timeout_(delay) {}
+  AsyncRobotService(std::string const& remote, std::string const& remoteName, int port, int delay)
+      : remote_(remote), remoteName_(remoteName), port_(port), socket_(io_service_),
+        message_timeout_(delay) {}
   /**
    * Starts up the service, initiating a connection to the robot.
    *
@@ -68,9 +71,13 @@ public:
   void sendMessage(VisionMessage const& msg);
 private:
   /**
-   * The host name of the robot.
+   * The host name to send data to.
    */
   std::string const remote_;
+  /**
+   * Friendly name of remote host for logging/debugging
+   */
+  std::string const remoteName_;
   /**
    * The port on which the robot is expecting vision messages.
    */
