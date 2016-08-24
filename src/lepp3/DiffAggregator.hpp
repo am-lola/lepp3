@@ -26,13 +26,13 @@ namespace lepp {
 class DiffAggregator : public FrameDataObserver {
 public:
   // Callback typedefs
-  typedef boost::function<void (ObjectModel&)> NewObstacleCallback;
-  typedef boost::function<void (ObjectModel&)> ModifiedObstacleCallback;
-  typedef boost::function<bool (ObjectModel&)> DeletedObstacleCallback;
+  typedef boost::function<void (ObjectModel&, long)> NewObstacleCallback;
+  typedef boost::function<void (ObjectModel&, long)> ModifiedObstacleCallback;
+  typedef boost::function<bool (ObjectModel&, long)> DeletedObstacleCallback;
 
-  typedef boost::function<void (SurfaceModel&)> NewSurfaceCallback;
-  typedef boost::function<void (SurfaceModel&)> ModifiedSurfaceCallback;
-  typedef boost::function<bool (SurfaceModel&)> DeletedSurfaceCallback;
+  typedef boost::function<void (SurfaceModel&, long)> NewSurfaceCallback;
+  typedef boost::function<void (SurfaceModel&, long)> ModifiedSurfaceCallback;
+  typedef boost::function<bool (SurfaceModel&, long)> DeletedSurfaceCallback;
 
 
   /**
@@ -40,20 +40,20 @@ public:
    * after every `frequency` frames.
    */
   DiffAggregator(int frequency)
-      : freq_(frequency), new_cb_(0), mod_cb_(0), del_cb_(0),new_surface_cb_(0), mod_surface_cb_(0), del_surface_cb_(0) {}
+      : freq_(frequency), new_obstacle_cb_(0), mod_obstacle_cb_(0), del_obstacle_cb_(0), new_surface_cb_(0), mod_surface_cb_(0), del_surface_cb_(0) {}
 
   /**
    * Sets a function that will be called for every new obstacle.
    */
-  void set_new_callback(NewObstacleCallback new_cb) { new_cb_ = new_cb; }
+  void set_new_obstacle_callback(NewObstacleCallback new_obstacle_cb) { new_obstacle_cb_ = new_obstacle_cb; }
   /**
    * Sets a function that will be called for every modified obstacle.
    */
-  void set_modified_callback(ModifiedObstacleCallback mod_cb) { mod_cb_ = mod_cb; }
+  void set_modified_obstacle_callback(ModifiedObstacleCallback mod_obstacle_cb) { mod_obstacle_cb_ = mod_obstacle_cb; }
   /**
    * Sets a function that will be called for every deleted obstacle.
    */
-  void set_deleted_callback(DeletedObstacleCallback del_cb) { del_cb_ = del_cb; }
+  void set_deleted_obstacle_callback(DeletedObstacleCallback del_obstacle_cb) { del_obstacle_cb_ = del_obstacle_cb; }
 
 //////////////////////////////////////////////////////////////////////////
   void set_new_surface_callback(NewSurfaceCallback new_surface_cb) { new_surface_cb_ = new_surface_cb; }
@@ -96,11 +96,11 @@ private:
 
 
   // Callbacks that are invoked in the appropriate event.
-  NewObstacleCallback new_cb_;
-  ModifiedObstacleCallback mod_cb_;
-  DeletedObstacleCallback del_cb_;
+  NewObstacleCallback new_obstacle_cb_;
+  ModifiedObstacleCallback mod_obstacle_cb_;
+  DeletedObstacleCallback del_obstacle_cb_;
 
-  //  Callbacks that are invoked in the appropriate event  
+  //  Callbacks that are invoked in the appropriate event
   NewSurfaceCallback new_surface_cb_;
   ModifiedSurfaceCallback mod_surface_cb_;
   DeletedSurfaceCallback del_surface_cb_;
@@ -126,10 +126,10 @@ inline void DiffAggregator::updateFrame(FrameDataPtr frameData) {
     // Check if the obstacle was found in the previous snapshot...
     if (previous_ids_.find(id) == previous_ids_.end()) {
       // This is a new obstacle.
-      if (new_cb_) new_cb_(*obstacles[i]);
+      if (new_obstacle_cb_) new_obstacle_cb_(*obstacles[i], frameData->frameNum);
     } else {
       // This is a modified obstacle.
-      if (mod_cb_) mod_cb_(*obstacles[i]);
+      if (mod_obstacle_cb_) mod_obstacle_cb_(*obstacles[i], frameData->frameNum);
     }
     // ..and now remember it for the future.
     previous_ids_.insert(id);
@@ -146,10 +146,10 @@ inline void DiffAggregator::updateFrame(FrameDataPtr frameData) {
     // Check if the obstacle was found in the previous snapshot...
     if (previous_surface_ids_.find(id) == previous_surface_ids_.end()) {
       // This is a new obstacle.
-      if (new_surface_cb_) new_surface_cb_(*surfaces[i]);
+      if (new_surface_cb_) new_surface_cb_(*surfaces[i], frameData->frameNum);
     } else {
       // This is a modified obstacle.
-      if (mod_surface_cb_) mod_surface_cb_(*surfaces[i]);
+      if (mod_surface_cb_) mod_surface_cb_(*surfaces[i], frameData->frameNum);
     }
     // ..and now remember it for the future.
     previous_surface_ids_.insert(id);
@@ -164,9 +164,9 @@ inline void DiffAggregator::updateFrame(FrameDataPtr frameData) {
   for (size_t i = 0; i < deleted.size(); ++i) {
     bool drop = true;
     int const del_id = deleted[i];
-    if (del_cb_) {
+    if (del_obstacle_cb_) {
       // Notify the callback that the object should be deleted
-      drop = del_cb_(*current_obstacles_[del_id]);
+      drop = del_obstacle_cb_(*current_obstacles_[del_id], frameData->frameNum);
     }
     if (drop) {
       // If the callback says that the object should be deleted (or there
@@ -185,7 +185,7 @@ inline void DiffAggregator::updateFrame(FrameDataPtr frameData) {
     int const del_id = deleted_surfaces[i];
     if (del_surface_cb_) {
       // Notify the callback that the object should be deleted
-      drop = del_surface_cb_(*current_surfaces_[del_id]);
+      drop = del_surface_cb_(*current_surfaces_[del_id], frameData->frameNum);
     }
     if (drop) {
       // If the callback says that the object should be deleted (or there

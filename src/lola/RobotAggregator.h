@@ -48,35 +48,35 @@ private:
    * The function is passed as a callback to the underlying `DiffAggregator` for
    * when new models are discovered.
    */
-  void new_cb_(ObjectModel& model);
+  void new_obstacle_cb_(ObjectModel& model, long frame_num);
 
   /**
    * The function is passed as a callback to the underlying `DiffAggregator` for
    * when models are discovered to be deleted.
    */
-  bool del_cb_(ObjectModel& model);
+  bool del_obstacle_cb_(ObjectModel& model, long frame_num);
   /**
    * The function is passed as a callback to the underlying `DiffAggregator` for
    * when a model has been modified.
    */
-  void mod_cb_(ObjectModel& model);
+  void mod_obstacle_cb_(ObjectModel& model, long frame_num);
 
   /**
    * The function is passed as a callback to the underlying `DiffAggregator` for
    * when new surfaces are discovered.
    */
-  void new_surface_cb_(SurfaceModel& model);
+  void new_surface_cb_(SurfaceModel& model, long frame_num);
 
   /**
    * The function is passed as a callback to the underlying `DiffAggregator` for
    * when surfaces are discovered to be deleted.
    */
-  bool del_surface_cb_(SurfaceModel& model);
+  bool del_surface_cb_(SurfaceModel& model, long frame_num);
   /**
    * The function is passed as a callback to the underlying `DiffAggregator` for
    * when a surface has been modified.
    */
-  void mod_surface_cb_(SurfaceModel& model);
+  void mod_surface_cb_(SurfaceModel& model, long frame_num);
 
   /**
    * Obtains a list of pointers to the primitives that the given model is
@@ -88,31 +88,31 @@ private:
   /**
    * Sends a message to the robot informing it of a new model.
    */
-  void sendNew(ObjectModel& new_model, int model_id, int part_id);
+  void sendNew(ObjectModel& new_model, int model_id, int part_id, long frame_num);
   /**
    * Sends a message to the robot informing it of a new surface.
    */
-  void sendNew(SurfaceModel& new_surface);
+  void sendNew(SurfaceModel& new_surface, long frame_num);
   /**
    * Sends a message to the robot informing it of a deleted model.
    */
-  void sendDelete(int id);
+  void sendDeleteObstacle(int id, long frame_num);
   /**
    * Sends a message to the robot informing it of a deleted part of a model.
    */
-  void sendDeletePart(int model_id, int part_id);
+  void sendDeleteObstaclePart(int model_id, int part_id, long frame_num);
   /**
    * Sends a message to the robot informing it of a deleted surface.
    */
-  void sendDeleteSurface(int id);
+  void sendDeleteSurface(int id, long frame_num);
   /**
    * Sends a message to the robot informing it of a modified model.
    */
-  void sendModify(ObjectModel& model, int model_id, int part_id);
+  void sendModify(ObjectModel& model, int model_id, int part_id, long frame_num);
   /**
    * Sends a message to the robot informing it of a modified surface.
    */
-  void sendModify(SurfaceModel& surface);
+  void sendModify(SurfaceModel& surface, long frame_num);
   /**
    * Obtains the next ID that should be used for a primitive that the robot is
    * notified of.
