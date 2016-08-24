@@ -2,6 +2,7 @@
 #include <boost/thread.hpp>
 
 #include "deps/easylogging++.h"
+#include <iface_msg.hpp>
 
 namespace {
   /**
@@ -54,11 +55,14 @@ void AsyncRobotService::start() {
 }
 
 void AsyncRobotService::inner_send(VisionMessage const& next_message) {
+  am2b_iface::MsgHeader msg_header = { am2b_iface::VISION_MESSAGE, (uint32_t)sizeof(VisionMessageHeader) + next_message.header.len };
   char const* buf = (char const*)&next_message;
   LINFO << "AsyncRobotService (" << remoteName_ << "): Sending a queued message: "
         << "msg == " << next_message;
   // Synchronously send the message, i.e. block until the send is complete.
   try {
+    socket_.send(
+        boost::asio::buffer((const char*)&msg_header, sizeof(msg_header)));
     socket_.send(
         boost::asio::buffer(buf, sizeof(VisionMessageHeader)));
     socket_.send(
