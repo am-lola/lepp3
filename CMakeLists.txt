@@ -4,7 +4,7 @@ project(lepp3)
 
 # Compile with -g flag for debugging information needed for profiling.
 # compile and link with -fopenmp flag for enabling OpenMP which is needed for parallelization
-SET(GCC_COVERAGE_COMPILE_FLAGS "-Wall -Wno-reorder -std=c++11 -fopenmp -pthread -msse2")
+SET(GCC_COVERAGE_COMPILE_FLAGS "-Wno-reorder -std=c++11 -fopenmp -pthread -msse2")
 SET(GCC_COVERAGE_LINK_FLAGS    "-fopenmp")
 SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
