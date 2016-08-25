@@ -160,10 +160,6 @@ void CameraCalibrator<PointT>::updateFrame(FrameDataPtr frameData) {
   // Notify any observer (i.e. the visualizer) of the largest found plane and
   // its mean+variance values.
   notifyCalibrationParams(largest_plane, mean_z, var_z);
-  /// DEBUG: output the mean and variance
-  std::cout << "CALIBRATION:" << std::endl;
-  std::cout << "Mean_Z : " << mean_z << std::endl;
-  std::cout << "Var_Z : " << var_z << std::endl;
 }
 
 template<class PointT>

@@ -34,8 +34,10 @@ public:
     const float& mean_z,
     const float& var_z);
 
-  void drawPlane(
+  void colorizePlane(
     typename pcl::PointCloud<PointT>::Ptr plane,
+    float& mean_z,
+    float& var_z,
     pcl::visualization::PCLVisualizer& viewer);
 
 private:
@@ -46,8 +48,10 @@ private:
 };
 
 template<class PointT>
-void LegacyVisualizer<PointT>::drawPlane(
+void LegacyVisualizer<PointT>::colorizePlane(
   typename pcl::PointCloud<PointT>::Ptr plane,
+  float& mean_z,
+  float& var_z,
   pcl::visualization::PCLVisualizer& viewer) {
 
   // Colorize the pointcloud based on the Z value
@@ -83,8 +87,15 @@ void LegacyVisualizer<PointT>::drawPlane(
   if(!viewer.updatePointCloud<pcl::PointXYZRGB> (color_cloud, rgb, "cloud"))
         viewer.addPointCloud<pcl::PointXYZRGB> (color_cloud, rgb, "cloud");
 
-  // viewer.setPointCloudRenderingProperties(
-  //   pcl::visualization::PCL_VISUALIZER_COLOR, 1.0,0,0, "cloud");
+  // Add text overlay
+  std::string mean_txt = "Mean_Z = " + std::to_string(mean_z);
+  std::string var_txt  = "Var_Z  = " + std::to_string(var_z);
+  double r = 1.0, g = 0.0, b = 1.0;
+  int font_size = 20;
+  if(!viewer.updateText(mean_txt, 0, 40, font_size, r, g, b, "MEAN"))
+    viewer.addText(mean_txt, 0, 40, font_size, r, g, b, "MEAN");
+  if(!viewer.updateText(var_txt, 0, 20, font_size, r, g, b,  "VAR"))
+    viewer.addText(var_txt, 0, 20, font_size, r, g, b,  "VAR");
 }
 
 template<class PointT>
@@ -99,11 +110,12 @@ void LegacyVisualizer<PointT>::updateCalibrationParams(
     const float& var_z) {
 
   pcl::visualization::CloudViewer::VizCallable plane_visualization =
-        boost::bind(&LegacyVisualizer::drawPlane,
-                    this, largest_plane, _1);
+        boost::bind(&LegacyVisualizer::colorizePlane,
+                    this, largest_plane, mean_z, var_z, _1);
 
   viewer_.runOnVisualizationThread(plane_visualization);
   // TODO: overlay text on PCLVisualizer
+
 }
 
 
