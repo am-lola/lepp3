@@ -40,5 +40,5 @@ type = "simple"
 [[observers]]
 type = "CameraCalibrator"
 
-[[obsrevers]]
+[[observers]]
 type = "LegacyVisualizer"
