@@ -103,8 +103,9 @@ protected:
   void initRecorder() {}
 
   void addAggregators() {
+    std::vector<std::string> agg_data_to_send = {"obstacles", "surfaces"};
     boost::shared_ptr<RobotAggregator> robot_aggregator(
-        new RobotAggregator(this->robot_service(), 30, *this->robot()));
+        new RobotAggregator(this->robot_service(), 30, agg_data_to_send, *this->robot()));
     this->detector_->attachObserver(robot_aggregator);
   }
 

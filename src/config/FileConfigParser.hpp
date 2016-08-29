@@ -527,6 +527,7 @@ private:
     std::cout << "agg type: " << type << std::endl;
     if (type == "RobotAggregator") {
       int const frame_rate = v.find("frame_rate")->as<int>();
+      std::vector<std::string> datatypes = v.find("data")->as<std::vector<std::string>>();
 
       std::cout << "find robot service..."<< std::endl;
       const toml::Value* robotServiceEntry = v.find("RobotService");
@@ -547,7 +548,7 @@ private:
       auto robotService = getRobotService(agg_array[0]);
 
       return boost::shared_ptr<RobotAggregator>(
-          new RobotAggregator(robotService, frame_rate, *this->robot()));
+          new RobotAggregator(robotService, frame_rate, datatypes, *this->robot()));
     } else {
       std::cerr << "Unknown aggregator type `" << type << "`" << std::endl;
       throw "Unknown aggregator type";

@@ -61,7 +61,7 @@ type = "SurfaceDetector"
 [[aggregators]]
 type = "RobotAggregator"
 frame_rate = 3
-#data = ["obstacles"]
+data = ["obstacles", "pointclouds"]
 
   [[aggregators.RobotService]]
   target="Vision"

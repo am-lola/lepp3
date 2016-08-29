@@ -14,8 +14,9 @@
 
 using namespace lepp;
 using am2b_iface::VisionMessage;
-using am2b_iface::ObstacleMessage;
 using am2b_iface::SurfaceMessage;
+using am2b_iface::ObstacleMessage;
+using am2b_iface::PointCloudMessage;
 using am2b_iface::Message_Type;
 
 /**
@@ -35,13 +36,18 @@ public:
    * Create a new `RobotAggregator` that will use the given service to
    * communicate to the robot and send status updates after every `freq` frames.
    */
-  RobotAggregator(boost::shared_ptr<RobotService> service, int freq, Robot& robot);
+  RobotAggregator(boost::shared_ptr<RobotService> service, int freq, std::vector<std::string> datatypes, Robot& robot);
   /**
    * `FrameDataObserver` interface implementation.
    */
   void updateFrame(FrameDataPtr frameData) {
     // Just pass it on to find the diff!
     diff_.updateFrame(frameData);
+
+    if (send_pointclouds_)
+    {
+      sendPointCloud(frameData->cloud, frameData->frameNum);
+    }
   }
 private:
   /**
@@ -114,6 +120,10 @@ private:
    */
   void sendModify(SurfaceModel& surface, long frame_num);
   /**
+   * Sends a point cloud to the remote host
+   */
+  void sendPointCloud(PointCloudConstPtr cloud, long frame_num);
+  /**
    * Obtains the next ID that should be used for a primitive that the robot is
    * notified of.
    */
@@ -142,6 +152,15 @@ private:
    * The ID that can be assigned to the next new model (or rather model part).
    */
   int next_id_;
+
+  /**
+   * Flags for enabling/disabling specific types of data from being collected
+   * and sent by the aggregator.
+   */
+  bool send_obstacles_   = false;
+  bool send_surfaces_    = false;
+  bool send_images_      = false;
+  bool send_pointclouds_ = false;
 };
 
 #endif

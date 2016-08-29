@@ -47,18 +47,38 @@ private:
 };
 }  // namespace <anonymous>
 
-RobotAggregator::RobotAggregator(boost::shared_ptr<RobotService> service, int freq, Robot& robot)
+RobotAggregator::RobotAggregator(boost::shared_ptr<RobotService> service, int freq, std::vector<std::string> datatypes, Robot& robot)
     : service_(service), diff_(freq), next_id_(0),
       robot_(robot) {
 
-  // Set up the callbacks that handle the particular cases.
-  diff_.set_new_obstacle_callback(boost::bind(&RobotAggregator::new_obstacle_cb_, this, _1, _2));
-  diff_.set_modified_obstacle_callback(boost::bind(&RobotAggregator::mod_obstacle_cb_, this, _1, _2));
-  diff_.set_deleted_obstacle_callback(boost::bind(&RobotAggregator::del_obstacle_cb_, this, _1, _2));
+  for (auto t : datatypes)
+  {
+    if (t == "obstacles")
+      send_obstacles_ = true;
+    else if (t == "surfaces")
+      send_surfaces_ = true;
+    else if (t == "pointclouds")
+      send_pointclouds_ = true;
+    else if (t == "images")
+      send_images_ = true;
+    else
+      std::cout << "RobotAggregator: Unexpected datatype '" << t << "'" << std::endl;
+  }
 
-  diff_.set_new_surface_callback(boost::bind(&RobotAggregator::new_surface_cb_, this, _1, _2));
-  diff_.set_modified_surface_callback(boost::bind(&RobotAggregator::mod_surface_cb_, this, _1, _2));
-  diff_.set_deleted_surface_callback(boost::bind(&RobotAggregator::del_surface_cb_, this, _1, _2));
+  // Set up the callbacks that handle the particular cases.
+  if (send_obstacles_)
+  {
+    diff_.set_new_obstacle_callback(boost::bind(&RobotAggregator::new_obstacle_cb_, this, _1, _2));
+    diff_.set_modified_obstacle_callback(boost::bind(&RobotAggregator::mod_obstacle_cb_, this, _1, _2));
+    diff_.set_deleted_obstacle_callback(boost::bind(&RobotAggregator::del_obstacle_cb_, this, _1, _2));
+  }
+
+  if (send_surfaces_)
+  {
+    diff_.set_new_surface_callback(boost::bind(&RobotAggregator::new_surface_cb_, this, _1, _2));
+    diff_.set_modified_surface_callback(boost::bind(&RobotAggregator::mod_surface_cb_, this, _1, _2));
+    diff_.set_deleted_surface_callback(boost::bind(&RobotAggregator::del_surface_cb_, this, _1, _2));
+  }
 }
 
 void RobotAggregator::new_obstacle_cb_(ObjectModel& model, long frame_num) {
@@ -261,5 +281,13 @@ void RobotAggregator::sendModify(SurfaceModel& surface, long frame_num)
   LINFO << "RobotAggregator: Modifying existing surface ["
         << "id = " << surface.id()
         << "]";
+  service_->sendMessage(msg);
+}
+
+void RobotAggregator::sendPointCloud(PointCloudConstPtr cloud, long frame_num)
+{
+  unsigned char* pt_data = (unsigned char*)&cloud->points[0];
+  VisionMessage msg = VisionMessage(PointCloudMessage(pt_data, cloud->points.size(), sizeof(PointT)), frame_num);
+
   service_->sendMessage(msg);
 }
