@@ -291,3 +291,17 @@ void RobotAggregator::sendPointCloud(PointCloudConstPtr cloud, long frame_num)
 
   service_->sendMessage(msg);
 }
+
+void RobotAggregator::sendRGBImage(const boost::shared_ptr<openni_wrapper::Image> &image, long frame_num)
+{
+  // copy image data to byte array
+  unsigned char* img_data = new unsigned char[image->getWidth() * image->getHeight() * 3];
+  image->fillRGB(image->getWidth(), image->getHeight(), img_data);
+
+  VisionMessage msg = VisionMessage(RGBMessage(img_data, image->getWidth(), image->getHeight()), frame_num);
+
+  // VisionMessage will store its own copy of the data
+  delete img_data;
+
+  service_->sendMessage(msg);
+}

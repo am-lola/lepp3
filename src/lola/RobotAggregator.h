@@ -4,6 +4,7 @@
 #include "lepp3/DiffAggregator.hpp"
 #include "lepp3/models/ObjectModel.h"
 #include "lepp3/FrameData.hpp"
+#include "lepp3/RGBData.hpp"
 
 #include "lola/RobotService.h"
 #include "lola/Robot.h"
@@ -13,6 +14,7 @@
 #include <boost/asio.hpp>
 
 using namespace lepp;
+using am2b_iface::RGBMessage;
 using am2b_iface::VisionMessage;
 using am2b_iface::SurfaceMessage;
 using am2b_iface::ObstacleMessage;
@@ -30,7 +32,7 @@ using am2b_iface::Message_Type;
  * primitive models) into its most primitive components and sending msesages for
  * each of those separately to the robot.
  */
-class RobotAggregator : public lepp::FrameDataObserver {
+class RobotAggregator : public lepp::FrameDataObserver, public lepp::RGBDataObserver {
 public:
   /**
    * Create a new `RobotAggregator` that will use the given service to
@@ -48,6 +50,17 @@ public:
     {
       sendPointCloud(frameData->cloud, frameData->frameNum);
     }
+  }
+  /**
+   * `RGBDataObserver` interface implementation.
+   */
+  void updateFrame(RGBDataPtr rgbData) {
+    std::cout << "Got new RGB FRAME!!!" << std::endl;
+    if (send_images_)
+    {
+      sendRGBImage(rgbData->image, rgbData->frameNum);
+    }
+
   }
 private:
   /**
@@ -123,6 +136,10 @@ private:
    * Sends a point cloud to the remote host
    */
   void sendPointCloud(PointCloudConstPtr cloud, long frame_num);
+  /**
+   * Sends an RGB image to the remote host
+   */
+  void sendRGBImage(const boost::shared_ptr<openni_wrapper::Image> &image, long frame_num);
   /**
    * Obtains the next ID that should be used for a primitive that the robot is
    * notified of.
