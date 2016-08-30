@@ -58,16 +58,16 @@ type = "SurfaceDetector"
 #port = 61449
 #delay = 1
 
-[[aggregators]]
-type = "RobotAggregator"
-frame_rate = 3
-data = ["obstacles", "pointclouds"]
+#[[aggregators]]
+#type = "RobotAggregator"
+#frame_rate = 3
+#data = ["images"] #, "pointclouds"]
 
-  [[aggregators.RobotService]]
-  target="Vision"
-  ip = "127.0.0.1"
-  port = 61448
-  delay = 10
+#  [[aggregators.RobotService]]
+#  target="Vision"
+#  ip = "127.0.0.1"
+#  port = 61448
+#  delay = 10
   # Delay is given in milliseconds. 0 is a valid value.
 
 # aggregator to send data to QNX
@@ -77,8 +77,8 @@ frame_rate = 3
 data = [ "obstacles", "surfaces" ]
   [[aggregators.RobotService]]
   target="Qnx"
-  ip = "192.168.0.3"  # QNX computer IP
-  port = 61449
+  ip = "192.168.0.7"  # QNX computer IP
+  port = 61448
   delay = 10
 
 
@@ -168,37 +168,37 @@ mergeUpdatePercentage = 0.2
 minDistToPlane = 0.04
 
 
-#[Visualization]
+[Visualization]
 # Whether the results are visualized **locally**
 # `cloud` = true|false ---- visualize the point cloud
 # `rgb` = true|false   ---- visualize the rgb image
-#cloud = true
-#rgb = true
+cloud = true
+rgb = true
 
-#[ARVisualizer]
+[ARVisualizer]
 #When the robot runs, frame can be changed to "lola"
 #frame=lola|pcl
 
-#frame="pcl"
+frame="lola"
 
 #lola
-#lola_positionx = 0
-#lola_positiony = 0
-#lola_positionz = 0
-#lola_forwardx = 1
-#lola_forwardy = 0
-#lola_forwardz= 0
-#lola_upx = 0
-#lola_upy = 0
-#lola_upz = 1
+lola_positionx = 0
+lola_positiony = 0
+lola_positionz = 0
+lola_forwardx = 1
+lola_forwardy = 0
+lola_forwardz= 0
+lola_upx = 0
+lola_upy = 0
+lola_upz = 1
 
 #PCL
-pcl_positionx = 0
-pcl_positiony = 0
-pcl_positionz = 0
-pcl_forwardx = 0
-pcl_forwardy = 0
-pcl_forwardz= 1
-pcl_upx = 0
-pcl_upy = -1
-pcl_upz = 0
+#pcl_positionx = 0
+#pcl_positiony = 0
+#pcl_positionz = 0
+#pcl_forwardx = 0
+#pcl_forwardy = 0
+#pcl_forwardz= 1
+#pcl_upx = 0
+#pcl_upy = -1
+#pcl_upz = 0
