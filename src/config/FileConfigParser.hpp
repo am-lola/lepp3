@@ -117,10 +117,13 @@ protected:
       throw "error: no video source found in the config file.";
     const std::string type = toml_tree_.find(
           "VideoSource.type")->as<std::string>();
+    bool enable_rgb = false;
+    if (toml_tree_.find("VideoSource.enable_rgb"))
+      enable_rgb = toml_tree_.find("VideoSource.enable_rgb")->as<bool>();
 
     if (type == "stream") {
       this->raw_source_ = boost::shared_ptr<VideoSource<PointT> >(
-          new LiveStreamSource<PointT>());
+          new LiveStreamSource<PointT>(enable_rgb));
     } else if (type == "pcd") {
       std::string file_path = toml_tree_.find(
             "VideoSource.file_path")->as<std::string>();
@@ -547,8 +550,10 @@ private:
 
       auto robotService = getRobotService(agg_array[0]);
 
-      return boost::shared_ptr<RobotAggregator>(
-          new RobotAggregator(robotService, frame_rate, datatypes, *this->robot()));
+      // attach to RGB data here since we always assume we're dealing with FrameDataObservers elsewhere...
+      boost::shared_ptr<RobotAggregator> robotAggregator = boost::make_shared<RobotAggregator>(robotService, frame_rate, datatypes, *this->robot());
+      boost::static_pointer_cast<RGBDataSubject>(this->raw_source_)->attachObserver(robotAggregator);
+      return robotAggregator;
     } else {
       std::cerr << "Unknown aggregator type `" << type << "`" << std::endl;
       throw "Unknown aggregator type";
