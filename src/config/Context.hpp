@@ -26,6 +26,7 @@
 
 #include "lepp3/filter/TruncateFilter.hpp"
 #include "lepp3/filter/SensorCalibrationFilter.hpp"
+#include "lepp3/filter/CropFilter.hpp"
 
 #include "lola/OdoCoordinateTransformer.hpp"
 #include "lola/Splitters.hpp"
@@ -234,6 +235,15 @@ protected:
     if (isLive()) {
       boost::shared_ptr<PointFilter<PointT> > filter(
           new RobotOdoTransformer<PointT>(this->pose_service_));
+      this->filtered_source_->addFilter(filter);
+    }
+    if (isLive()) {
+      float const xmax = 4;
+      float const xmin = -1;
+      float const ymax = 1.5;
+      float const ymin = -1.5;
+      boost::shared_ptr<PointFilter<PointT> > filter(
+          new CropFilter<PointT>(xmax,xmin,ymax,ymin));
       this->filtered_source_->addFilter(filter);
     }
     {
@@ -592,6 +602,13 @@ private:
       int decimals = expectKey<int>("decimal_points");
       return boost::shared_ptr<PointFilter<PointT> >(
           new TruncateFilter<PointT>(decimals));
+    } else if (type == "CropFilter") {
+      double xmax = expectKey<float>("xmax");
+      double xmin = expectKey<float>("xmin");
+      double ymax = expectKey<float>("ymax");
+      double ymin = expectKey<float>("ymin");
+      return boost::shared_ptr<PointFilter<PointT> >(
+          new CropFilter<PointT>(xmax, xmin, ymax, ymin));
     } else {
       std::cerr << "Unknown filter type `" << type << "`" << std::endl;
       throw "Unknown filter type";
