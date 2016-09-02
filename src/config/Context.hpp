@@ -603,10 +603,10 @@ private:
       return boost::shared_ptr<PointFilter<PointT> >(
           new TruncateFilter<PointT>(decimals));
     } else if (type == "CropFilter") {
-      double xmax = expectKey<float>("xmax");
-      double xmin = expectKey<float>("xmin");
-      double ymax = expectKey<float>("ymax");
-      double ymin = expectKey<float>("ymin");
+      float xmax = expectKey<float>("xmax");
+      float xmin = expectKey<float>("xmin");
+      float ymax = expectKey<float>("ymax");
+      float ymin = expectKey<float>("ymin");
       return boost::shared_ptr<PointFilter<PointT> >(
           new CropFilter<PointT>(xmax, xmin, ymax, ymin));
     } else {
