@@ -53,6 +53,13 @@ type = "simple"
     type = "TruncateFilter"
     decimal_points = 2
 
+  [[FilteredVideoSource.filters]]
+    type = CropFilter
+    xmax = 4
+    xmin = -1.5
+    ymax = 1.5
+    ymin = -1.5      
+
 [SplitStrategy]
 # split_axis = largest|middle|smallest
 split_axis = "middle"

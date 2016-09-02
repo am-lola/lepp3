@@ -24,6 +24,7 @@
 
 #include "lepp3/filter/TruncateFilter.hpp"
 #include "lepp3/filter/SensorCalibrationFilter.hpp"
+#include "lepp3/filter/CropFilter.hpp"
 
 #include "lepp3/util/VideoRecorder.hpp"
 #include "lepp3/CameraCalibrator.hpp"

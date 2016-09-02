@@ -55,6 +55,15 @@ protected:
           new RobotOdoTransformer<PointT>(this->pose_service_));
       this->filtered_source_->addFilter(filter);
     }
+    if (isLive()) {
+      double const xmax = 4;
+      double const xmin = -1;
+      double const ymax = 1.5;
+      double const ymin = -1.5;
+      boost::shared_ptr<PointFilter<PointT> > filter(
+          new CropFilter<PointT>(xmax,xmin,ymax,ymin));
+      this->filtered_source_->addFilter(filter);
+    }
     {
       boost::shared_ptr<PointFilter<PointT> > filter(
           new TruncateFilter<PointT>(2));

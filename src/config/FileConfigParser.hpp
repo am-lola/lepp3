@@ -496,6 +496,13 @@ private:
       int decimals = v.find("decimal_points")->as<int>();
       return boost::shared_ptr<PointFilter<PointT> >(
           new TruncateFilter<PointT>(decimals));
+    } else if (type == "CropFilter") {
+      double xmax = v.find("xmax")->as<double>();
+      double xmin = v.find("xmin")->as<double>();
+      double ymax = v.find("ymax")->as<double>();
+      double ymin = v.find("ymin")->as<double>();
+      return boost::shared_ptr<PointFilter<PointT> >(
+          new CropFilter<PointT>(xmax, xmin, ymax, ymin));
     } else {
       std::cerr << "Unknown filter type `" << type << "`" << std::endl;
       throw "Unknown filter type";
