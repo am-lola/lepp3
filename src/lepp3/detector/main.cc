@@ -5,7 +5,6 @@
 #include <iostream>
 
 #include "lepp3/Typedefs.hpp"
-#include "config/HardcodedParser.hpp"
 #include "config/FileConfigParser.hpp"
 
 #include "deps/toml.h"
@@ -47,11 +46,10 @@ int main(int argc, char* argv[]) {
         parser.reset(new FileConfigParser<PointT>(argv[i + 1]));
       }
     }
-
-    if (!parser) {
-      // Fall back to trying to do a hardcoded parser if no config file given.
-      parser.reset(new HardcodedParser<PointT>(argv, argc));
-    }
+    // if (!parser) {
+    //   // Fall back to trying to do a hardcoded parser if no config file given.
+    //   parser.reset(new HardcodedParser<PointT>(argv, argc));
+    // }
   } catch (char const* exc) {
     std::cerr << exc << std::endl;
     PrintUsage();
@@ -71,7 +69,7 @@ int main(int argc, char* argv[]) {
   //   while (!g_exitProgram)
   //     boost::this_thread::sleep(boost::posix_time::milliseconds(100));
   // }
-  
+
   while (true)
       boost::this_thread::sleep(boost::posix_time::milliseconds(8000));
 
