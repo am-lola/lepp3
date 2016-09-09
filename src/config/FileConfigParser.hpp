@@ -212,7 +212,26 @@ protected:
       }
       else if (type == "ARVisualizer")
       {
-        initVisualizers();
+        toml::Value const* visualizer = v.find("visualizer");
+        if (!visualizer)
+        {
+          std::cout << "[[observers.visualizer]] not found!" << std::endl;
+          std::cout << "Cannot create a Visualizer without specifying the parameters!" << std::endl;
+          exit(1);
+        }
+        toml::Array const& array = visualizer->as<toml::Array>();
+        /*
+         * TODO add sanity check for the case where there's more than one visualizer
+         * instance inside one definition.
+         */
+        auto vis = array[0];
+        this->visualizers_.push_back(getVisualizer(vis));
+      }
+      else if (type == "CalibratorVisualizer")
+      {
+        this->calib_visualizer_.reset(new CalibratorVisualizer<PointT>());
+        this->source()->FrameDataSubject::attachObserver(this->calib_visualizer_);
+        this->cam_calibrator()->attachCalibrationAggregator(this->calib_visualizer_);
       }
       else if (type == "LegacyVisualizer")
       {
@@ -432,42 +451,35 @@ protected:
 
   virtual void initVisualizers() override
   {
-    // NEW: Having multiple instances of visualizer
-    // const toml::Value* value = toml_tree_.find("observers.visualizer");
-    // if (value == nullptr)
-    //   return;
-    //
-    // const toml::Array& viz_array = value->as<toml::Array>();
-    // for (const toml::Value& v : viz_array) {
-    //   this->visualizers_.push_back(getVisualizer(v));
-    // }
+    // NEW: Having multiple instances of visualizer is now done using the
+    //      `getVisualizer` method and storing them in the vector `visualizers_`
 
     // OLD: Only one instance of visualizer
-    int width = toml_tree_.find("Visualization.width")->as<int>();
-    int height = toml_tree_.find("Visualization.height")->as<int>();
-
-    if (surfaceDetectorActive && !obstacleDetectorActive)
-    {
-      this->visualizers_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive, width, height));
-      surface_detector_->FrameDataSubject::attachObserver(this->visualizers_);
-    }
-    else if (obstacleDetectorActive)
-    {
-      this->visualizers_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive, width, height));
-      this->detector_->FrameDataSubject::attachObserver(this->visualizers_);
-    }
-
-    bool viz_cloud = toml_tree_.find("Visualization.cloud")->as<bool>();
-    if (viz_cloud) {
-      // TODO add relevant stuff for cloud visualization and any necessary
-      // observer
-    }
-
-    bool viz_rgb = toml_tree_.find("Visualization.rgb")->as<bool>();
-    if (viz_rgb) {
-      // TODO add relevant stuff for RGB image visualization and any necessary
-      // observer
-    }
+    // int width = toml_tree_.find("Visualization.width")->as<int>();
+    // int height = toml_tree_.find("Visualization.height")->as<int>();
+    //
+    // if (surfaceDetectorActive && !obstacleDetectorActive)
+    // {
+    //   this->visualizers_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive, width, height));
+    //   surface_detector_->FrameDataSubject::attachObserver(this->visualizers_);
+    // }
+    // else if (obstacleDetectorActive)
+    // {
+    //   this->visualizers_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive, width, height));
+    //   this->detector_->FrameDataSubject::attachObserver(this->visualizers_);
+    // }
+    //
+    // bool viz_cloud = toml_tree_.find("Visualization.cloud")->as<bool>();
+    // if (viz_cloud) {
+    //   // TODO add relevant stuff for cloud visualization and any necessary
+    //   // observer
+    // }
+    //
+    // bool viz_rgb = toml_tree_.find("Visualization.rgb")->as<bool>();
+    // if (viz_rgb) {
+    //   // TODO add relevant stuff for RGB image visualization and any necessary
+    //   // observer
+    // }
   }
 
 private:
@@ -502,22 +514,26 @@ private:
     }
   }
 
-  boost::shared_ptr<ARVisualizer> getVisualizer(toml::Value const& v) {
-    std::string const data = v.find("data")->as<std::string>();
-    if (data == "cloud") {
+  boost::shared_ptr<BaseVisualizer> getVisualizer(toml::Value const& v) {
+    std::cout << "Entered getVisualizer" << std::endl;
 
-    } else if (data == "rgb") {
-
-    } else {
-      std::cerr << "Unknown visualization data type `" << data << "`" << std::endl;
-      throw "Unknown viz data type";
-    }
-
-    int const width = v.find("width")->as<int>();
+    std::string const name = v.find("name")->as<std::string>();
     int const height = v.find("height")->as<int>();
+    int const width = v.find("width")->as<int>();
 
-    return boost::shared_ptr<ARVisualizer>(
-      new ARVisualizer(false, false, width, height));
+    std::string const type = v.find("type")->as<std::string>();
+    std::cout << "visualizer.type: " << type << std::endl;
+    if (type == "CameraCalibrator") {
+      boost::shared_ptr<CalibratorVisualizer<PointT> > calib_visualizer(
+          new CalibratorVisualizer<PointT>());
+      this->source()->FrameDataSubject::attachObserver(calib_visualizer);
+      this->cam_calibrator()->attachCalibrationAggregator(calib_visualizer);
+      return calib_visualizer;
+    }
+    else {
+      std::cerr << "Unknown visualizer type `" << type << "`" << std::endl;
+      throw "Unknown visualizer type";
+    }
   }
 
   /**

@@ -18,9 +18,11 @@
 #include "lepp3/RGBData.hpp"
 #include "lepp3/PlaneInlierFinder.hpp"
 
+#include "lepp3/visualization/BaseVisualizer.hpp"
 #include "lepp3/visualization/Visualizer.hpp"
 #include "lepp3/visualization/ARVisualizer.hpp"
 #include "lepp3/visualization/LegacyVisualizer.hpp"
+#include "lepp3/visualization/CalibratorVisualizer.hpp"
 
 #include "lepp3/filter/TruncateFilter.hpp"
 #include "lepp3/filter/SensorCalibrationFilter.hpp"
@@ -179,8 +181,9 @@ protected:
   boost::shared_ptr<FrameDataSubject> detector_;
   boost::shared_ptr<VideoRecorder<PointT> > recorder_;
   boost::shared_ptr<CameraCalibrator<PointT> > cam_calibrator_;
-  // std::vector<boost::shared_ptr<ARVisualizer> > visualizers_;
-  boost::shared_ptr<ARVisualizer> visualizers_;
+  std::vector<boost::shared_ptr<BaseVisualizer> > visualizers_;
+  // boost::shared_ptr<ARVisualizer> visualizers_;
+  boost::shared_ptr<CalibratorVisualizer<PointT> > calib_visualizer_;
   boost::shared_ptr<LegacyVisualizer<PointT> > legacy_visualizer_;
 };
 
