@@ -31,7 +31,7 @@ option(LEPP_BUILD_EXAMPLES "Build LEPP examples" FALSE)
 option(LEPP_BUILD_LOLA "Build an obstacle detector for LOLA" TRUE)
 
 include_directories("../src")
-include_directories("./lola/iface/iface/")
+include_directories("./lola/iface/include")
 
 if(LEPP_BUILD_EXAMPLES)
     include(examples/Examples.txt)
