@@ -151,12 +151,6 @@ private:
    * implementation.
    */
   std::vector<boost::shared_ptr<PointFilter<PointT> > > point_filters_;
-
-  /*
-  * Transform all points given in the point cloud to world coordinates.
-  */
-  void transformToWorldCoordinates(PointCloudPtr &cloud);
-
   /**
   * Remove all points from the given point cloud that are too far away from Lola.
   */
@@ -269,6 +263,7 @@ void FilteredVideoSource<PointT>::updateFrame(
 
   // Now we obtain the fully filtered cloud...
   this->getFiltered(filtered);
+  // TODO : detele this function??
   this->removeBackground(cloud_filtered);
   this->preprocessCloud(cloud_filtered);
 
