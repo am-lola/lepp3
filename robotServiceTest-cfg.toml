@@ -73,7 +73,7 @@ type = "SurfaceDetector"
 # aggregator to send data to QNX
 [[aggregators]]
 type = "RobotAggregator"
-frame_rate = 3
+update_frequency= 3
 data = [ "obstacles", "surfaces" ]
   [[aggregators.RobotService]]
   target="Qnx"

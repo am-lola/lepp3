@@ -529,7 +529,7 @@ private:
     std::string const type = v.find("type")->as<std::string>();
     std::cout << "agg type: " << type << std::endl;
     if (type == "RobotAggregator") {
-      int const frame_rate = v.find("frame_rate")->as<int>();
+      int const update_frequency= v.find("update_frequency")->as<int>();
       std::vector<std::string> datatypes = v.find("data")->as<std::vector<std::string>>();
 
       std::cout << "find robot service..."<< std::endl;
@@ -551,7 +551,7 @@ private:
       auto robotService = getRobotService(agg_array[0]);
 
       // attach to RGB data here since we always assume we're dealing with FrameDataObservers elsewhere...
-      boost::shared_ptr<RobotAggregator> robotAggregator = boost::make_shared<RobotAggregator>(robotService, frame_rate, datatypes, *this->robot());
+      boost::shared_ptr<RobotAggregator> robotAggregator = boost::make_shared<RobotAggregator>(robotService, update_frequency, datatypes, *this->robot());
       boost::static_pointer_cast<RGBDataSubject>(this->raw_source_)->attachObserver(robotAggregator);
       return robotAggregator;
     } else {
