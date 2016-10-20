@@ -8,7 +8,7 @@
 namespace lepp {
 
 /**
- * A base class for visualizers
+ * A base class for visualizers. Wraps an instance of ar::ARVisualizer
  */
 class BaseVisualizer : public FrameDataObserver {
 
@@ -18,10 +18,10 @@ public:
    * is done in any inherited class.
    */
   BaseVisualizer(
-    char const* name = "lepp3", int const& width = 1024, int const& height = 768)
+    std::string const& name = "lepp3", int const& width = 1024, int const& height = 768)
       : arvis_(new ar::ARVisualizer()) {
 
-      arvis_->Start(name, width, height);
+      arvis_->Start(name.c_str(), width, height);
   }
 
   /**
