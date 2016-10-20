@@ -18,15 +18,10 @@ class CalibratorVisualizer
 
 public:
   CalibratorVisualizer(
-    char const* name = "lepp3", int const& width = 1024, int const& height = 768)
+    std::string const& name = "lepp3", int const& width = 1024, int const& height = 768)
     : BaseVisualizer(name, width, height),
       main_cloud_data_(ar::PCL_PointXYZ),
       largest_plane_data_(ar::PCL_PointXYZRGBA) {
-
-  if (width == 0 || height == 0)
-	  arvis_->Start("lepp3");
-  else
-    arvis_->Start("lepp3", width, height);
 
   main_cloud_handle_ = arvis_->Add(main_cloud_data_);
   largest_plane_handle_ = arvis_->Add(largest_plane_data_);
@@ -118,9 +113,9 @@ template<class PointT>
 void CalibratorVisualizer<PointT>::updateFrame(FrameDataPtr frameData) {
   // visualize the point cloud
   // TODO: Decide whether to show the full point cloud in this visualizer
-//  main_cloud_data_.pointData = reinterpret_cast<const void*>(&(frameData->cloud->points[0]));
-//  main_cloud_data_.numPoints = frameData->cloud->size();
-//  arvis_->Update(main_cloud_handle_, main_cloud_data_);
+  main_cloud_data_.pointData = reinterpret_cast<const void*>(&(frameData->cloud->points[0]));
+  main_cloud_data_.numPoints = frameData->cloud->size();
+  arvis_->Update(main_cloud_handle_, main_cloud_data_);
 }
 
 template<class PointT>
