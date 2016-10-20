@@ -20,7 +20,7 @@
 
 #include "lepp3/visualization/BaseVisualizer.hpp"
 #include "lepp3/visualization/Visualizer.hpp"
-#include "lepp3/visualization/ARVisualizer.hpp"
+#include "lepp3/visualization/ObsSurfVisualizer.hpp"
 #include "lepp3/visualization/LegacyVisualizer.hpp"
 #include "lepp3/visualization/CalibratorVisualizer.hpp"
 
@@ -75,8 +75,8 @@ public:
   /// The cam_calibrator accessor
   boost::shared_ptr<CameraCalibrator<PointT> > cam_calibrator() { return cam_calibrator_; }
   /// The visualizer accessor
-  // std::vector<boost::shared_ptr<ARVisualizer> > visualizers() { return visualizers_; }
-  boost::shared_ptr<ARVisualizer> visualizers() { return visualizers_; }
+  // TODO FIXME return a vector of visualizers.
+  // boost::shared_ptr<BaseVisualizer> visualizers() { return visualizers_; }
 
 protected:
   /**
@@ -90,7 +90,7 @@ protected:
    */
   virtual void init() {}
 
-  /// Robot initialization
+  /// Default Robot initialization. Derived classes may change this process.
   virtual void buildRobot() {
     initPoseService();
     initVisionService();
@@ -157,17 +157,14 @@ protected:
   virtual void addAggregators() {}
 
   /// Initialize 'ObstacleDetector' and 'SurfaceDetector' if necessary.
-  virtual void initSurfObstDetector() = 0;
+  virtual void initSurfaceAndObstacleDetector(
+        std::string const& obstacle_detector_method) = 0;
 
-  /// Initialize the `Recorder`. Must set the `recorder_` member.
+  /// Initialize the `VideoRecorder` module. Must set the `recorder_` member.
   virtual void initRecorder() = 0;
 
   /// Initialize the `CameraCalibrator`. Must set the `calibrator_` member.
   virtual void initCamCalibrator() = 0;
-  /// A hook for conveniently adding a visualizer, if required.
-  /// Provides a default implementation that does not initialize any local
-  /// visualization.
-  virtual void initVisualizers() {}
 
 protected:
   /// The members are exposed directly to concrete implementations for

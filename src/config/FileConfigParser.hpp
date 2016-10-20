@@ -28,6 +28,9 @@ public:
    *
    * If the file cannot be opened, there is an error parsing it, or one of the
    * components is misconfigured, the constructor will throw.
+   *
+   * Uses tiny tinytoml to create a tree out of the available entities in the
+   * file. Parser extracts information out of this tree.
    */
   FileConfigParser(std::string const& file_name)
       : file_name_(file_name),
@@ -44,46 +47,73 @@ public:
   }
 
 protected:
+  /**
+   * Main parsing pipeline. Major parsing steps happen here, with each of them
+   * having sub-steps.
+   */
   virtual void init() override {
-    // Make the pose service optional --> avoid stopping the parser.
+    // The pose service is optional.
     // Compatibility for offline use.
     if (toml_tree_.find("PoseService"))
       initPoseService();
     else
-      std::cout << "No pose service info found in config file." << std::endl;
-    // Make the robot communication optional --> avoid stopping the parser.
+      std::cout << "No pose service info found in config file."
+                << "Assuming no robot pose information will be available."
+                << std::endl;
+    // Existence of a Lola is optional.
     // Compatibility for offline use.
     if (toml_tree_.find("Robot"))
       initRobot();
     else
-      std::cout << "No robot info found in config file." << std::endl;
-    // Make the robot service communication optional --> avoid stopping the parser.
+      std::cout << "No robot info found in config file. "
+                << "Lola is not connected for this run."
+                << std::endl;
+    // Robot service communication is optional.
     // Compatibility for offline use.
     if (toml_tree_.find("RobotService"))
       initVisionService();
     else
       std::cout << "No robot service info found in config file." << std::endl;
 
-    // Now get our video source ready...
+    // Now get the video source ready...
     initRawSource();
-    // ...along with any possible filters
+    // ...along with any possible filters. Method Parser::buildFilteredSource
+    // from the base class is called.
     this->buildFilteredSource();
     // attach any available observers
     addObservers();
     // ...and additional observer processors.
     addAggregators();
-    // Finally, optionally visualize everything in a local GUI
-    // if (toml_tree_.find("Visualization"))
-    //   initVisualizers();
+
+    std::cout << "==== Finished parsing the config file. ====" << std::endl;
   }
+
+  /**
+   * Attempts to set up the PoseService instance. Should include an IP address
+   * and a port number. This will correspond to the computer which is sending
+   * pose data to LEPP.
+   */
+  virtual void initPoseService() override {
+    std::string ip = toml_tree_.find("PoseService.ip")->as<std::string>();
+    int port = toml_tree_.find("PoseService.port")->as<int>();
+
+    this->pose_service_.reset(new PoseService(ip, port));
+    this->pose_service_->start();
+  }
+
+  /**
+   * Sets up the `Robot` instance. Requires the `PoseService` to be set
+   * beforehand.
+   */
   virtual void initRobot() override {
     double bubble_size = toml_tree_.find("Robot.bubble_size")->as<double>();
     this->robot_.reset(new Robot(*this->pose_service(), bubble_size));
   }
 
-  /// Implementations of initialization of various parts of the pipeline.
+  /**
+   * Creats an instance of "VideoSource" based on the given parameters.
+   */
   virtual void initRawSource() override {
-    std::cout << "entered initRawSource" << std::endl;
     if (!toml_tree_.find("VideoSource.type"))
       throw "error: no video source found in the config file.";
     const std::string type = toml_tree_.find(
@@ -136,6 +166,10 @@ protected:
     }
   }
 
+  /**
+   * Creates and instance of `FilteredVideoSource` based on the previously
+   * acquired `VideoSource` object instance.
+   */
   virtual void initFilteredVideoSource() override {
     const std::string type = toml_tree_.find(
           "FilteredVideoSource.type")->as<std::string>();
@@ -153,6 +187,11 @@ protected:
     }
   }
 
+  /**
+   * Reads and sets up the available filters for the `FilteredVideoSource`
+   * instance. Filter initialization for each entry is done by calling
+   * `getPointFilter`.
+   */
   virtual void addFilters() override {
     const toml::Value* value = toml_tree_.find("FilteredVideoSource.filters");
     if (value == nullptr)
@@ -164,14 +203,9 @@ protected:
     }
   }
 
-  virtual void initPoseService() override {
-    std::string ip = toml_tree_.find("PoseService.ip")->as<std::string>();
-    int port = toml_tree_.find("PoseService.port")->as<int>();
-
-    this->pose_service_.reset(new PoseService(ip, port));
-    this->pose_service_->start();
-  }
-
+  /**
+   *
+   */
   virtual void initVisionService() override {
     std::string ip = toml_tree_.find("RobotService.ip")->as<std::string>();
     int port = toml_tree_.find("RobotService.port")->as<int>();
@@ -183,6 +217,9 @@ protected:
     this->robot_service_ = async_robot_service;
   }
 
+  /**
+   * Sets up any observer that is supposed to attach to the `FilteredVideoSource`
+   */
   virtual void addObservers() override
   {
     std::cout << "entered addObservers" << std::endl;
@@ -190,6 +227,10 @@ protected:
     if (!available)
       return;
     const toml::Array& obs_arr = available->as<toml::Array>();
+    // Value holding the name of the method for (if available) obstacle detection
+    std::string obstacle_detector_method;
+    // Iterate though all the available observer entries in the config file and
+    // set them up accordingly.
     for (const toml::Value& v : obs_arr)
     {
       std::string const type = v.find("type")->as<std::string>();
@@ -197,6 +238,7 @@ protected:
       if (type == "ObstacleDetector")
       {
         obstacleDetectorActive = true;
+        obstacle_detector_method = v.find("method")->as<std::string>();
       }
       else if (type == "SurfaceDetector")
       {
@@ -222,29 +264,17 @@ protected:
         toml::Array const& array = visualizer->as<toml::Array>();
         /*
          * TODO add sanity check for the case where there's more than one visualizer
-         * instance inside one definition.
+         * instance inside one definition (=illegal basewd on definition).
          */
         auto vis = array[0];
         this->visualizers_.push_back(getVisualizer(vis));
-      }
-      else if (type == "CalibratorVisualizer")
-      {
-        this->calib_visualizer_.reset(new CalibratorVisualizer<PointT>());
-        this->source()->FrameDataSubject::attachObserver(this->calib_visualizer_);
-        this->cam_calibrator()->attachCalibrationAggregator(this->calib_visualizer_);
-      }
-      else if (type == "LegacyVisualizer")
-      {
-        this->legacy_visualizer_.reset(new LegacyVisualizer<PointT>());
-        this->source()->FrameDataSubject::attachObserver(this->legacy_visualizer_);
-        if (this->cam_calibrator()) {
-          this->cam_calibrator()->attachCalibrationAggregator(this->legacy_visualizer_);
-        }
+        std::cout << "visualizer added" << std::endl;
       }
     }
-    // initialize obstacle and surface detector if necessary
-    if (surfaceDetectorActive || obstacleDetectorActive)
-      initSurfObstDetector();
+    // Initialize obstacle and surface detector if necessary
+    if (surfaceDetectorActive || obstacleDetectorActive) {
+      initSurfaceAndObstacleDetector(obstacle_detector_method);
+    }
   }
 
   virtual boost::shared_ptr<SplitStrategy<PointT> > buildSplitStrategy() override {
@@ -316,9 +346,13 @@ protected:
   {
     surfaceClusterParameters.push_back(toml_tree_.find("Clustering.clusterTolerance")->as<double>());
     surfaceClusterParameters.push_back(toml_tree_.find("Clustering.minClusterSize")->as<int>());
-    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.voxelSize_X")->as<double>());
-    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.voxelSize_Y")->as<double>());
-    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.voxelSize_Z")->as<double>());
+    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.coarseVoxelSize_X")->as<double>());
+    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.coarseVoxelSize_Y")->as<double>());
+    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.coarseVoxelSize_Z")->as<double>());
+    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.fineVoxelSize_X")->as<double>());
+    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.fineVoxelSize_Y")->as<double>());
+    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.fineVoxelSize_Z")->as<double>());
+    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.coarseFineLimit")->as<int>());
   }
 
 
@@ -327,7 +361,7 @@ protected:
     surfaceTrackerParameters.push_back(toml_tree_.find("SurfaceTracking.lostLimit")->as<int>());
     surfaceTrackerParameters.push_back(toml_tree_.find("SurfaceTracking.foundLimit")->as<int>());
     surfaceTrackerParameters.push_back(toml_tree_.find("SurfaceTracking.maxCenterDistance")->as<double>());
-    surfaceTrackerParameters.push_back(toml_tree_.find("SurfaceTracking.maxCloudSizeDiviation")->as<double>());
+    surfaceTrackerParameters.push_back(toml_tree_.find("SurfaceTracking.maxRadiusDeviationPercentage")->as<double>());
   }
 
   void loadConvexHullParameters(std::vector<double> &convexHullParameters)
@@ -337,7 +371,8 @@ protected:
   }
 
 
-  virtual void initSurfObstDetector() override
+  virtual void initSurfaceAndObstacleDetector(
+        std::string const& obstacle_detector_method) override
   {
     // surfaceDetector is always active because ground is always removed
     std::vector<double> surfFinderParameters;
@@ -352,51 +387,73 @@ protected:
       loadSurfaceClustererParameters(surfaceClusterParameters);
       surface_clusterer_.reset(new SurfaceClusterer<PointT>(surfaceClusterParameters));
       surface_detector_->SurfaceDataSubject::attachObserver(surface_clusterer_);
-
       // initialize tracking of surfaces
       std::vector<double> surfaceTrackerParameters;
       loadSurfaceTrackerParameters(surfaceTrackerParameters);
       surface_tracker_.reset(new SurfaceTracker<PointT>(surfaceTrackerParameters));
       surface_clusterer_->SurfaceDataSubject::attachObserver(surface_tracker_);
-
       // initialize convex hull detector
       std::vector<double> convexHullParameters;
       loadConvexHullParameters(convexHullParameters);
       convex_hull_detector_.reset(new ConvexHullDetector(convexHullParameters));
       surface_tracker_->SurfaceDataSubject::attachObserver(convex_hull_detector_);
-
       // connect convex hull detector back to surfaceDetector (close the loop)
       convex_hull_detector_->SurfaceDataSubject::attachObserver(surface_detector_);
-
-      std::cout << "initialized surface detector" << std::endl;
     }
 
     if (obstacleDetectorActive)
     {
+      if (obstacle_detector_method == "EuclideanClustering") {
+        // Prepare the approximator that the detector is to use.
+        // First, the simple approximator...
+        boost::shared_ptr<ObjectApproximator<PointT> > simple_approx(
+            this->getApproximator());
+        // ...then the split strategy
+        boost::shared_ptr<SplitStrategy<PointT> > splitter(
+            this->buildSplitStrategy());
+        // ...finally, wrap those into a `SplitObjectApproximator` that is given
+        // to the detector.
+        boost::shared_ptr<ObjectApproximator<PointT> > approx(
+            new SplitObjectApproximator<PointT>(simple_approx, splitter));
+        // Prepare the base detector...
+        base_obstacle_detector_.reset(
+            new ObstacleDetector<PointT>(approx, surfaceDetectorActive));
+        this->source()->FrameDataSubject::attachObserver(base_obstacle_detector_);
+        // Smooth out the basic detector by applying a smooth detector to it
+        boost::shared_ptr<SmoothObstacleAggregator> smooth_detector(
+            new SmoothObstacleAggregator);
+        base_obstacle_detector_->FrameDataSubject::attachObserver(smooth_detector);
+        // Now the detector that is exposed via the context is a smoothed-out
+        // base detector.
+        this->detector_ = smooth_detector;
+      } else if (obstacle_detector_method == "GMM") {
+        // parse [ObstacleTracking] parameters
+        ObstacleTrackerParameters parameters;
+        parameters.enableVisualizer = toml_tree_.get<bool>("ObstacleTracking.enableVisualizer");
+        parameters.filterSSVPositions = toml_tree_.get<bool>("ObstacleTracking.filterSSVPositions");
+        parameters.voxelGridResolution = toml_tree_.get<double>("ObstacleTracking.voxelGridResolution");
+        parameters.enableCroppingPointCloudInUI = toml_tree_.get<bool>("ObstacleTracking.enableCroppingPointCloudInUI");
+        // parse [ObstacleTracking.KalmanFilter] parameters
+        parameters.kalman_SystemNoisePosition = toml_tree_.get<double>("ObstacleTracking.KalmanFilter.systemNoisePosition");
+        parameters.kalman_SystemNoiseVelocity = toml_tree_.get<double>("ObstacleTracking.KalmanFilter.systemNoiseVelocity");
+        parameters.kalman_MeasurementNoise = toml_tree_.get<double>("ObstacleTracking.KalmanFilter.measurementNoise");
+
+        boost::shared_ptr<ObstacleTracker> obstacle_tracker(new ObstacleTracker(parameters));
+        this->detector_ = obstacle_tracker;
+  #ifndef ENABLE_RECORDER
+        inlier_finder_->FrameDataSubject::attachObserver(obstacle_tracker);
+  #endif
+
+        std::cout << "initialized obstacle tracker" << std::endl;
+      } else {
+
+      }
       // Setup plane inlier finder
       std::vector<double> planeInlierFinderParameters;
       loadPlaneInlierFinderParameters(planeInlierFinderParameters);
       inlier_finder_.reset(new PlaneInlierFinder<PointT>(planeInlierFinderParameters));
       surface_detector_->FrameDataSubject::attachObserver(inlier_finder_);
 
-      // parse [ObstacleTracking] parameters
-      ObstacleTrackerParameters parameters;
-      parameters.enableVisualizer = toml_tree_.get<bool>("ObstacleTracking.enableVisualizer");
-      parameters.filterSSVPositions = toml_tree_.get<bool>("ObstacleTracking.filterSSVPositions");
-      parameters.voxelGridResolution = toml_tree_.get<double>("ObstacleTracking.voxelGridResolution");
-      parameters.enableCroppingPointCloudInUI = toml_tree_.get<bool>("ObstacleTracking.enableCroppingPointCloudInUI");
-      // parse [ObstacleTracking.KalmanFilter] parameters
-      parameters.kalman_SystemNoisePosition = toml_tree_.get<double>("ObstacleTracking.KalmanFilter.systemNoisePosition");
-      parameters.kalman_SystemNoiseVelocity = toml_tree_.get<double>("ObstacleTracking.KalmanFilter.systemNoiseVelocity");
-      parameters.kalman_MeasurementNoise = toml_tree_.get<double>("ObstacleTracking.KalmanFilter.measurementNoise");
-
-      boost::shared_ptr<ObstacleTracker> obstacle_tracker(new ObstacleTracker(parameters));
-      this->detector_ = obstacle_tracker;
-#ifndef ENABLE_RECORDER
-      inlier_finder_->FrameDataSubject::attachObserver(obstacle_tracker);
-#endif
-
-      std::cout << "initialized obstacle tracker" << std::endl;
     }
 
   }
@@ -449,39 +506,6 @@ protected:
     }
   }
 
-  virtual void initVisualizers() override
-  {
-    // NEW: Having multiple instances of visualizer is now done using the
-    //      `getVisualizer` method and storing them in the vector `visualizers_`
-
-    // OLD: Only one instance of visualizer
-    // int width = toml_tree_.find("Visualization.width")->as<int>();
-    // int height = toml_tree_.find("Visualization.height")->as<int>();
-    //
-    // if (surfaceDetectorActive && !obstacleDetectorActive)
-    // {
-    //   this->visualizers_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive, width, height));
-    //   surface_detector_->FrameDataSubject::attachObserver(this->visualizers_);
-    // }
-    // else if (obstacleDetectorActive)
-    // {
-    //   this->visualizers_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive, width, height));
-    //   this->detector_->FrameDataSubject::attachObserver(this->visualizers_);
-    // }
-    //
-    // bool viz_cloud = toml_tree_.find("Visualization.cloud")->as<bool>();
-    // if (viz_cloud) {
-    //   // TODO add relevant stuff for cloud visualization and any necessary
-    //   // observer
-    // }
-    //
-    // bool viz_rgb = toml_tree_.find("Visualization.rgb")->as<bool>();
-    // if (viz_rgb) {
-    //   // TODO add relevant stuff for RGB image visualization and any necessary
-    //   // observer
-    // }
-  }
-
 private:
   /// Helper functions for constructing parts of the pipeline.
   /**
@@ -532,10 +556,13 @@ private:
     std::cout << "visualizer.type: " << type << std::endl;
     if (type == "CameraCalibrator") {
       boost::shared_ptr<CalibratorVisualizer<PointT> > calib_visualizer(
-          new CalibratorVisualizer<PointT>());
+          new CalibratorVisualizer<PointT>(name, width, height));
       this->source()->FrameDataSubject::attachObserver(calib_visualizer);
       this->cam_calibrator()->attachCalibrationAggregator(calib_visualizer);
       return calib_visualizer;
+    } else if (type == "ObsSurfVisualizer") {
+      boost::shared_ptr<ObsSurfVisualizer> obs_surf_visualizer(
+          new ObsSurfVisualizer(name, true, false, width, height));
     }
     else {
       std::cerr << "Unknown visualizer type `" << type << "`" << std::endl;
@@ -592,12 +619,12 @@ private:
    * reference to it to make sure it doesn't get destroyed, although it is
    * never exposed to any outside clients.
    */
-  boost::shared_ptr<ObstacleDetector<PointT>> base_obstacle_detector_;
-  boost::shared_ptr<SurfaceDetector<PointT>> surface_detector_;
-  boost::shared_ptr<SurfaceClusterer<PointT>> surface_clusterer_;
-  boost::shared_ptr<SurfaceTracker<PointT>> surface_tracker_;
+  boost::shared_ptr<ObstacleDetector<PointT> > base_obstacle_detector_;
+  boost::shared_ptr<SurfaceDetector<PointT> > surface_detector_;
+  boost::shared_ptr<SurfaceClusterer<PointT> > surface_clusterer_;
+  boost::shared_ptr<SurfaceTracker<PointT> > surface_tracker_;
   boost::shared_ptr<ConvexHullDetector> convex_hull_detector_;
-  boost::shared_ptr<PlaneInlierFinder<PointT>> inlier_finder_;
+  boost::shared_ptr<PlaneInlierFinder<PointT> > inlier_finder_;
 
   bool surfaceDetectorActive;
   bool obstacleDetectorActive;
