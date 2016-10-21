@@ -32,6 +32,11 @@ type = "simple"
     b = -0.0100851
 
   [[FilteredVideoSource.filters]]
+    # The OdoTransformer knows to reference the PoseService found in the IOC
+    # container automatically
+    type = "RobotOdoTransformer"
+
+  [[FilteredVideoSource.filters]]
     type = "TruncateFilter"
     decimal_points = 2
 
