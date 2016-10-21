@@ -152,10 +152,7 @@ private:
    */
   std::vector<boost::shared_ptr<PointFilter<PointT> > > point_filters_;
 
-  /*
-  * Transform all points given in the point cloud to world coordinates.
-  */
-  void transformToWorldCoordinates(PointCloudPtr &cloud);
+  
 
   /**
   * Remove all points from the given point cloud that are too far away from Lola.

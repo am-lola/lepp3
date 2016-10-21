@@ -56,10 +56,12 @@ public:
     double center2[3] = {capsule.second().x, capsule.second().y, capsule.second().z};
     double radius = capsule.radius();
     ar::Capsule obstacle(center1, center2, radius, ar::Color(0.5,0,0.5,0.3));
+     
     // capsule was not drawn before
     if (capsule.get_meshHandle() == -1)
     {
       mesh_handle_t mh = arvis->Add(obstacle);
+      
       capsule.set_meshHandle(mh);
     }
     // update capsule
@@ -120,11 +122,15 @@ public:
     
     // create polygon object with correct color
     ar::Polygon surfPoly(points, numPoints, ar::Color(r[colorID],g[colorID],b[colorID],1));
+     
  
     // plane was not drawn before
     if (plane.get_meshHandle() == -1)
     {
       mesh_handle_t mh = arvis->Add(surfPoly);
+
+
+
       plane.set_meshHandle(mh);
     }
     // update plane

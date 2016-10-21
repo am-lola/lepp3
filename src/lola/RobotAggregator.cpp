@@ -274,6 +274,11 @@ void RobotAggregator::sendModify(SurfaceModel& surface, long frame_num)
     vertices.push_back(point.x);
     vertices.push_back(point.y);
     vertices.push_back(point.z);
+     LINFO << "RobotAggregator:"
+        << "x: " << point.x 
+        <<" y: "<< point.y 
+        << " z: " << point.z 
+        << "]";
   }
 
   VisionMessage msg = VisionMessage(SurfaceMessage::ModifyMessage(surface.id(), normal, vertices), frame_num);
