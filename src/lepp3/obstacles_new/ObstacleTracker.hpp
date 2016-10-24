@@ -6,11 +6,14 @@
 #include "lepp3/FrameData.hpp"
 #include "lepp3/obstacles_new/ObstacleTrackerState.hpp"
 #include "lepp3/obstacles_new/VoxelGrid.h"
-#include "lepp3/obstacles_new/ObstacleTrackerVisualizer.hpp"
+#include "lepp3/visualization/ObstacleTrackerVisualizer.hpp"
+#include "lepp3/GMMObstacleTrackerAggregator.hpp"
 
 #include "lepp3/util/PointCloudRecorder.hpp"
 // #include "lepp3/util/Timer.hpp"
 #include "lepp3/debug/timer.hpp"
+
+#include <am2b-arvis/ARVisualizer.hpp>
 
 #include <algorithm>
 #include <pcl/filters/voxel_grid.h>
@@ -91,33 +94,50 @@ class ObstacleTracker : public FrameDataObserver, public FrameDataSubject
 public:
 
   ObstacleTracker(const ObstacleTrackerParameters& parameters)
-    : _voxelGrid(parameters.voxelGridResolution)
-  {
+      : _voxelGrid(parameters.voxelGridResolution) {
     _parameters = parameters;
-    if (parameters.enableVisualizer)
-      _visualizer = new ObstacleTrackerVisualizer(parameters);
-
 #ifdef ENABLE_RECORDER
-    if (hasVisualizer())
-    {
-      _recorder = new PointCloudRecorder(_visualizer->getVisualizer());
+    if (hasVisualizer()) {
+      _recorder = new PointCloudRecorder(vis_handle_->getVisualizer());
       _recorder->attachObserver(boost::shared_ptr<ObstacleTracker>(this));
     }
 #endif
   }
 
-  ~ObstacleTracker()
-  {
+  ~ObstacleTracker() {
     if (_recorder != nullptr)
       delete _recorder;
-    if (_visualizer != nullptr)
-      delete _visualizer;
   }
 
+  void attachCalibrationAggregator(
+      boost::shared_ptr<GMMObstacleTrackerAggregator> aggregator) {
+    aggregators_.push_back(aggregator);
+  }
+  /**
+   * FrameDataObserver interface implementation: processes the current point cloud.
+   */
   virtual void updateFrame(FrameDataPtr frameData) override;
+  void setVisualizerHandle(
+          boost::shared_ptr<ObstacleTrackerVisualizer> vis_handle) {
 
+    vis_handle_ = vis_handle;
+  }
 private:
   ObstacleTrackerParameters _parameters;
+  boost:shared_ptr<ObstacleTrackerVisualizer> vis_handle_ = nullptr;
+  /**
+   * Tracks all attached ObstacleAggregators that wish to be notified of newly
+   * detected obstacles.
+   */
+  std::vector<boost::shared_ptr<GMMObstacleTrackerAggregator> > aggregators_;
+
+  /**
+   *
+   */
+  void ObstacleTracker::notifyTrackerData(
+        ar::PointCloudData const& cloud_data,
+        VoxelGrid const& vg,
+        TrackerVizParams::RuntimeStat stats);
 
   void initialize(const PointCloudT* pc);
   void emstep(const PointCloudT* pc, int frameNum);
@@ -134,6 +154,7 @@ private:
   void addState(const Eigen::Vector3f& mean, const Eigen::Matrix3f& covar);
   void removeState(size_t index);
   void clearStates();
+  inline bool hasVisualizer() const { return vis_handle_ != nullptr; }
 
   Vector<State> _states;
   VoxelGrid _voxelGrid;
@@ -147,9 +168,6 @@ private:
 
   // optional recorder
   PointCloudRecorder* _recorder = nullptr;
-  // optional visualizer stuff
-  inline bool hasVisualizer() const { return _visualizer != nullptr; }
-  ObstacleTrackerVisualizer* _visualizer = nullptr;
   void fillVisualizerPointCloudColors(const Eigen::MatrixXf& R, const Eigen::MatrixXi& C);
 
   typedef Eigen::Map<Eigen::MatrixXf,
@@ -651,7 +669,7 @@ void ObstacleTracker::generateSSVs(State& state, FrameDataPtr frameData) const
 void ObstacleTracker::addState(State& state)
 {
   if (hasVisualizer())
-    _visualizer->initVisData(state);
+    vis_handle_->initVisData(state);
 
   _states.push_back(state);
 }
@@ -660,13 +678,13 @@ void ObstacleTracker::addState(const Eigen::Vector3f& mean, const Eigen::Matrix3
 {
   _states.emplace_back(mean, covar);
   if (hasVisualizer())
-    _visualizer->initVisData(_states.back());
+    vis_handle_->initVisData(_states.back());
 }
 
 void ObstacleTracker::removeState(size_t index)
 {
   if (hasVisualizer())
-    _visualizer->deinitVisData(_states[index]);
+    vis_handle_->deinitVisData(_states[index]);
 
   // the old "swap with last element and pop_back" trick avoids execessive copies or linked lists
   std::swap(_states[index], _states.back());
@@ -678,7 +696,7 @@ void ObstacleTracker::clearStates()
   if (hasVisualizer())
   {
     for (size_t k = 0; k < _states.size(); k++)
-      _visualizer->deinitVisData(_states[k]);
+      vis_handle_->deinitVisData(_states[k]);
   }
 
   _states.clear();
@@ -698,13 +716,13 @@ void ObstacleTracker::updateFrame(FrameDataPtr frameData)
 
   if (hasVisualizer())
   {
-    using UserOption = ObstacleTrackerVisualizer::UserOption;
+    using UserOption = TrackerVizParams::UIOption;
     // TODO: still notify observers here?
-    if (!_visualizer->getUserOption<bool>(UserOption::EnableTracker))
-      return;
+    // if (!vis_handle_->getUserOption<bool>(UserOption::EnableTracker))
+    //   return;
 
-    _enableTightFit = _visualizer->getUserOption<bool>(UserOption::EnableTightFit);
-    _parameters.filterSSVPositions = _visualizer->getUserOption<bool>(UserOption::FilterSSVPositions);
+    _enableTightFit = vis_handle_->getUserOption<bool>(UserOption::EnableTightFit);
+    _parameters.filterSSVPositions = vis_handle_->getUserOption<bool>(UserOption::FilterSSVPositions);
   }
   else
   {
@@ -722,7 +740,7 @@ void ObstacleTracker::updateFrame(FrameDataPtr frameData)
   // downsample the point cloud
   float dsResolution = DOWNSAMPLE_RESOLUTION;
   if (hasVisualizer())
-    dsResolution = _visualizer->getUserOption<float>(ObstacleTrackerVisualizer::UserOption::DownsampleResolution);
+    dsResolution = vis_handle_->getUserOption<float>(ObstacleTrackerVisualizer::UserOption::DownsampleResolution);
 
   pcl::VoxelGrid<PointT> sor;
   sor.setInputCloud(frameData->cloudMinusSurfaces);
@@ -742,7 +760,7 @@ void ObstacleTracker::updateFrame(FrameDataPtr frameData)
     pcl::CropBox<PointT> cropBox;
     Vector4f cropBoxMin;
     Vector4f cropBoxMax;
-    _visualizer->getUserOptionCropBounds(cropBoxMin, cropBoxMax);
+    vis_handle_->getUserOptionCropBounds(cropBoxMin, cropBoxMax);
 
     cropBox.setInputCloud(cloud_filtered);
     cropBox.setMin(cropBoxMin);
@@ -760,8 +778,8 @@ void ObstacleTracker::updateFrame(FrameDataPtr frameData)
   if (hasVisualizer())
   {
     const size_t N = pc->size(); // number of points
-    if (N > _visualizerPointCloud.size())
-      _visualizerPointCloud.resize(N); // realloc only when needed
+    if (N > vis_handle_PointCloud.size())
+      vis_handle_PointCloud.resize(N); // realloc only when needed
 
     VisualizerPCMapT map(reinterpret_cast<float*>(_visualizerPointCloud.data()), 4, N);
     // copy position data to _visualizerPointCloud
@@ -808,8 +826,10 @@ void ObstacleTracker::updateFrame(FrameDataPtr frameData)
     dt = _frameTimer.duration() / 1000.0f;
   }
 
-  if (hasVisualizer())
-    _visualizer->pushStat(ObstacleTrackerVisualizer::Stat::DeltaT, dt * 1000.0f);
+  GMM::RuntimeStat runtime_stats;
+  // TODO: put a freaking explanation for the data sent through
+  // `GMMObstacleTrackerAggregator`
+  runtime_stats.DeltaT = dt * 1000.0f;
 
   _frameTimer.start();
 
@@ -835,19 +855,38 @@ void ObstacleTracker::updateFrame(FrameDataPtr frameData)
   for (auto& state : _states)
   {
     // send latest data to the visualizer
+    // TODO: change to send through aggregator
     if (hasVisualizer())
-      _visualizer->updateVisData(state);
+      vis_handle_->updateVisData(state);
   }
 
   if (hasVisualizer())
   {
-    _visualizer->visualizePointCloud(_visualizerPointCloud.data(), pc->size()); // need to use size of pc, we don't always resize _visualizerPointCloud
-    _visualizer->visualizeVoxelGrid(_voxelGrid);
-    _visualizer->pushStat(ObstacleTrackerVisualizer::Stat::MainAlgorithmTime, perfTimer.duration());
+    ar::PointCloudData cloud_data;
+    // vis_handle_->visualizePointCloud(_visualizerPointCloud.data(), pc->size()); // need to use size of pc, we don't always resize _visualizerPointCloud
+    cloud_data.pointData = reinterpret_cast<const void*>(_visualizerPointCloud.data());
+    cloud_data.numPoints = pc->size();
+
+    // vis_handle_->visualizeVoxelGrid(_voxelGrid);
+    runtime_stats.MainAlgorithmTime = perfTimer.duration();
   }
 
+  //
+  notifyTrackerData(cloud_data, _voxelGrid, runtime_stats);
   // finally, push everything to our observers
   notifyObservers(frameData);
+}
+
+void ObstacleTracker::notifyTrackerData(
+      ar::PointCloudData const& cloud_data,
+      VoxelGrid const& vg,
+      TrackerVizParams::RuntimeStat runtime_stats) {
+
+  size_t sz = aggregators_.size();
+  for (size_t i = 0; i < sz; ++i) {
+    aggregators_[i]->updateObstacleTrackingData(cloud_data, vg, runtime_stats);
+  }
+
 }
 
 void ObstacleTracker::fillVisualizerPointCloudColors(const Eigen::MatrixXf& R, const Eigen::MatrixXi& C)
@@ -855,7 +894,7 @@ void ObstacleTracker::fillVisualizerPointCloudColors(const Eigen::MatrixXf& R, c
   using namespace Eigen;
   const size_t N = R.rows();
   const size_t K = R.cols();
-  const auto colorMode = _visualizer->getUserOptionColorMode();
+  const auto colorMode = vis_handle_->getUserOptionColorMode();
   if (colorMode == ObstacleTrackerVisualizer::ColorMode_HardAssignment)
   {
     for (size_t i = 0; i < N; i++)

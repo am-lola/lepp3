@@ -8,6 +8,7 @@
 #include "lepp3/SurfaceDetector.hpp"
 #include "lepp3/SurfaceTracker.hpp"
 #include "lepp3/obstacles_new/ObstacleTracker.hpp"
+#include "lepp3/obstacles_new/GMMObstacleTrackerState.hpp"
 
 #include "deps/toml.h"
 
@@ -429,8 +430,9 @@ protected:
       } else if (obstacle_detector_method == "GMM") {
         // parse [ObstacleTracking] parameters
         ObstacleTrackerParameters parameters;
-        parameters.enableVisualizer = toml_tree_.get<bool>("ObstacleTracking.enableVisualizer");
-        parameters.filterSSVPositions = toml_tree_.get<bool>("ObstacleTracking.filterSSVPositions");
+        TrackerVizParams tracker_viz_params;
+        tracker_viz_params.enableVisualizer = toml_tree_.get<bool>("ObstacleTracking.enableVisualizer");
+        tracker_viz_params.filterSSVPositions = toml_tree_.get<bool>("ObstacleTracking.filterSSVPositions");
         parameters.voxelGridResolution = toml_tree_.get<double>("ObstacleTracking.voxelGridResolution");
         parameters.enableCroppingPointCloudInUI = toml_tree_.get<bool>("ObstacleTracking.enableCroppingPointCloudInUI");
         // parse [ObstacleTracking.KalmanFilter] parameters
@@ -509,6 +511,55 @@ protected:
 private:
   /// Helper functions for constructing parts of the pipeline.
   /**
+   * A helper function that reads all the parameters that are required by the
+   * `GMMObstacleTracker`.
+   */
+  GMM::DebugGUIParams readGMMObstacleTrackerParams(toml::Value const& v) {
+    bool const enableTracker = v.find("enable_tracker")->as<bool>();
+    bool const enableTightFit = v.find("enable_tight_fit")->as<bool>();
+    bool const drawGaussians = v.find("draw_gaussians")->as<bool>();
+    bool const drawSSVs = v.find("draw_ssv")->as<bool>();
+    bool const drawTrajectories = v.find("draw_trajectories")->as<bool>();
+    bool const drawVelocities = v.find("draw_velocities")->as<bool>();
+    bool const drawDebugValues = v.find("draw_debug_values")->as<bool>();
+    bool const drawVoxels = v.find("draw_voxels")->as<bool>();
+
+    int const trajectoryLength = v.find("trajectory_length")->as<int>();
+    // TODO decide how to read ar::color info from config file
+    // ar::Color gaussianColor;
+    // ar::Color ssvColor;
+    float const downsampleResolution = v.find("downsample_res")->as<float>();
+
+    GMM::ColorMode colorMode;
+    if (v.find("color_mode")) {
+      std::string const m = v.find("color_mode")->as<std::string>();
+
+      if (m == "NONE") {
+        colorMode = GMM::ColorMode::NONE;
+      } else if (m == "SOFT_ASSIGNMENT") {
+        colorMode = GMM::ColorMode::SOFT_ASSIGNMENT;
+      } else if (m == "HARD_ASSIGNMENT") {
+        colorMode = GMM::ColorMode::HARD_ASSIGNMENT;
+      } // TODO set the last missing value in GMM::ColorMode
+    }
+
+    GMM::DebugGUIParams params;
+    params.enableTracker = enableTracker;
+    params.enableTightFit = enableTightFit;
+    params.drawGaussians = drawGaussians;
+    params.drawSSVs = drawSSVs;
+    params.drawTrajectories = drawTrajectories;
+    params.drawVelocities = drawVelocities;
+    params.drawDebugValues = drawDebugValues;
+    params.drawVoxels = drawVoxels;
+    params.trajectoryLength = trajectoryLength;
+    params.downsampleResolution = downsampleResolution;
+    params.colorMode = colorMode;
+    // TODO add missing values gassuanColor, ssvColor
+
+    return params;
+  }
+  /**
    * A helper function that constructs the next `PointFilter` instance,
    * as defined in the following lines of the config file.
    * If the lines are invalid, an exception is thrown.
@@ -563,6 +614,20 @@ private:
     } else if (type == "ObsSurfVisualizer") {
       boost::shared_ptr<ObsSurfVisualizer> obs_surf_visualizer(
           new ObsSurfVisualizer(name, true, false, width, height));
+      // TODO finish up the init and return the current visualizer instance.
+    } else if (type == "GMMTrackingVisualizer") {
+      // TODO read all the necessary parameters from the config file.
+      bool const debugGUI = v.find("debugGUI")->as<bool>();
+      // Set default values for GUI Debug parameters.
+      GMM::DebugGUIParams d_gui_params;
+      // If there are debug parameters available in the config, get 'em
+      if(debugGUI) {
+        toml::Value const* debug_gui = v.find("debugGUI");
+
+        d_gui_params = readGMMObstacleTrackerParams(debug_gui);
+      }
+      return boost::shared_ptr<ObstacleTrackerVisualizer>(
+          new ObstacleTrackerVisualizer(name, width, height, d_gui_params));
     }
     else {
       std::cerr << "Unknown visualizer type `" << type << "`" << std::endl;

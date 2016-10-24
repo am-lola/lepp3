@@ -8,13 +8,70 @@
 namespace lepp
 {
 
+namespace GMM {
+  enum ColorMode {
+    NONE = 0,
+    SOFT_ASSIGNMENT = 1,
+    HARD_ASSIGNMENT = 2,
+    NR_ITEMS = 3, // TODO fix this dirty hack to keep # of modes.
+  };
+
+  struct RuntimeStat {
+    // ctor
+    RuntimeStat()
+        : MainAlgorithmTime(0.0),
+          DeltaT(0.0) {}
+    // member variables
+    double MainAlgorithmTime;
+    double DeltaT;
+  };
+
+  struct DebugGUIParams {
+    // ctor
+    DebugGUIParams()
+        : enableTracker(false),
+          enableTightFit(false),
+          drawGaussians(false),
+          drawSSVs(false),
+          drawTrajectories(false),
+          drawVelocities(false),
+          drawDebugValues(false),
+          drawVoxels(false),
+          colorMode(false),
+          trajectoryLength(128),
+          gaussianColor(false),
+          ssvColor(false),
+          downsampleResolution(0.03f) {}
+    // member variables
+    bool enableTracker;
+    bool enableTightFit;
+    bool drawGaussians;
+    bool drawSSVs;
+    bool drawTrajectories;
+    bool drawVelocities;
+    bool drawDebugValues;
+    bool drawVoxels;
+    ColorMode colorMode;
+    // bool filterSSVPositions; // This is not necssary here. Already defined.
+    int trajectoryLength;
+    ar::Color gaussianColor;
+    ar::Color ssvColor;
+    float downsampleResolution;
+  }; // struct debugGUI
+
+} // namespace GMM
+
 // parameters passed externally (e.g. via a config file)
-struct ObstacleTrackerParameters
-{
+struct GMMObstacleTrackerParams {
   bool enableVisualizer;
   bool filterSSVPositions;
   float voxelGridResolution;
   bool enableCroppingPointCloudInUI;
+
+  struct Vis {
+    bool filter_ssv_positions;
+    bool enable_crop_cloud_in_ui;
+  };
 
   // sigma squared of uniform gaussian noise (these go into the diagonal of Σ)
   float kalman_SystemNoisePosition = 0.01f;
