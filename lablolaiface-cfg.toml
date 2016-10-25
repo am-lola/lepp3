@@ -33,10 +33,9 @@ type = "simple"
     b = -0.0100851
 
   [[FilteredVideoSource.filters]]
-      # The OdoTransformer knows to reference the PoseService found in the IOC
-      # container automatically
-      type = "RobotOdoTransformer"
-
+    # The OdoTransformer knows to reference the PoseService found in the IOC
+    # container automatically
+    type = "RobotOdoTransformer"
 
   [[FilteredVideoSource.filters]]
     type = "TruncateFilter"
@@ -56,7 +55,7 @@ type = "ObstacleDetector"
 # aggregator to send data to QNX
 [[aggregators]]
 type = "RobotAggregator"
-frame_rate = 300
+update_frequency= 300
 data = [ "obstacles", "surfaces", "images" ]
   [[aggregators.RobotService]]
   target="Qnx"
