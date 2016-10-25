@@ -59,6 +59,10 @@ private:
 	double getAngle(const pcl::ModelCoefficients &coeffs1, 
 		const pcl::ModelCoefficients &coeffs2);
 
+	
+	//Previous plane coeffs are only used for tricking ransac, comment out for trial with the rest of the relevant part
+	//std::vector<pcl::ModelCoefficients> previous_plane_coeffs;
+
 	/**
 	* Instance used to extract the planes from the input cloud.
 	*/
@@ -155,6 +159,42 @@ void SurfaceFinder<PointT>::findPlanes(
 	// Remove planes until we reach x % of the original number of points
 	const size_t pointThreshold = MIN_FILTER_PERCENTAGE * cloud_filtered->size();
 
+    /************ TRICK RANSAC HERE ************Comment out with previous plane coeff variable above for trial********/
+    /*
+    std::cout << "Tricking RANSAC, original size: " << cloud_filtered->points.size() << std::endl;
+    std::cout << "Previous Coeffs: " << previous_plane_coeffs.size() << std::endl;
+    for (size_t i = 0; i < previous_plane_coeffs.size(); i++)
+    {
+    	PointCloudPtr currentPlane(new PointCloudT());
+		// PointCloudPtr plane_points (new pcl::PointCloud<PointT>);
+		pcl::PointIndices::Ptr plane_indices(new pcl::PointIndices);
+		pcl::ModelOutlierRemoval<PointT> plane_filter(true);
+		plane_filter.setModelCoefficients (previous_plane_coeffs[i]);
+		plane_filter.setThreshold (0.04);
+		plane_filter.setModelType (pcl::SACMODEL_PLANE);
+		plane_filter.setInputCloud (cloud_filtered);
+		plane_filter.filter (plane_indices->indices);
+
+		if (plane_indices->indices.size() < 1000)
+			continue;
+
+		std::cout << "Plane " << i << ": " << plane_indices->indices.size() << " inliers" << std::endl;
+
+		pcl::ExtractIndices<PointT> extract;
+		extract.setIndices(plane_indices);
+		extract.setInputCloud(cloud_filtered);
+		extract.setNegative(false);
+		extract.filter(*currentPlane);
+
+		extract.setNegative(true);
+		extract.filter(*cloud_filtered);
+
+		classify(currentPlane, previous_plane_coeffs[i], planes, planeCoefficients);
+	}
+	std::cout << "Tricking RANSAC, filtered size: " << cloud_filtered->points.size() << "/" << pointThreshold << std::endl;
+    */
+    //******************TRICK RANSAC**************************/
+    
 	bool first=true;
 	while (cloud_filtered->size() > pointThreshold) {
 		// Try to obtain the next plane...
