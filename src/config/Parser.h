@@ -156,10 +156,10 @@ protected:
   virtual void addObservers() {}
   virtual void addAggregators() {}
 
-  /// Initialize 'ObstacleDetector' and 'SurfaceDetector' if necessary.
-  virtual void initSurfaceAndObstacleDetector(
-        std::string const& obstacle_detector_method) = 0;
-
+  /// Initialize and 'SurfaceDetector' if necessary.
+  virtual void initSurfaceDetector() = 0;
+  /// Initialize and 'ObstacleDetector' if necessary.
+  virtual void initObstacleDetector(toml::Value const&) = 0;
   /// Initialize the `VideoRecorder` module. Must set the `recorder_` member.
   virtual void initRecorder() = 0;
 

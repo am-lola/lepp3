@@ -37,6 +37,7 @@ public:
       : file_name_(file_name),
         parser_(toml::parse(file_name)),
         toml_tree_(parser_.value),
+        ground_removal_(false),
         surfaceDetectorActive(false),
         obstacleDetectorActive(false) {
 
@@ -239,11 +240,20 @@ protected:
       if (type == "ObstacleDetector")
       {
         obstacleDetectorActive = true;
-        obstacle_detector_method = v.find("method")->as<std::string>();
+        // Set up the basic surface detector for ground removal, if not already
+        // initialized.
+        if (!ground_removal_)
+          initGroundRemoval();
+        initObstacleDetector(v);
       }
       else if (type == "SurfaceDetector")
       {
         surfaceDetectorActive = true;
+        // Set up the basic surface detector for ground removal, if not already
+        // initialized.
+        if (!ground_removal_)
+          initGroundRemoval();
+        initSurfaceDetector();
       }
       else if (type == "Recorder")
       {
@@ -274,7 +284,7 @@ protected:
     }
     // Initialize obstacle and surface detector if necessary
     if (surfaceDetectorActive || obstacleDetectorActive) {
-      initSurfaceAndObstacleDetector(obstacle_detector_method);
+      initSurfaceDetector();
     }
   }
 
@@ -372,92 +382,78 @@ protected:
   }
 
 
-  virtual void initSurfaceAndObstacleDetector(
-        std::string const& obstacle_detector_method) override
-  {
-    // surfaceDetector is always active because ground is always removed
-    std::vector<double> surfFinderParameters;
-    loadSurfaceFinderParameters(surfFinderParameters);
-    surface_detector_.reset(new SurfaceDetector<PointT>(surfaceDetectorActive,surfFinderParameters));
-    this->source()->FrameDataSubject::attachObserver(surface_detector_);
+  /**
+   * Initiailizes the obstacle detector.
+   */
+  virtual void initObstacleDetector(toml::Value const& v) {
 
-    if (surfaceDetectorActive)
-    {
-      // initialize surface clusterer
-      std::vector<double> surfaceClusterParameters;
-      loadSurfaceClustererParameters(surfaceClusterParameters);
-      surface_clusterer_.reset(new SurfaceClusterer<PointT>(surfaceClusterParameters));
-      surface_detector_->SurfaceDataSubject::attachObserver(surface_clusterer_);
-      // initialize tracking of surfaces
-      std::vector<double> surfaceTrackerParameters;
-      loadSurfaceTrackerParameters(surfaceTrackerParameters);
-      surface_tracker_.reset(new SurfaceTracker<PointT>(surfaceTrackerParameters));
-      surface_clusterer_->SurfaceDataSubject::attachObserver(surface_tracker_);
-      // initialize convex hull detector
-      std::vector<double> convexHullParameters;
-      loadConvexHullParameters(convexHullParameters);
-      convex_hull_detector_.reset(new ConvexHullDetector(convexHullParameters));
-      surface_tracker_->SurfaceDataSubject::attachObserver(convex_hull_detector_);
-      // connect convex hull detector back to surfaceDetector (close the loop)
-      convex_hull_detector_->SurfaceDataSubject::attachObserver(surface_detector_);
+    // Setup plane inlier finder
+    // TODO: inspect why they had this plane inlier finder right before the
+    // obstacle detector.
+    std::vector<double> planeInlierFinderParameters;
+    loadPlaneInlierFinderParameters(planeInlierFinderParameters);
+    inlier_finder_.reset(new PlaneInlierFinder<PointT>(planeInlierFinderParameters));
+    surface_detector_->FrameDataSubject::attachObserver(inlier_finder_);
+
+    method = v.find("method")->as<std::string>();
+    if (method == "EuclideanClustering") {
+      // Prepare the approximator that the detector is to use.
+      // First, the simple approximator...
+      boost::shared_ptr<ObjectApproximator<PointT> > simple_approx(
+          this->getApproximator());
+      // ...then the split strategy
+      boost::shared_ptr<SplitStrategy<PointT> > splitter(
+          this->buildSplitStrategy());
+      // ...finally, wrap those into a `SplitObjectApproximator` that is given
+      // to the detector.
+      boost::shared_ptr<ObjectApproximator<PointT> > approx(
+          new SplitObjectApproximator<PointT>(simple_approx, splitter));
+      // Prepare the base detector...
+      base_obstacle_detector_.reset(
+          new ObstacleDetector<PointT>(approx, surfaceDetectorActive));
+      this->source()->FrameDataSubject::attachObserver(base_obstacle_detector_);
+      // Smooth out the basic detector by applying a smooth detector to it
+      boost::shared_ptr<SmoothObstacleAggregator> smooth_detector(
+          new SmoothObstacleAggregator);
+      base_obstacle_detector_->FrameDataSubject::attachObserver(smooth_detector);
+      // Now the detector that is exposed via the context is a smoothed-out
+      // base detector.
+      this->detector_ = smooth_detector;
+    } else if (method == "GMM") {
+      // parse [ObstacleTracking] parameters
+      GMM::ObstacleTrackerParams params = readGMMObstacleTrackerParams();
+
+      boost::shared_ptr<ObstacleTracker> obstacle_tracker(new ObstacleTracker(params));
+      this->detector_ = obstacle_tracker;
+    #ifndef ENABLE_RECORDER
+      inlier_finder_->FrameDataSubject::attachObserver(obstacle_tracker);
+    #endif
+
+      std::cout << "initialized obstacle tracker" << std::endl;
+    } else {
+      std::cerr << "Unknown filter type `" << type << "`" << std::endl;
+      throw "Unknown filter type";
     }
+  }
 
-    if (obstacleDetectorActive)
-    {
-      if (obstacle_detector_method == "EuclideanClustering") {
-        // Prepare the approximator that the detector is to use.
-        // First, the simple approximator...
-        boost::shared_ptr<ObjectApproximator<PointT> > simple_approx(
-            this->getApproximator());
-        // ...then the split strategy
-        boost::shared_ptr<SplitStrategy<PointT> > splitter(
-            this->buildSplitStrategy());
-        // ...finally, wrap those into a `SplitObjectApproximator` that is given
-        // to the detector.
-        boost::shared_ptr<ObjectApproximator<PointT> > approx(
-            new SplitObjectApproximator<PointT>(simple_approx, splitter));
-        // Prepare the base detector...
-        base_obstacle_detector_.reset(
-            new ObstacleDetector<PointT>(approx, surfaceDetectorActive));
-        this->source()->FrameDataSubject::attachObserver(base_obstacle_detector_);
-        // Smooth out the basic detector by applying a smooth detector to it
-        boost::shared_ptr<SmoothObstacleAggregator> smooth_detector(
-            new SmoothObstacleAggregator);
-        base_obstacle_detector_->FrameDataSubject::attachObserver(smooth_detector);
-        // Now the detector that is exposed via the context is a smoothed-out
-        // base detector.
-        this->detector_ = smooth_detector;
-      } else if (obstacle_detector_method == "GMM") {
-        // parse [ObstacleTracking] parameters
-        ObstacleTrackerParameters parameters;
-        TrackerVizParams tracker_viz_params;
-        tracker_viz_params.enableVisualizer = toml_tree_.get<bool>("ObstacleTracking.enableVisualizer");
-        tracker_viz_params.filterSSVPositions = toml_tree_.get<bool>("ObstacleTracking.filterSSVPositions");
-        parameters.voxelGridResolution = toml_tree_.get<double>("ObstacleTracking.voxelGridResolution");
-        parameters.enableCroppingPointCloudInUI = toml_tree_.get<bool>("ObstacleTracking.enableCroppingPointCloudInUI");
-        // parse [ObstacleTracking.KalmanFilter] parameters
-        parameters.kalman_SystemNoisePosition = toml_tree_.get<double>("ObstacleTracking.KalmanFilter.systemNoisePosition");
-        parameters.kalman_SystemNoiseVelocity = toml_tree_.get<double>("ObstacleTracking.KalmanFilter.systemNoiseVelocity");
-        parameters.kalman_MeasurementNoise = toml_tree_.get<double>("ObstacleTracking.KalmanFilter.measurementNoise");
-
-        boost::shared_ptr<ObstacleTracker> obstacle_tracker(new ObstacleTracker(parameters));
-        this->detector_ = obstacle_tracker;
-  #ifndef ENABLE_RECORDER
-        inlier_finder_->FrameDataSubject::attachObserver(obstacle_tracker);
-  #endif
-
-        std::cout << "initialized obstacle tracker" << std::endl;
-      } else {
-
-      }
-      // Setup plane inlier finder
-      std::vector<double> planeInlierFinderParameters;
-      loadPlaneInlierFinderParameters(planeInlierFinderParameters);
-      inlier_finder_.reset(new PlaneInlierFinder<PointT>(planeInlierFinderParameters));
-      surface_detector_->FrameDataSubject::attachObserver(inlier_finder_);
-
-    }
-
+  virtual void initSurfaceDetector() override {
+    // initialize surface clusterer
+    std::vector<double> surfaceClusterParameters;
+  loadSurfaceClustererParameters(surfaceClusterParameters);
+    surface_clusterer_.reset(new SurfaceClusterer<PointT>(surfaceClusterParameters));
+    surface_detector_->SurfaceDataSubject::attachObserver(surface_clusterer_);
+    // initialize tracking of surfaces
+    std::vector<double> surfaceTrackerParameters;
+    loadSurfaceTrackerParameters(surfaceTrackerParameters);
+    surface_tracker_.reset(new SurfaceTracker<PointT>(surfaceTrackerParameters));
+    surface_clusterer_->SurfaceDataSubject::attachObserver(surface_tracker_);
+    // initialize convex hull detector
+    std::vector<double> convexHullParameters;
+    loadConvexHullParameters(convexHullParameters);
+    convex_hull_detector_.reset(new ConvexHullDetector(convexHullParameters));
+    surface_tracker_->SurfaceDataSubject::attachObserver(convex_hull_detector_);
+    // connect convex hull detector back to surfaceDetector (close the loop)
+    convex_hull_detector_->SurfaceDataSubject::attachObserver(surface_detector_);
   }
 
 
@@ -514,7 +510,7 @@ private:
    * A helper function that reads all the parameters that are required by the
    * `GMMObstacleTracker`.
    */
-  GMM::DebugGUIParams readGMMObstacleTrackerParams(toml::Value const& v) {
+  GMM::DebugGUIParams readGMMDebugGuiParams(toml::Value const& v) {
     bool const enableTracker = v.find("enable_tracker")->as<bool>();
     bool const enableTightFit = v.find("enable_tight_fit")->as<bool>();
     bool const drawGaussians = v.find("draw_gaussians")->as<bool>();
@@ -558,6 +554,29 @@ private:
     // TODO add missing values gassuanColor, ssvColor
 
     return params;
+  }
+
+  GMM::ObstacleTrackerParams readGMMObstacleTrackerParams() {
+    toml::Value const& v = toml_tree_.find("GMMObstacleDetectorParams");
+    GMM::ObstacleTrackerParams params;
+    params.filterSSVPositions = v.find("filter_ssv_position")->as<bool>();
+    params.voxelGridResolution = v.find("ObstacleTracking.voxel_grid_resolution")->as<float>();
+    params.kalman_SystemNoisePosition = v.find("kalman_system_noise_position")->as<float>();
+    params.kalman_SystemNoiseVelocity = v.find("kalman_system_noise_velocity")->as<float>();
+    params.kalman_MeasurementNoise = v.find("kalman_measurement_noise")->as<float>();
+
+    return params;
+
+  }
+
+  void initGroundRemoval() {
+    // A basic surfaceDetector is ALWAYS active because ground is always removed
+    std::vector<double> surfFinderParameters;
+    loadSurfaceFinderParameters(surfFinderParameters);
+    surface_detector_.reset(new SurfaceDetector<PointT>(surfaceDetectorActive,surfFinderParameters));
+    this->source()->FrameDataSubject::attachObserver(surface_detector_);
+
+    ground_removal_ = true;
   }
   /**
    * A helper function that constructs the next `PointFilter` instance,
@@ -624,7 +643,7 @@ private:
       if(debugGUI) {
         toml::Value const* debug_gui = v.find("debugGUI");
 
-        d_gui_params = readGMMObstacleTrackerParams(debug_gui);
+        d_gui_params = readGMMDebugGuiParams(debug_gui);
       }
       return boost::shared_ptr<ObstacleTrackerVisualizer>(
           new ObstacleTrackerVisualizer(name, width, height, d_gui_params));
@@ -693,6 +712,7 @@ private:
 
   bool surfaceDetectorActive;
   bool obstacleDetectorActive;
+  bool ground_removal_;
 };
 
 #endif
