@@ -145,6 +145,8 @@ public:
 
     type_id_ = 0;
     radius_ = sphere.radius();
+
+    std::cout << "SPHERE: [" << coefs_[0] << ", " << coefs_[1] << ", " << coefs_[2] << "]" << std::endl;
   }
 
   void visitCapsule(CapsuleModel& capsule) {
@@ -158,6 +160,8 @@ public:
 
     type_id_ = 1;
     radius_ = capsule.radius();
+    std::cout << "CAPSULE: [" << coefs_[0] << ", " << coefs_[1] << ", " << coefs_[2] << "], [" 
+                              << coefs_[3] << ", " << coefs_[4] << ", " << coefs_[5] << "]" << std::endl;
   }
 
   std::vector<double> const& coefs() const { return coefs_; }
