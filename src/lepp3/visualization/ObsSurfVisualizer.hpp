@@ -3,11 +3,11 @@
 
 #include "lepp3/FrameData.hpp"
 #include "lepp3/Typedefs.hpp"
+#include "lepp3/visualization/BaseVisualizer.hpp"
 #include "lepp3/models/ObjectModel.h"
 #include "lepp3/models/SurfaceModel.h"
 #include "lepp3/CalibrationAggregator.hpp"
 
-#include <am2b-arvis/ARVisualizer.hpp>
 #include <vector>
 #include <algorithm>
 #include <iostream>
@@ -168,14 +168,16 @@ const int SurfaceDrawer::g[6] = {  0,   0, 255,   0, 255, 255};
  * detection.
  */
 
-// TODO: Decide whether this should be a template-based class.
-class ObsSurfVisualizer
-    : public BaseVisualizer {
+// TODO: [Sahand] Decide whether this should be a template-based class.
+//       [Sahand] (My opinion): It can't be. ARVisualizer has its own point
+//                type defined, and it'd be tricky to compare it with PCL point
+//                types.
+class ObsSurfVisualizer : public BaseVisualizer {
 
 public:
 	ObsSurfVisualizer(std::string const& name = "lepp3",
-                    bool visualizeSurfaces = true,
                     bool visualizeObstacles = false,
+                    bool visualizeSurfaces = true,
                     int width = 1024, int height = 768)
       : BaseVisualizer(name, width, height),
         show_surfaces_(visualizeSurfaces),
