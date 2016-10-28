@@ -17,6 +17,7 @@
 #include "lepp3/FrameData.hpp"
 #include "lepp3/RGBData.hpp"
 #include "lepp3/PlaneInlierFinder.hpp"
+#include "lepp3/GMMObstacleTracker.hpp"
 
 #include "lepp3/visualization/BaseVisualizer.hpp"
 #include "lepp3/visualization/Visualizer.hpp"
@@ -159,7 +160,7 @@ protected:
   /// Initialize and 'SurfaceDetector' if necessary.
   virtual void initSurfaceDetector() = 0;
   /// Initialize and 'ObstacleDetector' if necessary.
-  virtual void initObstacleDetector(toml::Value const&) = 0;
+  virtual void initObstacleDetector(std::string const&) = 0;
   /// Initialize the `VideoRecorder` module. Must set the `recorder_` member.
   virtual void initRecorder() = 0;
 

@@ -7,8 +7,8 @@
 #include "Parser.h"
 #include "lepp3/SurfaceDetector.hpp"
 #include "lepp3/SurfaceTracker.hpp"
-#include "lepp3/obstacles_new/ObstacleTracker.hpp"
-#include "lepp3/obstacles_new/GMMObstacleTrackerState.hpp"
+#include "lepp3/GMMObstacleTracker.hpp"
+#include "lepp3/GMMObstacleTrackerState.hpp"
 
 #include "deps/toml.h"
 
@@ -229,8 +229,6 @@ protected:
     if (!available)
       return;
     const toml::Array& obs_arr = available->as<toml::Array>();
-    // Value holding the name of the method for (if available) obstacle detection
-    std::string obstacle_detector_method;
     // Iterate though all the available observer entries in the config file and
     // set them up accordingly.
     for (const toml::Value& v : obs_arr)
@@ -243,8 +241,9 @@ protected:
         // Set up the basic surface detector for ground removal, if not already
         // initialized.
         if (!ground_removal_)
-          initGroundRemoval();
-        initObstacleDetector(v);
+          initSurfaceFinder();
+        std::string const method = v.find("method")->as<std::string>();
+        initObstacleDetector(method);
       }
       else if (type == "SurfaceDetector")
       {
@@ -252,7 +251,7 @@ protected:
         // Set up the basic surface detector for ground removal, if not already
         // initialized.
         if (!ground_removal_)
-          initGroundRemoval();
+          initSurfaceFinder();
         initSurfaceDetector();
       }
       else if (type == "Recorder")
@@ -385,17 +384,21 @@ protected:
   /**
    * Initiailizes the obstacle detector.
    */
-  virtual void initObstacleDetector(toml::Value const& v) {
+  virtual void initObstacleDetector(std::string const& method) {
 
     // Setup plane inlier finder
-    // TODO: inspect why they had this plane inlier finder right before the
-    // obstacle detector.
+    // TODO: [Sahand] There's an ambiguity here. There's the `initSurfaceFinder`
+    //       which is initialized regardless of having a `SurfaceDetector` or
+    //       `ObstacleDetector`, and then there is the following 4 lines. Inspect
+    //       why they had this plane inlier finder right before the obstacle
+    //       detector. Does it mean the `PlaneInlierFinder` tries to remove all
+    //       those surfaces found by the `initSurfaceFinder` to end of with only
+    //       obstacles? Or is it a redundant step?
     std::vector<double> planeInlierFinderParameters;
     loadPlaneInlierFinderParameters(planeInlierFinderParameters);
     inlier_finder_.reset(new PlaneInlierFinder<PointT>(planeInlierFinderParameters));
     surface_detector_->FrameDataSubject::attachObserver(inlier_finder_);
 
-    method = v.find("method")->as<std::string>();
     if (method == "EuclideanClustering") {
       // Prepare the approximator that the detector is to use.
       // First, the simple approximator...
@@ -423,7 +426,7 @@ protected:
       // parse [ObstacleTracking] parameters
       GMM::ObstacleTrackerParams params = readGMMObstacleTrackerParams();
 
-      boost::shared_ptr<ObstacleTracker> obstacle_tracker(new ObstacleTracker(params));
+      boost::shared_ptr<GMMObstacleTracker> obstacle_tracker(new GMMObstacleTracker(params));
       this->detector_ = obstacle_tracker;
     #ifndef ENABLE_RECORDER
       inlier_finder_->FrameDataSubject::attachObserver(obstacle_tracker);
@@ -431,8 +434,8 @@ protected:
 
       std::cout << "initialized obstacle tracker" << std::endl;
     } else {
-      std::cerr << "Unknown filter type `" << type << "`" << std::endl;
-      throw "Unknown filter type";
+      std::cerr << "Unknown obstacle detector method`" << method << "`" << std::endl;
+      throw "Unknown obstacle detector method";
     }
   }
 
@@ -510,25 +513,25 @@ private:
    * A helper function that reads all the parameters that are required by the
    * `GMMObstacleTracker`.
    */
-  GMM::DebugGUIParams readGMMDebugGuiParams(toml::Value const& v) {
-    bool const enableTracker = v.find("enable_tracker")->as<bool>();
-    bool const enableTightFit = v.find("enable_tight_fit")->as<bool>();
-    bool const drawGaussians = v.find("draw_gaussians")->as<bool>();
-    bool const drawSSVs = v.find("draw_ssv")->as<bool>();
-    bool const drawTrajectories = v.find("draw_trajectories")->as<bool>();
-    bool const drawVelocities = v.find("draw_velocities")->as<bool>();
-    bool const drawDebugValues = v.find("draw_debug_values")->as<bool>();
-    bool const drawVoxels = v.find("draw_voxels")->as<bool>();
+  GMM::DebugGUIParams readGMMDebugGuiParams(toml::Value const* v) {
+    bool const enableTracker = v->find("enable_tracker")->as<bool>();
+    bool const enableTightFit = v->find("enable_tight_fit")->as<bool>();
+    bool const drawGaussians = v->find("draw_gaussians")->as<bool>();
+    bool const drawSSVs = v->find("draw_ssv")->as<bool>();
+    bool const drawTrajectories = v->find("draw_trajectories")->as<bool>();
+    bool const drawVelocities = v->find("draw_velocities")->as<bool>();
+    bool const drawDebugValues = v->find("draw_debug_values")->as<bool>();
+    bool const drawVoxels = v->find("draw_voxels")->as<bool>();
 
-    int const trajectoryLength = v.find("trajectory_length")->as<int>();
+    int const trajectoryLength = v->find("trajectory_length")->as<int>();
     // TODO decide how to read ar::color info from config file
     // ar::Color gaussianColor;
     // ar::Color ssvColor;
-    float const downsampleResolution = v.find("downsample_res")->as<float>();
+    float const downsampleResolution = static_cast<float>(v->find("downsample_res")->as<double>());
 
     GMM::ColorMode colorMode;
-    if (v.find("color_mode")) {
-      std::string const m = v.find("color_mode")->as<std::string>();
+    if (v->find("color_mode")) {
+      std::string const m = v->find("color_mode")->as<std::string>();
 
       if (m == "NONE") {
         colorMode = GMM::ColorMode::NONE;
@@ -557,19 +560,20 @@ private:
   }
 
   GMM::ObstacleTrackerParams readGMMObstacleTrackerParams() {
-    toml::Value const& v = toml_tree_.find("GMMObstacleDetectorParams");
+    toml::Value const* v = toml_tree_.find("GMMObstacleDetectorParams");
     GMM::ObstacleTrackerParams params;
-    params.filterSSVPositions = v.find("filter_ssv_position")->as<bool>();
-    params.voxelGridResolution = v.find("ObstacleTracking.voxel_grid_resolution")->as<float>();
-    params.kalman_SystemNoisePosition = v.find("kalman_system_noise_position")->as<float>();
-    params.kalman_SystemNoiseVelocity = v.find("kalman_system_noise_velocity")->as<float>();
-    params.kalman_MeasurementNoise = v.find("kalman_measurement_noise")->as<float>();
+    params.enableTightFit = v->find("enable_tight_fit")->as<bool>();
+    params.filterSSVPositions = v->find("filter_ssv_position")->as<bool>();
+    params.voxelGridResolution = v->find("ObstacleTracking.voxel_grid_resolution")->as<double>();
+    params.kalman_SystemNoisePosition = v->find("kalman_system_noise_position")->as<double>();
+    params.kalman_SystemNoiseVelocity = v->find("kalman_system_noise_velocity")->as<double>();
+    params.kalman_MeasurementNoise = v->find("kalman_measurement_noise")->as<double>();
 
     return params;
 
   }
 
-  void initGroundRemoval() {
+  void initSurfaceFinder() {
     // A basic surfaceDetector is ALWAYS active because ground is always removed
     std::vector<double> surfFinderParameters;
     loadSurfaceFinderParameters(surfFinderParameters);
@@ -631,9 +635,19 @@ private:
       this->cam_calibrator()->attachCalibrationAggregator(calib_visualizer);
       return calib_visualizer;
     } else if (type == "ObsSurfVisualizer") {
-      boost::shared_ptr<ObsSurfVisualizer> obs_surf_visualizer(
-          new ObsSurfVisualizer(name, true, false, width, height));
-      // TODO finish up the init and return the current visualizer instance.
+      // TODO: [Sahand] decide whether to define the following two variables.
+      //       We already have `surfaceDetectorActive` and `obstacleDetectorActive`
+      //       which are set according to the availability of their components.
+      //       (Reason to have it here as well): There might be the case where
+      //       we want to run all of the components, but only visualizing some
+      //       of them.
+      bool show_obstacles = false;
+      bool show_surfaces = false;
+      show_obstacles = v.find("show_obstacles")->as<bool>();
+      show_surfaces = v.find("show_surfaces")->as<bool>();
+
+      return boost::shared_ptr<ObsSurfVisualizer> (
+          new ObsSurfVisualizer(name, show_obstacles, show_surfaces, width, height));
     } else if (type == "GMMTrackingVisualizer") {
       // TODO read all the necessary parameters from the config file.
       bool const debugGUI = v.find("debugGUI")->as<bool>();
@@ -646,7 +660,7 @@ private:
         d_gui_params = readGMMDebugGuiParams(debug_gui);
       }
       return boost::shared_ptr<ObstacleTrackerVisualizer>(
-          new ObstacleTrackerVisualizer(name, width, height, d_gui_params));
+          new ObstacleTrackerVisualizer(d_gui_params, name, width, height));
     }
     else {
       std::cerr << "Unknown visualizer type `" << type << "`" << std::endl;
