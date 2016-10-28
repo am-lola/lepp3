@@ -17,17 +17,21 @@ template<class PointT>
 class SurfaceClusterer : public SurfaceDataObserver, public SurfaceDataSubject
 {
 public:
-    SurfaceClusterer(std::vector<double> &clusterParameters) : 
+    SurfaceClusterer(std::vector<double> &clusterParameters) :
     	CLUSTER_TOLERANCE(clusterParameters[0]),
     	MIN_CLUSTER_SIZE(clusterParameters[1]),
-    	VOXEL_SIZE_X(clusterParameters[2]),
-    	VOXEL_SIZE_Y(clusterParameters[3]),
-    	VOXEL_SIZE_Z(clusterParameters[4])
+    	COARSE_VOXEL_SIZE_X(clusterParameters[2]),
+    	COARSE_VOXEL_SIZE_Y(clusterParameters[3]),
+    	COARSE_VOXEL_SIZE_Z(clusterParameters[4]),
+    	FINE_VOXEL_SIZE_X(clusterParameters[5]),
+    	FINE_VOXEL_SIZE_Y(clusterParameters[6]),
+    	FINE_VOXEL_SIZE_Z(clusterParameters[7]),
+    	FINE_COARSE_LIMIT(clusterParameters[8])
     {}
 
     /**
-    * Cluster the given surfaces into planes. Store the found surfaces and surface model 
-    * coefficients in 'surfaces' and 'surfaceCoefficients'. Subtract the found surfaces 
+    * Cluster the given surfaces into planes. Store the found surfaces and surface model
+    * coefficients in 'surfaces' and 'surfaceCoefficients'. Subtract the found surfaces
     * from the input cloud and store the remaining cloud in 'cloudMinusSurfaces'.
     */
 	virtual void updateSurfaces(SurfaceDataPtr surfaceData);
@@ -38,12 +42,12 @@ private:
 	* Returns a vector where each element represents the pcl::PointIndices
 	* instance representing the corresponding cluster.
 	*/
-    void getSurfaceClusters(PointCloudPtr const& cloud, 
+    void getSurfaceClusters(PointCloudPtr const& cloud,
     	std::vector<pcl::PointIndices> &cluster_indices);
 
 	/**
 	* A plane might contain several non-connected planes that do not correspond
-	* to the same surface. Thus, the planes are clustered into seperate surfaces 
+	* to the same surface. Thus, the planes are clustered into seperate surfaces
 	* in this function if necessary.
 	**/
 	void cluster(
@@ -54,15 +58,16 @@ private:
 	/**
     * Downsample point cloud. Reduce the size of the given point cloud.
     * This function is called after the segmentation/classifying step but
-    * before clustering. 
+    * before clustering.
     * This step is NOT done before segmentation/classify because cloudMinusSurfaces
     * should have a resolution as high as possible since this cloud is used to
-    * detect obstacles. 
+    * detect obstacles.
     * Clustering surfaces is found to be quite inefficient though but since we
     * obtain a convex hull for each surface later on anyway, downsampling the point
     * size does not influence the quality of the surface clustering.
     */
-    void downSample(PointCloudPtr &cloud);
+    void downSample(PointCloudPtr &cloud, const double voxelSizeX,
+    	const double voxelSizeY, const double voxelSizeZ);
 
 	/**
 	* Project given surfaces on plane specified by the corresponding plane coefficients.
@@ -74,19 +79,24 @@ private:
 	const int MIN_CLUSTER_SIZE;
 
 	// side length of a voxel when applying voxelgridfilter
-	const double VOXEL_SIZE_X;
-	const double VOXEL_SIZE_Y;
-	const double VOXEL_SIZE_Z;
+	const double COARSE_VOXEL_SIZE_X;
+	const double COARSE_VOXEL_SIZE_Y;
+	const double COARSE_VOXEL_SIZE_Z;
+	const double FINE_VOXEL_SIZE_X;
+	const double FINE_VOXEL_SIZE_Y;
+	const double FINE_VOXEL_SIZE_Z;
+	const double FINE_COARSE_LIMIT;
 };
 
 
 template<class PointT>
-void SurfaceClusterer<PointT>::downSample(PointCloudPtr &cloud)
+void SurfaceClusterer<PointT>::downSample(PointCloudPtr &cloud,
+	const double voxelSizeX, const double voxelSizeY, const double voxelSizeZ)
 {
   PointCloudPtr cloud_filtered(new PointCloudT());
   pcl::VoxelGrid<PointT> sor;
   sor.setInputCloud (cloud);
-  sor.setLeafSize (VOXEL_SIZE_X, VOXEL_SIZE_Y, VOXEL_SIZE_Z);
+  sor.setLeafSize (voxelSizeX, voxelSizeY, voxelSizeZ);
   sor.filter (*cloud_filtered);
   cloud = cloud_filtered;
 }
@@ -98,8 +108,8 @@ void SurfaceClusterer<PointT>::getSurfaceClusters(
 	// Extract the clusters from such a filtered cloud.
 	int max_size=cloud->points.size();
 	pcl::EuclideanClusterExtraction<PointT> clusterizer;
-	clusterizer.setClusterTolerance(0.03);
-	clusterizer.setMinClusterSize(2300);
+	clusterizer.setClusterTolerance(CLUSTER_TOLERANCE);
+	clusterizer.setMinClusterSize(MIN_CLUSTER_SIZE);
 	clusterizer.setMaxClusterSize(max_size);
 	pcl::search::KdTree<pcl::PointXYZ>::Ptr kd_tree_(
 			new pcl::search::KdTree<pcl::PointXYZ>);
@@ -128,9 +138,9 @@ template<class PointT>
 void SurfaceClusterer<PointT>::cluster(
 	PointCloudPtr plane,
 	pcl::ModelCoefficients &planeCoefficients,
-	std::vector<SurfaceModelPtr> &surfaces) 
+	std::vector<SurfaceModelPtr> &surfaces)
 {
-	// A classified surface may consist of different clusters. 
+	// A classified surface may consist of different clusters.
 	// Get point indices of points belonging to the same cluster.
     std::vector<pcl::PointIndices> cluster_indices;
     getSurfaceClusters(plane, cluster_indices);
@@ -139,7 +149,7 @@ void SurfaceClusterer<PointT>::cluster(
    	std::vector<SurfaceModelPtr> clusteredSurfaces;
     for (int j = 0; j < cluster_indices.size(); j++)
     {
-    	// extract all points from the classified surface that 
+    	// extract all points from the classified surface that
     	// belong to the same clauster
     	pcl::ExtractIndices<PointT> extract;
     	extract.setInputCloud(plane);
@@ -171,7 +181,10 @@ void SurfaceClusterer<PointT>::updateSurfaces(SurfaceDataPtr surfaceData)
 #pragma omp parallel for schedule(dynamic,1)
     for (size_t i = 0; i < surfaceData->planes.size(); i++)
     {
-    	downSample(surfaceData->planes[i]);
+    	if (surfaceData->planes[i]->size() > FINE_COARSE_LIMIT)
+    		downSample(surfaceData->planes[i], COARSE_VOXEL_SIZE_X, COARSE_VOXEL_SIZE_Y, COARSE_VOXEL_SIZE_Z);
+    	else
+    		downSample(surfaceData->planes[i], FINE_VOXEL_SIZE_X, FINE_VOXEL_SIZE_Y, FINE_VOXEL_SIZE_Z);
 
     	// cluster planes into seperate surfaces and create SurfaceModels
     	cluster(surfaceData->planes[i], surfaceData->planeCoefficients[i], surfaceData->surfaces);

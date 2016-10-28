@@ -11,10 +11,10 @@ namespace lepp
 
 struct FrameData
 {
-	FrameData(long num) : frameNum(num), 
-		cloudMinusSurfaces(new PointCloudT()), 
+	FrameData(long num) : frameNum(num),
+		cloudMinusSurfaces(new PointCloudT()),
 		surfaceDetectionIteration(-1), surfaceReferenceFrameNum(-1),
-		planeCoeffsIteration(-1), planeCoeffsReferenceFrameNum(-1) 
+		planeCoeffsIteration(-1), planeCoeffsReferenceFrameNum(-1)
 	{}
 	long 							frameNum;
 	long 							surfaceDetectionIteration;
@@ -31,7 +31,7 @@ struct FrameData
 
 
 
-class FrameDataObserver 
+class FrameDataObserver
 {
 public:
 	/**
@@ -47,7 +47,7 @@ public:
 
 
 
-class FrameDataSubject 
+class FrameDataSubject
 {
 public:
 	/**
@@ -69,7 +69,7 @@ protected:
 	*/
     void notifyObservers(FrameDataPtr frameData)
     {
-	  for (size_t i = 0; i < observers.size(); i++) 
+	  for (size_t i = 0; i < observers.size(); i++)
 	  {
 	    observers[i]->updateFrame(frameData);
 	  }

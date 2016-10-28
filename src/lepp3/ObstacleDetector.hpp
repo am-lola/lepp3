@@ -23,7 +23,7 @@ using namespace lepp;
  * of each of them by the given `ObjectApproximator` instance.
  */
 template<class PointT>
-class ObstacleDetector : public FrameDataObserver, public FrameDataSubject 
+class ObstacleDetector : public FrameDataObserver, public FrameDataSubject
 {
 public:
   /**
@@ -45,7 +45,7 @@ private:
 
 
   /**
-  * Return false if obstalce is below any surface and its center is closer 
+  * Return false if obstalce is below any surface and its center is closer
   * than MAX_SQUARED_DISTANCE to the boundary of the considered surface hull.
   */
   bool isValidObstacle(FrameDataPtr frameData, int obstacleIndex);
@@ -86,13 +86,13 @@ bool ObstacleDetector<PointT>::isValidObstacle(FrameDataPtr frameData, int obsta
     {
       PointT seg1 = currentHull->at(j);
       PointT seg2 = currentHull->at((j+1) % currentHull->size());
-      
+
       // get shortest distance of point (center.x, center.y, projZ) to line segment defined by points seg1 <-> seg2
       PointT projCenter(center.x, center.y, projZ);
       PointT shortestVec;
       ConvexHullDetector::projectPointOntoLineSegment(seg1, seg2, projCenter, shortestVec);
       double shortestDist = ConvexHullDetector::getVecLengthSquared(shortestVec);
-     
+
       // if obstacle is belove the surface and closer to its hull boundary than MAX_SQUARED_DISTANCE, the obstacle is invalid
       if (shortestDist < MAX_SQUARED_DISTANCE)
         return false;
@@ -120,18 +120,18 @@ void ObstacleDetector<PointT>::filterInvalidObstacles(FrameDataPtr frameData)
 
 
 template<class PointT>
-void ObstacleDetector<PointT>::updateFrame(FrameDataPtr frameData) 
+void ObstacleDetector<PointT>::updateFrame(FrameDataPtr frameData)
 {
   if (frameData->cloudMinusSurfaces->size() != 0)
   {
     segmenter_->segment(frameData);
 
     // Iteratively approximate the segments
-    for (size_t i = 0; i < frameData->obstacleClouds.size(); i++) 
+    for (size_t i = 0; i < frameData->obstacleClouds.size(); i++)
     {
       frameData->obstacles.push_back(approximator_->approximate(frameData->obstacleClouds[i]));
     }
-    
+
     // remove invalid obstacles
     if (surfaceDetectorActive)
       filterInvalidObstacles(frameData);

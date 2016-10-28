@@ -22,14 +22,14 @@ public:
 	/**
 	 * Create a new `BlendVisitor` will update the given surface in the argument using the class parameters.
 	 */
-	BlendVisitors(model_id_t id, mesh_handle_t mh, Coordinate translation_vec, PointCloudConstPtr hull, 
+	BlendVisitors(model_id_t id, mesh_handle_t mh, Coordinate translation_vec, PointCloudConstPtr hull,
 		pcl::ModelCoefficients oldCoefficients) :
 			id(id), mh(mh),
-			translation_vec(translation_vec), 
-			hull(hull), 
+			translation_vec(translation_vec),
+			hull(hull),
 			oldCoefficients(oldCoefficients) {
 	}
-	void visitSurface(SurfaceModel &newPlane) 
+	void visitSurface(SurfaceModel &newPlane)
 	{
 		// set id of new plane
 		newPlane.set_id(id);
@@ -41,10 +41,10 @@ public:
 		newPlane.translateCenterPoint(translation_vec);
 
 		// set convex hull to old convex hull (this is used by the convex hull detector later on)
-		newPlane.set_hull(hull);	
+		newPlane.set_hull(hull);
 
 		// Take average of old and new model coefficients
-		pcl::ModelCoefficients mergeCoefficients (newPlane.get_planeCoefficients());			
+		pcl::ModelCoefficients mergeCoefficients (newPlane.get_planeCoefficients());
 		for (int i = 0; i < 4; i++)
 			mergeCoefficients.values[i] = 0.5 * (mergeCoefficients.values[i] + oldCoefficients.values[i]);
 		newPlane.set_planeCoefficients(mergeCoefficients);
@@ -91,7 +91,7 @@ public:
 		LOST_LIMIT(surfaceTrackerParameters[0]),
 		FOUND_LIMIT(surfaceTrackerParameters[1]),
 		MAX_CENTER_DISTANCE(surfaceTrackerParameters[2]),
-		MAX_CLOUD_SIZE_DEVIATION(surfaceTrackerParameters[3])
+		MAX_RADIUS_DEVIATION_PERCENTAGE(surfaceTrackerParameters[3])
 	{}
 
 	/**
@@ -217,14 +217,14 @@ private:
 	 */
 	std::map<model_id_t, std::list<SurfaceModelPtr>::iterator> model_idx_in_list_;
 
-	// set the number of consecutive frames needed in order to detect/lose a plane 
+	// set the number of consecutive frames needed in order to detect/lose a plane
 	const int LOST_LIMIT;
 	const int FOUND_LIMIT;
 
 	// maximum center distance of two planes in order to be tracked
 	const double MAX_CENTER_DISTANCE;
 	// maximum percentual deviation of two planes in order to be tracked
-	const double MAX_CLOUD_SIZE_DEVIATION;
+	const double MAX_RADIUS_DEVIATION_PERCENTAGE;
 };
 
 template<class PointT>
@@ -261,7 +261,7 @@ model_id_t SurfaceTracker<PointT>::getMatchByDistance(
 
 		size_t trackedSurfaceSize = it->second->get_cloud()->size();
 
-		if ((dist <= MAX_CENTER_DISTANCE) && (std::abs((1.0*trackedSurfaceSize/newSurfaceSize) - 1) < MAX_CLOUD_SIZE_DEVIATION))
+		if ((dist <= MAX_CENTER_DISTANCE) && (std::abs((1.0*trackedSurfaceSize/newSurfaceSize) - 1) < MAX_RADIUS_DEVIATION_PERCENTAGE))
 		{
 			//std::cout << " accept";
 			if (!found)
@@ -354,7 +354,7 @@ void SurfaceTracker<PointT>::adaptTracked(
 		std::vector<SurfaceModelPtr> const& new_surfaces) {
 
 	for (std::map<int, size_t>:: const_iterator it =
-			correspondence.begin(); it != correspondence.end(); ++it) 
+			correspondence.begin(); it != correspondence.end(); ++it)
 	{
 		model_id_t const& model_id = it->first;
 		int const& i = it->second;
@@ -372,7 +372,7 @@ void SurfaceTracker<PointT>::adaptTracked(
 		Coordinate const translation_vec = (oldSurfaceModel->centerpoint() - new_surfaces[i]->centerpoint()) / 2;
 
 		// Blend the old surface into the new one
-		BlendVisitors blender(oldSurfaceModel->id(), oldSurfaceModel->get_meshHandle() ,translation_vec, oldSurfaceModel->get_hull(), 
+		BlendVisitors blender(oldSurfaceModel->id(), oldSurfaceModel->get_meshHandle() ,translation_vec, oldSurfaceModel->get_hull(),
 			oldSurfaceModel->get_planeCoefficients());
 
 		tracked_models_[model_id]->accept(blender);
@@ -493,7 +493,7 @@ void SurfaceTracker<PointT>::updateSurfaces(SurfaceDataPtr surfaceData)
 	dropLostSurface();
     materializeFoundSurfaces();
 
-    // copy materialized models    
+    // copy materialized models
     std::vector<SurfaceModelPtr> materializedModelsCopy(materialized_models_.begin(), materialized_models_.end());
     surfaceData->surfaces = materializedModelsCopy;
 

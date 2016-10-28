@@ -80,7 +80,7 @@ GeneralGrabberVideoSource<PointT>::~GeneralGrabberVideoSource() {
 
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::cloud_cb_(
-    const PointCloudConstPtr& cloud) 
+    const PointCloudConstPtr& cloud)
 {
   FrameDataPtr frameData(new FrameData(++frameCount));
   frameData->cloud = cloud;
@@ -89,10 +89,10 @@ void GeneralGrabberVideoSource<PointT>::cloud_cb_(
 
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::image_cb_ (
-    const typename boost::shared_ptr<openni_wrapper::Image>& rgb) 
+    const typename boost::shared_ptr<openni_wrapper::Image>& rgb)
 {
   RGBDataPtr rgbData(new RGBData(frameCount, rgb));
-  this->setNextFrame(rgbData);  
+  this->setNextFrame(rgbData);
 }
 
 template<class PointT>
@@ -109,10 +109,10 @@ void GeneralGrabberVideoSource<PointT>::setOptions(
 }
 
 template<class PointT>
-void GeneralGrabberVideoSource<PointT>::open() 
+void GeneralGrabberVideoSource<PointT>::open()
 {
   // Register the callback and start grabbing frames...
-  if (receive_cloud_) 
+  if (receive_cloud_)
   {
     typedef void (callback_t)(const PointCloudConstPtr&);
     boost::function<callback_t> f = boost::bind(
