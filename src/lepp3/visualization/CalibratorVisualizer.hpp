@@ -3,7 +3,6 @@
 
 #include <sstream>
 
-#include "lepp3/FrameData.hpp"
 #include "lepp3/Typedefs.hpp"
 #include "lepp3/visualization/BaseVisualizer.hpp"
 #include "lepp3/CalibrationAggregator.hpp"
