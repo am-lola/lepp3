@@ -7,8 +7,7 @@
 #   - `type`: stream, oni, pcd, am_offline
 # `oni` and `pcd` types require an additional parameter: file_path
 # `am_offline` type requires an additional parameters: dir_path
-type = "oni"
-file_path = "../videos/Stairs.oni"
+type = "stream"
 
 [FilteredVideoSource]
 # type = simple|prob|pt1
@@ -50,34 +49,33 @@ kalman_system_noise_position = 0.01
 kalman_system_noise_velocity = 0.15
 kalman_measurement_noise = 0.10
 
-
-# [SplitStrategy]
-# # split_axis = largest|middle|smallest
-# split_axis = "middle"
-# # A number of split conditions that need to be satisfied in order for an object
-# # split to occur.
-# # Care should be taken to define the conditions in a way that guarantees that
-# # splitting eventually stops for each object (possibly the easiest way is to
-# # always include the DepthLimit condition with a fairly high depth limit).
-# # If no split conditions are provided, the objects will never be split.
-#   [[SplitStrategy.conditions]]
-#     type = "DepthLimit"
-#     depth = 1
-#   [[SplitStrategy.conditions]]
-#     type = "SizeLimit"
-#     # size is a volume in [cm^3]
-#     size = 3000.
-#   [[SplitStrategy.conditions]]
-#     type = "ShapeCondition"
-#     # The threshold values to consider something "very much" a sphere
-#     sphere1 = 0.8
-#     sphere2 = 0.1
-#     # The threshold value to consider something "very much" a cylinder
-#     cylinder = 0.25
-#   #[[SplitStrategy.conditions]]
-#   #  type = "DistanceThreshold"
-#   #  # Distance is in [cm]
-#   #  distance_threshold = 150
+#[SplitStrategy]
+## split_axis = largest|middle|smallest
+#split_axis = "middle"
+## A number of split conditions that need to be satisfied in order for an object
+## split to occur.
+## Care should be taken to define the conditions in a way that guarantees that
+## splitting eventually stops for each object (possibly the easiest way is to
+## always include the DepthLimit condition with a fairly high depth limit).
+## If no split conditions are provided, the objects will never be split.
+#  [[SplitStrategy.conditions]]
+#    type = "DepthLimit"
+#    depth = 2
+#  [[SplitStrategy.conditions]]
+#    type = "SizeLimit"
+#    # size is a volume in [cm^3]
+#    size = 3000.
+#  [[SplitStrategy.conditions]]
+#    type = "ShapeCondition"
+#    # The threshold values to consider something "very much" a sphere
+#    sphere1 = 0.8
+#    sphere2 = 0.1
+#    # The threshold value to consider something "very much" a cylinder
+#    cylinder = 0.25
+#  [[SplitStrategy.conditions]]
+#    type = "DistanceThreshold"
+#    # Distance is in [cm]
+#    distance_threshold = 150
 
 # Uncomment if any information needs to be sent to the robot.
 # [RobotService]
@@ -179,3 +177,31 @@ type = "ARVisualizer"
     draw_gaussians = true
     draw_velocities = true
     downsample_res = 0.03
+
+#[ARVisualizer]
+##When the robot runs, frame can be changed to "lola"
+##frame=lola|pcl
+#
+#frame="pcl"
+#
+##lola
+#lola_positionx = 0
+#lola_positiony = 0
+#lola_positionz = 0
+#lola_forwardx = 1
+#lola_forwardy = 0
+#lola_forwardz= 0
+#lola_upx = 0
+#lola_upy = 0
+#lola_upz = 1
+#
+##PCL
+#pcl_positionx = 0
+#pcl_positiony = 0
+#pcl_positionz = 0
+#pcl_forwardx = 0
+#pcl_forwardy = 0
+#pcl_forwardz= 1
+#pcl_upx = 0
+#pcl_upy = -1
+#pcl_upz = 0

@@ -34,16 +34,16 @@ public:
         rgb_viewer_enabled_(false),
         frameCount(0),
         receive_cloud_(true),
-       receive_image_(false) {}
+        receive_image_(false) {}
   GeneralGrabberVideoSource(boost::shared_ptr<pcl::Grabber> interface, bool rgb_enabled)
       : interface_(interface),
         rgb_viewer_enabled_(rgb_enabled),
         receive_cloud_(true),
-        receive_image_(false),
+        receive_image_(rgb_enabled),
         frameCount(0) {}
 
   virtual ~GeneralGrabberVideoSource();
-  virtual void open() override;
+  virtual void open();
   bool rgb_viewer_enabled_;
   /**
    * Implementation of VideoSource interface
@@ -109,8 +109,7 @@ void GeneralGrabberVideoSource<PointT>::setOptions(
 }
 
 template<class PointT>
-void GeneralGrabberVideoSource<PointT>::open()
-{
+void GeneralGrabberVideoSource<PointT>::open() {
   // Register the callback and start grabbing frames...
   if (receive_cloud_)
   {
@@ -139,9 +138,11 @@ void GeneralGrabberVideoSource<PointT>::open()
 template<class PointT>
 class LiveStreamSource : public GeneralGrabberVideoSource<PointT> {
 public:
-  LiveStreamSource()
+  LiveStreamSource(bool enable_rgb = false)
       : GeneralGrabberVideoSource<PointT>(boost::shared_ptr<pcl::Grabber>(
-            new pcl::OpenNIGrabber("", pcl::OpenNIGrabber::OpenNI_QVGA_30Hz))) {
+            new pcl::OpenNIGrabber("", pcl::OpenNIGrabber::OpenNI_QVGA_30Hz)),
+            enable_rgb
+          ) {
     // Empty... All work performed in the initializer list.
   }
 };

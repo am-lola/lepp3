@@ -4,197 +4,12 @@
 #include <boost/asio.hpp>
 #include <boost/array.hpp>
 
+#include <iface_vis.h>
+
 #include "lola/PoseObserver.hpp"
 
 #include "lepp3/models/Coordinate.h"
 using boost::asio::ip::udp;
-
-// /**
-//  * A struct wrapping the parameters LOLA-provided kinematics parameters that are
-//  * used to construct the transformation matrices between the camera frame and
-//  * the world coordinate system as LOLA knows it.
-//  */
-// struct LolaKinematicsParams {
-//   double t_wr_cl[3];
-//   double R_wr_cl[3][3];
-//   double t_stance_odo[3];
-//   double phi_z_odo;
-//   double stance;
-//   int stamp;
-// };
-
-/*!
-  Robot pose data
-
-  vectors given in world coordinate frame
-
-  ub = upper body
-  fl = left foot
-  fr = right foot
-  cl = left camera
-  cr = right camera
-  im = IMU,
-
-  wr = world frame
-  odo = drift frame
-
-  Struct reused verbatim from the original LOLA source code to keep compatibility.
-*/
-//#pragma pack(push)
-//#pragma pack(1)
-struct HR_Pose
-{
-  enum{RIGHT=0,LEFT=1};
-  //!UDP port
-  enum{PORT=0xD001};
-  //!data rate [ms] (actually determined by hardware trigger!)
-  enum{RATE=50};
-  //!number of segments in detailed robot model.
-  enum{N_SEGMENTS=25};
-
-  //rot = rotation
-  //add = adduction
-  //flx = flexion
-  enum SegmentIndex
-    {
-      //torso
-      seg_torso=0,
-      //pelvis
-      seg_pelvis_rot,seg_pelvis_add,
-      //right leg
-      seg_hip_rot_r,seg_hip_add_r,seg_hip_flx_r,seg_knee_flx_r,seg_ankle_add_r,seg_ankle_flx_r,seg_toe_flx_r,
-      //left leg
-      seg_hip_rot_l,seg_hip_add_l,seg_hip_flx_l,seg_knee_flx_l,seg_ankle_add_l,seg_ankle_flx_l,seg_toe_flx_l,
-      //right arm
-      seg_shoulder_flx_r,seg_shoulder_add_r,seg_elbow_flx_r,
-      //left arm
-      seg_shoulder_flx_l,seg_shoulder_add_l,seg_elbow_flx_l,
-      //head (tilt: both cameras without convergence joint)
-      seg_head_pan, seg_head_tilt
-    };
-
-  //!segment pose
-  struct SegmentPose
-  {
-    //!transform matrix
-    float R[3*3];
-    //!position
-    float t[3];
-  };
-
-  //////////////////////////////////////////////////
-  //// 1 -- header
-  //!data struct version
-  uint32_t version;
-  //! tick counter
-  uint64_t tick_counter;
-  //!<stance leg (RIGHT/LEFT)
-  uint8_t stance;
-  //!<padding
-  uint8_t zero[3];
-
-  uint64_t stamp;
-
-
-  //////////////////////////////////////////////////
-  //// 2 -- simplified /abstract robot model (feet, cameras, upper body)
-  //!vector from world frame to left leg in world frame
-  float t_wr_fr[3];
-  //!vector from world frame to right leg in world frame
-  float t_wr_fl[3];
-  //!vector from world frame to left camera in world frame
-  float t_wr_cl[3];
-  //!vector from world frame to right camera in world frame
-  float t_wr_cr[3];
-
-  //!transformation matrix from left leg to world frame
-  float R_wr_fr[3*3];
-  //!transformation matrix from right leg to world frame
-  float R_wr_fl[3*3];
-  //!transformation matrix from left camera to world frame
-  float R_wr_cl[3*3];
-  //!transformation matrix from right camera to world frame
-  float R_wr_cr[3*3];
-  /*!
-    transformation matrix from upper body coordinate frame
-    to inertial frame measured by IMU (world frame)
-    (identity matrix, if robot is standing upright)
-  */
-  float R_wr_ub[3*3];
-  //!vector from world frame to upper body frame in world frame
-  float t_wr_ub[3];
-
-  //////////////////////////////////////////////////
-  //// 3 -- full robot pose
-  SegmentPose seg_pose[N_SEGMENTS];
-
-  //////////////////////////////////////////////////
-  //// 4 -- "drift pose" (odometry)
-  //!stance leg in drift frame
-  float t_stance_odo[3];
-  //!stance foot rotation in drift frame
-  float phi_z_odo;
-
-  //////////////////////////////////////////////////
-  //// 5 -- "drift pose" (odometry)
-  //!<currently active velocity in x-direction [m/s]
-  float vx_act;
-  //!<currently active velocity in y-direction [m/s]
-  float vy_act;
-  //!<currently active angular velocity [rad/s]
-  float om_act;
-};
-/* #pragma pack (pop) */
-
-/*!
-  Robot pose data - reduced version for sending to new vision system
-
-  vectors given in world coordinate frame
-
-  ub = upper body
-  fl = left foot
-  fr = right foot
-  cl = left camera
-  cr = right camera
-  im = IMU,
-
-  wr = world frame
-  odo = drift frame
-
-  Struct reused verbatim from the original LOLA source code to keep compatibility.
-*/
-#pragma pack(push)
-#pragma pack(1)
-struct HR_Pose_Red
-{
-
-  //////////////////////////////////////////////////
-  //// 1 -- header
-  //!data struct version
-  uint32_t version;
-  //! tick counter
-  uint64_t tick_counter;
-  //!<stance leg (RIGHT/LEFT)
-  uint8_t stance;
-
-  uint64_t stamp;
-
-  //////////////////////////////////////////////////
-  //// 2 -- simplified /abstract robot model (feet, cameras, upper body)
-  //!vector from world frame to left camera in world frame
-  float t_wr_cl[3];
-  //!transformation matrix from left camera to world frame
-  float R_wr_cl[3*3];
-
-  //////////////////////////////////////////////////
-  //// 4 -- "drift pose" (odometry)
-  //!stance leg in drift frame
-  float t_stance_odo[3];
-  //!stance foot rotation in drift frame
-  float phi_z_odo;
-
-};
-#pragma pack (pop)
 
 /**
  * A class that provides the ability to run a local service that listens to
@@ -221,11 +36,33 @@ public:
    * be processed asynchronously.
    */
   void start();
+
   /**
    * Obtains the current pose information. Using this method is completely
    * thread safe.
    */
-  HR_Pose_Red getCurrentPose() const;
+  HR_Pose_Red getCurrentPose() const
+  {
+    // This does an atomic copy of the pointer (the refcount is atomically updated)
+    // There can be no race condition since if the service needs to update the
+    // pointer, it will do so atomically and the reader also obtains a copy of the
+    // pointer atomically.
+    boost::shared_ptr<HR_Pose_Red> p = pose_;
+    // Now we are safe to manipulate the object itself, since nothing else needs
+    // to directly touch the instance itself and we have safely obtained a
+    // reference to it.
+    // We just return the object (but this involves a non-atomic copy, hence the
+    // pointer dance).
+
+    if (p) {
+      return *p;
+    } else {
+      HR_Pose_Red pose = {0};
+      return pose;
+    }
+  }
+
+
 
   /**
    * Returns the "World" origin in ODO coordinate system.

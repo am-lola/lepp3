@@ -4,61 +4,10 @@
 #include <boost/asio.hpp>
 #include <cstring>
 #include <iostream>
+#include "iface_vision_msg.hpp"
 
-// The macro creates an ID for a Robot message.
-// The macro is taken from the LOLA source base.
-// TODO Once C++11 can be used, make this a `constexpr` function, instead of a macro.
-#define __MSG_ID_DEF_GLOBAL(dom,sig)  (0x80000000 | ((dom&0xFF)<<0x10) | (sig&0xFFFF))
-
-/**
- * A struct representing the raw vision message format that is sent to the
- * robot.
- */
-struct VisionMessage {
-  uint32_t id;
-  uint32_t len;
-  float params[15];
-
-  VisionMessage() : len(sizeof params) {}
-
-  // IDs for particular vision operations.
-  static uint32_t const SET_SSV =  __MSG_ID_DEF_GLOBAL(0x4, 0x203);
-  static uint32_t const MODIFY_SSV =  __MSG_ID_DEF_GLOBAL(0x4, 0x206);
-  static uint32_t const REMOVE_SSV =  __MSG_ID_DEF_GLOBAL(0x4, 0x207);
-
-  // Flags (passed in parameter at the index 4 in delete messages) indicating
-  // whether the entire object model should be removed or only a part.
-  static constexpr float DEL_WHOLE_SEGMENT_FLAG = 0;
-  static constexpr float DEL_ONLY_PART_FLAG = 1;
-
-  // Static factory functions. Facilitate creating the messages without worrying
-  // about the internal format.
-  /**
-   * Creates a `VisionMessage` that says that an object with the given ID
-   * should be removed. The entire model is removed, including all of its child
-   * parts.
-   */
-  static VisionMessage DeleteMessage(int model_id);
-  /**
-   * Creates a `VisionMessage` that says that a particular part of a larger model
-   * should be deleted.
-   */
-  static VisionMessage DeletePartMessage(int model_id, int part_id);
-  /**
-   * Creates a `VisionMessage` that says that a new object with the given
-   * parameters should be created.
-   */
-  static VisionMessage SetMessage(
-      int type_id, int model_id, int part_id, double radius, std::vector<double> const& coefs);
-  /**
-   * Creates a `VisionMessage` that says that an existing object with the given
-   * ID should be modified according to the given parameters.
-   */
-  static VisionMessage ModifyMessage(
-      int type_id, int model_id, int part_id, double radius, std::vector<double> const& coefs);
-};
-
-std::ostream& operator<<(std::ostream& out, VisionMessage const& msg);
+using am2b_iface::VisionMessage;
+using am2b_iface::VisionMessageHeader;
 
 /**
  * An interface that needs to be implemented by concrete classes that can
@@ -104,6 +53,9 @@ public:
   AsyncRobotService(std::string const& remote, int port, int delay)
       : remote_(remote), port_(port), socket_(io_service_),
         message_timeout_(delay) {}
+  AsyncRobotService(std::string const& remote, std::string const& remoteName, int port, int delay)
+      : remote_(remote), remoteName_(remoteName), port_(port), socket_(io_service_),
+        message_timeout_(delay) {}
   /**
    * Starts up the service, initiating a connection to the robot.
    *
@@ -119,9 +71,13 @@ public:
   void sendMessage(VisionMessage const& msg);
 private:
   /**
-   * The host name of the robot.
+   * The host name to send data to.
    */
   std::string const remote_;
+  /**
+   * Friendly name of remote host for logging/debugging
+   */
+  std::string const remoteName_;
   /**
    * The port on which the robot is expecting vision messages.
    */

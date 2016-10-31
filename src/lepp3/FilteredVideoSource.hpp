@@ -263,7 +263,7 @@ void FilteredVideoSource<PointT>::updateFrame(
 
   // Now we obtain the fully filtered cloud...
   this->getFiltered(filtered);
-  // TODO : detele this function??
+  // TODO: [Sahand] detele this function??
   this->removeBackground(cloud_filtered);
   this->preprocessCloud(cloud_filtered);
 
@@ -277,7 +277,6 @@ void FilteredVideoSource<PointT>::updateFrame(
   this->setNextFrame(frameData);
   //cout << filtered.size() << "   " << cloud_filtered->size() << endl;
 }
-
 
 /**
  * An implementation of a `FilteredVideoSource` that only applies the

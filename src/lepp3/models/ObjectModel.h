@@ -61,7 +61,6 @@ public:
   virtual void visitCapsule(CapsuleModel& capsule) = 0;
 };
 
-
 /**
  * Model class representing a sphere.
  */

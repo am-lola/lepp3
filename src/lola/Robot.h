@@ -3,6 +3,8 @@
 
 #include "lola/PoseService.h"
 #include "lepp3/models/ObjectModel.h"
+#include <pcl/segmentation/impl/extract_polygonal_prism_data.hpp>
+
 
 /**
  * A facade in front of different services and methods that the robot
@@ -39,8 +41,9 @@ public:
    * the robot (i.e. the "inner zone").
    */
   bool isInRobotBoundary(lepp::ObjectModel const& model) const;
+  bool isInRobotBoundary(lepp::SurfaceModel const& model) const; 
 
-  /**
+  /** 
    * Returns the robot's position in the world coordinate system (i.e. ODO).
    */
   lepp::Coordinate robot_position() const { return pose_service_.getRobotPosition(); }

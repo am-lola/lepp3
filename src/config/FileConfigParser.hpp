@@ -67,15 +67,7 @@ protected:
     if (toml_tree_.find("Robot"))
       initRobot();
     else
-      std::cout << "No robot info found in config file. "
-                << "Lola is not connected for this run."
-                << std::endl;
-    // Robot service communication is optional.
-    // Compatibility for offline use.
-    if (toml_tree_.find("RobotService"))
-      initVisionService();
-    else
-      std::cout << "No robot service info found in config file." << std::endl;
+      std::cout << "No robot info found in config file." << std::endl;
 
     // Now get the video source ready...
     initRawSource();
@@ -89,41 +81,62 @@ protected:
 
     std::cout << "==== Finished parsing the config file. ====" << std::endl;
   }
-
-  /**
-   * Attempts to set up the PoseService instance. Should include an IP address
-   * and a port number. This will correspond to the computer which is sending
-   * pose data to LEPP.
-   */
-  virtual void initPoseService() override {
-    std::string ip = toml_tree_.find("PoseService.ip")->as<std::string>();
-    int port = toml_tree_.find("PoseService.port")->as<int>();
-
-    this->pose_service_.reset(new PoseService(ip, port));
-    this->pose_service_->start();
-  }
-
-  /**
-   * Sets up the `Robot` instance. Requires the `PoseService` to be set
-   * beforehand.
-   */
-  virtual void initRobot() override {
+  void initRobot() {
     double bubble_size = toml_tree_.find("Robot.bubble_size")->as<double>();
     this->robot_.reset(new Robot(*this->pose_service(), bubble_size));
   }
 
-  /**
-   * Creats an instance of "VideoSource" based on the given parameters.
-   */
-  virtual void initRawSource() override {
+  void addAggregators() {
+      std::cout << "entered addAggregators" << std::endl;
+      const toml::Value* available = toml_tree_.find("aggregators");
+      if (!available)
+        return;
+
+      const toml::Array& agg_array = available->as<toml::Array>();
+      std::cout << "# aggregators : ";
+      std::cout << agg_array.size() << std::endl;
+      for (const toml::Value& v : agg_array)
+      {
+        this->detector_->attachObserver(getAggregator(v));
+      }
+  }
+
+  // constructs a RobotService from the parameters specified by t
+  boost::shared_ptr<AsyncRobotService> getRobotService(const toml::Value& t)
+  {
+      std::cout << "Constructing new RobotService" << std::endl;
+
+      const std::string target = t.find("target")->as<std::string>();
+      std::cout << "Target connection: " << target << std::endl;
+
+      std::string ip = t.find("ip")->as<std::string>();
+      std::cout << "\tip:    " << ip << std::endl;
+
+      int port = t.find("port")->as<int>();
+      std::cout << "\tPort:  " << port << std::endl;
+
+      int delay = t.find("delay")->as<int>();
+      std::cout << "\tDelay: " << delay << std::endl;
+
+      boost::shared_ptr<AsyncRobotService> async_robot_service(new AsyncRobotService(ip, target, port, delay));
+      async_robot_service->start();
+      return async_robot_service;
+  }
+
+  /// Implementations of initialization of various parts of the pipeline.
+  void initRawSource() {
+    std::cout << "entered initRawSource" << std::endl;
     if (!toml_tree_.find("VideoSource.type"))
       throw "error: no video source found in the config file.";
     const std::string type = toml_tree_.find(
           "VideoSource.type")->as<std::string>();
+    bool enable_rgb = false;
+    if (toml_tree_.find("VideoSource.enable_rgb"))
+      enable_rgb = toml_tree_.find("VideoSource.enable_rgb")->as<bool>();
 
     if (type == "stream") {
       this->raw_source_ = boost::shared_ptr<VideoSource<PointT> >(
-          new LiveStreamSource<PointT>());
+          new LiveStreamSource<PointT>(enable_rgb));
     } else if (type == "pcd") {
       std::string file_path = toml_tree_.find(
             "VideoSource.file_path")->as<std::string>();
@@ -205,24 +218,15 @@ protected:
     }
   }
 
-  /**
-   *
-   */
-  virtual void initVisionService() override {
-    std::string ip = toml_tree_.find("RobotService.ip")->as<std::string>();
-    int port = toml_tree_.find("RobotService.port")->as<int>();
-    int delay = toml_tree_.find("RobotService.delay")->as<int>();
+  void initPoseService() {
+    std::string ip = toml_tree_.find("PoseService.ip")->as<std::string>();
+    int port = toml_tree_.find("PoseService.port")->as<int>();
 
-    boost::shared_ptr<AsyncRobotService> async_robot_service(
-        new AsyncRobotService(ip, port, delay));
-    async_robot_service->start();
-    this->robot_service_ = async_robot_service;
+    this->pose_service_.reset(new PoseService(ip, port));
+    this->pose_service_->start();
   }
 
-  /**
-   * Sets up any observer that is supposed to attach to the `FilteredVideoSource`
-   */
-  virtual void addObservers() override
+  void addObservers()
   {
     std::cout << "entered addObservers" << std::endl;
     const toml::Value* available = toml_tree_.find("observers");
@@ -463,9 +467,13 @@ protected:
   virtual void initRecorder() override {
     std::cout << "entered initRecorder" << std::endl;
     this->recorder_.reset(new VideoRecorder<PointT>());
-    const bool rec_cloud = toml_tree_.get<bool>("RecordingOptions.cloud");
-    const bool rec_rgb = toml_tree_.get<bool>("RecordingOptions.rgb");
-    const bool rec_pose = toml_tree_.get<bool>("RecordingOptions.pose");
+    std::cout << "recorder got reset!" << std::endl;
+    const bool rec_cloud = toml_tree_.find(
+          "RecordingOptions.cloud")->as<bool>();
+    const bool rec_rgb = toml_tree_.find(
+          "RecordingOptions.rgb")->as<bool>();
+    const bool rec_pose = toml_tree_.find(
+          "RecordingOptions.pose")->as<bool>();
     std::cout << "\trec_cloud: " << rec_cloud
               << "\n\trec_rgb: " << rec_rgb
               << "\n\trec_pose: " << rec_pose << std::endl;
@@ -488,24 +496,66 @@ protected:
       this->pose_service_->attachObserver(this->recorder());
   }
 
+//  void loadARVisualizerParams(double position[],double up[],double forward[])
+//  {
+//    std::string type= toml_tree_.find("ARVisualizer.frame")->as<std::string>();
+//    if (type == "pcl") {
+//      position[0]=toml_tree_.find("ARVisualizer.pcl_positionx")->as<int>();
+//      position[1]=toml_tree_.find("ARVisualizer.pcl_positiony")->as<int>();
+//      position[2]=toml_tree_.find("ARVisualizer.pcl_positionz")->as<int>();
+//      up[0]=toml_tree_.find("ARVisualizer.pcl_upx")->as<int>();
+//      up[1]=toml_tree_.find("ARVisualizer.pcl_upy")->as<int>();
+//      up[2]=toml_tree_.find("ARVisualizer.pcl_upz")->as<int>();
+//      forward[0]=toml_tree_.find("ARVisualizer.pcl_forwardx")->as<int>();
+//      forward[1]=toml_tree_.find("ARVisualizer.pcl_forwardy")->as<int>();
+//      forward[2]=toml_tree_.find("ARVisualizer.pcl_forwardz")->as<int>();
+//    }
+//    else if (type == "lola") {
+//      position[0]=toml_tree_.find("ARVisualizer.lola_positionx")->as<int>();
+//      position[1]=toml_tree_.find("ARVisualizer.lola_positiony")->as<int>();
+//      position[2]=toml_tree_.find("ARVisualizer.lola_positionz")->as<int>();
+//      up[0]=toml_tree_.find("ARVisualizer.lola_upx")->as<int>();
+//      up[1]=toml_tree_.find("ARVisualizer.lola_upy")->as<int>();
+//      up[2]=toml_tree_.find("ARVisualizer.lola_upz")->as<int>();
+//      forward[0]=toml_tree_.find("ARVisualizer.lola_forwardx")->as<int>();
+//      forward[1]=toml_tree_.find("ARVisualizer.lola_forwardy")->as<int>();
+//      forward[2]=toml_tree_.find("ARVisualizer.lola_forwardz")->as<int>();
+//    } else {
+//      throw "Unknown AR frame condition given.";
+//    }
+//  }
+//
+//  void initVisualizer()
+//  {
+//    double position[3]={0};
+//    double forward[3]={0};
+//    double up[3]={0};
+//
+//    loadARVisualizerParams(position,up,forward);
+//
+//    if (surfaceDetectorActive && !obstacleDetectorActive)
+//    {
+//      ar_visualizer_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive, position,forward,up));
+//      surface_detector_->FrameDataSubject::attachObserver(ar_visualizer_);
+//    }
+//    else if (obstacleDetectorActive)
+//    {
+//      ar_visualizer_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive,position,forward,up));
+//      this->detector_->FrameDataSubject::attachObserver(ar_visualizer_);
+//    }
+//
+//    bool viz_cloud = toml_tree_.find("Visualization.cloud")->as<bool>();
+//    if (viz_cloud) {
+//      // TODO add relevant stuff for cloud visualization and any necessary
+//      // observer
+//    }
+
   virtual void initCamCalibrator() override {
     std::cout << "entered initCamCalibrator" << std::endl;
     this->cam_calibrator_.reset(new CameraCalibrator<PointT>);
     this->source()->FrameDataSubject::attachObserver(this->cam_calibrator());
   }
 
-  virtual void addAggregators() override {
-    std::cout << "entered addAggregators" << std::endl;
-    const toml::Value* available = toml_tree_.find("aggregators");
-    if (!available)
-      return;
-    const toml::Array& agg_array = available->as<toml::Array>();
-    std::cout << "# aggregators : ";
-    std::cout << agg_array.size() << std::endl;
-    for (const toml::Value& v : agg_array) {
-      this->detector_->attachObserver(getAggregator(v));
-    }
-  }
 
 private:
   /// Helper functions for constructing parts of the pipeline.
@@ -669,25 +719,38 @@ private:
   }
 
   /**
-   * A helper function that constructs the next `FrameDataObserver` instance,
+   * A helper function that constructs the next `ObstacleAggregator` instance,
    * as defined in the following lines of the config file.
    * If the lines are invalid, an exception is thrown.
    */
   boost::shared_ptr<FrameDataObserver> getAggregator(toml::Value const& v) {
     std::string const type = v.find("type")->as<std::string>();
     std::cout << "agg type: " << type << std::endl;
-    if (type == "LolaAggregator") {
-      std::string const ip = v.find("ip")->as<std::string>();
-      int const port = v.find("port")->as<int>();
+    if (type == "RobotAggregator") {
+      int const update_frequency= v.find("update_frequency")->as<int>();
+      std::vector<std::string> datatypes = v.find("data")->as<std::vector<std::string>>();
 
-      return boost::shared_ptr<LolaAggregator>(
-          new LolaAggregator(ip, port));
-    } else if (type == "RobotAggregator") {
-      int const frame_rate = v.find("frame_rate")->as<int>();
+      std::cout << "find robot service..."<< std::endl;
+      const toml::Value* robotServiceEntry = v.find("RobotService");
+      if (!robotServiceEntry)
+      {
+        std::cout << "[[aggregators.RobotService]] not found!" << std::endl;
+        std::cout << "  Cannot create RobotAggregator without RobotService!" << std::endl;
+        exit(1);
+      }
+
+      const toml::Array& agg_array = robotServiceEntry->as<toml::Array>();
+      if (agg_array.size() != 1)
+      {
+        std::cout << "Expected exactly 1 RobotService entry, found: " << agg_array.size() << std::endl;
+        exit(1);
+      }
+
+      auto robotService = getRobotService(agg_array[0]);
 
       return boost::shared_ptr<RobotAggregator>(
           new RobotAggregator(*this->robot_service(), frame_rate, *this->robot()));
-    } else if (type == "ObstacleEvaluator") {
+      } else if (type == "ObstacleEvaluator") {
       int const ref_volume = v.find("ref_volume")->as<int>();
       return boost::shared_ptr<ObstacleEvaluator>(
           new ObstacleEvaluator(ref_volume));

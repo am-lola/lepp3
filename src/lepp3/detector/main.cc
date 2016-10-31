@@ -12,11 +12,7 @@
 
 _INITIALIZE_EASYLOGGINGPP
 
-
 using namespace lepp;
-
-// global bool that can be set from anywhere to exit the program
-bool g_exitProgram = false;
 
 /**
  * Prints out the expected CLI usage of the program.
@@ -46,10 +42,6 @@ int main(int argc, char* argv[]) {
         parser.reset(new FileConfigParser<PointT>(argv[i + 1]));
       }
     }
-    // if (!parser) {
-    //   // Fall back to trying to do a hardcoded parser if no config file given.
-    //   parser.reset(new HardcodedParser<PointT>(argv, argc));
-    // }
   } catch (char const* exc) {
     std::cerr << exc << std::endl;
     PrintUsage();
@@ -60,16 +52,8 @@ int main(int argc, char* argv[]) {
   if (parser->source())
     parser->source()->open();
 
-  // if (parser->visualizers())
-  // {
-  //   parser->visualizers()->waitForClose();
-  // }
-  // else
-  // {
-  //   while (!g_exitProgram)
-  //     boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-  // }
-
+  std::cout << "Waiting forever..." << std::endl;
+  std::cout << "(^C to exit)" << std::endl;
   while (true)
       boost::this_thread::sleep(boost::posix_time::milliseconds(8000));
 

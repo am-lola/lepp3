@@ -34,10 +34,10 @@ int main(int argc, char* argv[]) {
     pcl::io::OpenNI2Grabber::OpenNI_Default_Mode,
     pcl::io::OpenNI2Grabber::OpenNI_Default_Mode));
   boost::shared_ptr<SimpleVideoSource> source(
-      new GeneralGrabberVideoSource<SimplePoint>(interface));
+      new GeneralGrabberVideoSource<PointT>(interface));
 
   boost::shared_ptr<SimpleVideoSource::ObserverType> observer(
-      new EchoObserver<SimplePoint>());
+      new EchoObserver<PointT>());
   source->attachObserver(observer);
 
   // Starts capturing new frames and forwarding them to attached observers.

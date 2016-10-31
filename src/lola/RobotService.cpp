@@ -2,6 +2,7 @@
 #include <boost/thread.hpp>
 
 #include "deps/easylogging++.h"
+#include <iface_msg.hpp>
 
 namespace {
   /**
@@ -9,9 +10,9 @@ namespace {
    */
   void connect_handler(boost::system::error_code const& error) {
     if (!error) {
-      LINFO << "AsyncRobotService: Connected to the robot.";
+      LINFO << "AsyncRobotService: Connected to remote host.";
     } else {
-      LERROR << "AsyncRobotService: Failed to connect to the robot";
+      LERROR << "AsyncRobotService:  Failed to connect to the remote host.";
     }
   }
 
@@ -43,96 +44,31 @@ namespace {
   }
 }
 
-VisionMessage VisionMessage::DeleteMessage(int model_id) {
-  LTRACE << "Constructing delete full message with object_id = " << model_id;
-  VisionMessage msg;
-  msg.id = REMOVE_SSV;
-  memset(msg.params, 0, sizeof msg.params);
-  // 0 - unused, no point setting the type
-  msg.params[1] = model_id;
-  // 2 - unused -- since the entire model is getting removed...
-  // 3 - unused, no point setting the radius
-  msg.params[4] = VisionMessage::DEL_WHOLE_SEGMENT_FLAG;
-  // The rest of the parameters are also irrelevant.
-  return msg;
-}
-
-VisionMessage VisionMessage::DeletePartMessage(int model_id, int part_id) {
-  LTRACE << "Constructing delete part message with (model_id, part_id) = (" << model_id << ", " << part_id << ")";
-  VisionMessage msg;
-  msg.id = REMOVE_SSV;
-  memset(msg.params, 0, sizeof msg.params);
-  // 0 - unused, no point setting the type
-  msg.params[1] = model_id;
-  msg.params[2] = part_id;
-  // 3 - unused, no point setting the radius
-  msg.params[4] = VisionMessage::DEL_ONLY_PART_FLAG;
-  // The rest of the parameters are also irrelevant.
-  return msg;
-}
-
-VisionMessage VisionMessage::SetMessage(
-    int type_id, int model_id, int part_id, double radius, std::vector<double> const& coefs) {
-  LTRACE << "Constructing set message with (model_id, part_id) = (" << model_id << ", " << part_id << ")";
-  VisionMessage msg;
-  msg.id = SET_SSV;
-  memset(msg.params, 0, sizeof msg.params);
-  msg.params[0] = type_id;
-  msg.params[1] = model_id;
-  msg.params[2] = part_id;
-  msg.params[3] = radius;
-  // 4 - unused
-  // 5 - unused
-  for (size_t i = 0; i < coefs.size(); ++i) msg.params[6 + i] = coefs[i];
-
-  return msg;
-}
-
-VisionMessage VisionMessage::ModifyMessage(
-    int type_id, int model_id, int part_id, double radius, std::vector<double> const& coefs) {
-  LTRACE << "Constructing set message with (model_id, part_id) = (" << model_id << ", " << part_id << ")";
-  VisionMessage msg;
-  msg.id = MODIFY_SSV;
-  memset(msg.params, 0, sizeof msg.params);
-  msg.params[0] = type_id;
-  msg.params[1] = model_id;
-  msg.params[2] = part_id;
-  msg.params[3] = radius;
-  // 4 - unused
-  // 5 - unused
-  for (size_t i = 0; i < coefs.size(); ++i) msg.params[6 + i] = coefs[i];
-
-  return msg;
-}
-
-std::ostream& operator<<(std::ostream& out, VisionMessage const& msg) {
-  out << "[" << msg.id << " | " << msg.len << " | ";
-  for (size_t i = 0; i < 15; ++i) out << msg.params[i] << ", ";
-  out << "]";
-
-  return out;
-}
-
 void AsyncRobotService::start() {
   // Start it up...
   boost::asio::ip::tcp::endpoint endpoint(
     boost::asio::ip::address::from_string(remote_), port_);
-  LINFO << "AsyncRobotService: Initiating a connection asynchronously...";
+  LINFO << "AsyncRobotService (" << remoteName_ << "): Initiating a connection asynchronously...";
   socket_.async_connect(endpoint, connect_handler);
   // Start the service thread in the background...
   boost::thread(boost::bind(service_thread, &io_service_));
 }
 
 void AsyncRobotService::inner_send(VisionMessage const& next_message) {
+  am2b_iface::MsgHeader msg_header = { am2b_iface::VISION_MESSAGE, (uint32_t)sizeof(VisionMessageHeader) + next_message.header.len };
   char const* buf = (char const*)&next_message;
-  LINFO << "AsyncRobotService: Sending a queued message: "
+  LINFO << "AsyncRobotService (" << remoteName_ << "): Sending a queued message: "
         << "msg == " << next_message;
   // Synchronously send the message, i.e. block until the send is complete.
   try {
     socket_.send(
-        boost::asio::buffer(buf, sizeof(VisionMessage)));
+        boost::asio::buffer((const char*)&msg_header, sizeof(msg_header)));
+    socket_.send(
+        boost::asio::buffer(buf, sizeof(VisionMessageHeader)));
+    socket_.send(
+        boost::asio::buffer(next_message.content, next_message.header.len));
   } catch (...) {
-    LERROR << "AsyncRobotService: Error sending message.";
+    LERROR << "AsyncRobotService (" << remoteName_ << "): Error sending message.";
   }
   // After each sent message, we want to wait a pre-defined amount of time
   // before sending the next one.

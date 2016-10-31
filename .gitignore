@@ -3,6 +3,7 @@ recordings
 oni
 evaluation
 *~
+*.swp
 *.oni
 *.pcd
 *.txt.user*

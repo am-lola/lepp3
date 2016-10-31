@@ -34,7 +34,7 @@
 
 #include "lola/OdoCoordinateTransformer.hpp"
 #include "lola/Splitters.hpp"
-#include "lola/LolaAggregator.h"
+#include "lola/RobotAggregator.h"
 #include "lola/PoseService.h"
 #include "lola/RobotService.h"
 
@@ -94,13 +94,11 @@ protected:
   /// Default Robot initialization. Derived classes may change this process.
   virtual void buildRobot() {
     initPoseService();
-    initVisionService();
     initRobot();
   }
   /// Initialize the PoseService. Must set the `pose_service_` member.
   virtual void initPoseService() = 0;
-  /// Initialize the `RobotService`. Must set the `robot_service_` member.
-  virtual void initVisionService() = 0;
+
   /**
    * Initialize the `Robot`. Must se the `robot_` member.
    * A default implementation pieces a default robot together based on the
