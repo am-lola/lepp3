@@ -1,3 +1,0 @@
-[submodule "src/iface"]
-	path = src/iface
-	url = https://gitlab.lrz.de/AMCode/am2b-iface.git

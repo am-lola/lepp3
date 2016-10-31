@@ -1,5 +1,5 @@
-#ifndef LEPP3_SMOOTH_OBSTACLE_AGGREGATOR_H__
-#define LEPP3_SMOOTH_OBSTACLE_AGGREGATOR_H__
+#ifndef LEPP3_LOW_PASS_OBSTACLE_TRACKER_H__
+#define LEPP3_LOW_PASS_OBSTACLE_TRACKER_H__
 
 #include <vector>
 #include <list>
@@ -58,13 +58,13 @@ private:
  * as well as an `FrameDataSubject` (as it emits a new set of obstacles to
  * those aggregators that are attached to it).
  */
-class SmoothObstacleAggregator : public FrameDataObserver, public FrameDataSubject
+class LowPassObstacleTracker : public FrameDataObserver, public FrameDataSubject
 {
 public:
   /**
-   * Creates a new `SmoothObstacleAggregator`.
+   * Creates a new `LowPassObstacleTracker`.
    */
-  SmoothObstacleAggregator();
+  LowPassObstacleTracker();
 
   /**
    * The member function that all concrete aggregators need to implement in
@@ -183,15 +183,15 @@ private:
   std::map<model_id_t, std::list<ObjectModelPtr>::iterator> model_idx_in_list_;
 };
 
-SmoothObstacleAggregator::SmoothObstacleAggregator()
+LowPassObstacleTracker::LowPassObstacleTracker()
     : next_model_id_(0) {}
 
-SmoothObstacleAggregator::model_id_t SmoothObstacleAggregator::nextModelId() {
+LowPassObstacleTracker::model_id_t LowPassObstacleTracker::nextModelId() {
   return next_model_id_++;
 }
 
-SmoothObstacleAggregator::model_id_t
-SmoothObstacleAggregator::getMatchByDistance(ObjectModelPtr model) {
+LowPassObstacleTracker::model_id_t
+LowPassObstacleTracker::getMatchByDistance(ObjectModelPtr model) {
   Coordinate const query_point = model->center_point();
   bool found = false;
   double min_dist = 1e10;
@@ -221,8 +221,8 @@ SmoothObstacleAggregator::getMatchByDistance(ObjectModelPtr model) {
   }
 }
 
-std::map<SmoothObstacleAggregator::model_id_t, size_t>
-SmoothObstacleAggregator::matchToPrevious(
+std::map<LowPassObstacleTracker::model_id_t, size_t>
+LowPassObstacleTracker::matchToPrevious(
     std::vector<ObjectModelPtr> const& new_obstacles) {
   // Maps the ID of the model to its index in the new list of obstacles.
   // This lets us know the new approximation of each currently tracked object.
@@ -263,7 +263,7 @@ SmoothObstacleAggregator::matchToPrevious(
   return correspondence;
 }
 
-void SmoothObstacleAggregator::adaptTracked(
+void LowPassObstacleTracker::adaptTracked(
     std::map<model_id_t, size_t> const& correspondence,
     std::vector<ObjectModelPtr> const& new_obstacles,
     long frameNum) {
@@ -287,7 +287,7 @@ void SmoothObstacleAggregator::adaptTracked(
   }
 }
 
-void SmoothObstacleAggregator::updateLostAndFound(
+void LowPassObstacleTracker::updateLostAndFound(
     std::map<model_id_t, size_t> const& new_matches) {
   for (std::map<model_id_t, boost::shared_ptr<ObjectModel> >::const_iterator it = tracked_models_.begin();
         it != tracked_models_.end();
@@ -307,7 +307,7 @@ void SmoothObstacleAggregator::updateLostAndFound(
   }
 }
 
-void SmoothObstacleAggregator::dropLostObjects() {
+void LowPassObstacleTracker::dropLostObjects() {
   // Drop obstacles that haven't been seen in a while
   // !!!NOTE!!! Deleting while iterating is no longer the same in C++11!
   std::map<model_id_t, int>::iterator it = frames_lost_.begin();
@@ -335,7 +335,7 @@ void SmoothObstacleAggregator::dropLostObjects() {
   }
 }
 
-void SmoothObstacleAggregator::materializeFoundObjects() {
+void LowPassObstacleTracker::materializeFoundObjects() {
   int const FOUND_LIMIT = 8;
   std::map<model_id_t, int>::iterator it = frames_found_.begin();
   while (it != frames_found_.end()) {
@@ -361,7 +361,7 @@ void SmoothObstacleAggregator::materializeFoundObjects() {
   }
 }
 
-void SmoothObstacleAggregator::updateFrame(FrameDataPtr frameData) 
+void LowPassObstacleTracker::updateFrame(FrameDataPtr frameData)
 {
   if (frameData->cloudMinusSurfaces->size() != 0)
   {
@@ -370,8 +370,8 @@ void SmoothObstacleAggregator::updateFrame(FrameDataPtr frameData)
     adaptTracked(correspondence, frameData->obstacles, frameData->frameNum);
     dropLostObjects();
     materializeFoundObjects();
-     // copy materialized models   
-    std::vector<ObjectModelPtr> materializedModelsCopy(materialized_models_.begin(), materialized_models_.end()); 
+     // copy materialized models
+    std::vector<ObjectModelPtr> materializedModelsCopy(materialized_models_.begin(), materialized_models_.end());
     frameData->obstacles = materializedModelsCopy;
   }
   notifyObservers(frameData);
@@ -379,4 +379,4 @@ void SmoothObstacleAggregator::updateFrame(FrameDataPtr frameData)
 
 }  // namespace lepp
 
-#endif
+#endif // LEPP3_LOW_PASS_OBSTACLE_TRACKER_H__

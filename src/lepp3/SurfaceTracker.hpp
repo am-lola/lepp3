@@ -22,11 +22,11 @@ public:
 	/**
 	 * Create a new `BlendVisitor` will update the given surface in the argument using the class parameters.
 	 */
-	BlendVisitors(model_id_t id, mesh_handle_t mh, Coordinate translation_vec, PointCloudConstPtr hull,
+	BlendVisitors(model_id_t id, mesh_handle_t mh, int colorID, Coordinate translation_vec, PointCloudConstPtr hull, 
 		pcl::ModelCoefficients oldCoefficients) :
-			id(id), mh(mh),
-			translation_vec(translation_vec),
-			hull(hull),
+			id(id), mh(mh), colorID(colorID),
+			translation_vec(translation_vec), 
+			hull(hull), 
 			oldCoefficients(oldCoefficients) {
 	}
 	void visitSurface(SurfaceModel &newPlane)

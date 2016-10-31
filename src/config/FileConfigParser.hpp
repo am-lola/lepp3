@@ -420,12 +420,12 @@ protected:
           new ObstacleDetector<PointT>(approx, surfaceDetectorActive));
       this->source()->FrameDataSubject::attachObserver(base_obstacle_detector_);
       // Smooth out the basic detector by applying a smooth detector to it
-      boost::shared_ptr<SmoothObstacleAggregator> smooth_detector(
-          new SmoothObstacleAggregator);
-      base_obstacle_detector_->FrameDataSubject::attachObserver(smooth_detector);
+      boost::shared_ptr<LowPassObstacleTracker> low_pass_obstacle_tracker(
+          new LowPassObstacleTracker);
+      base_obstacle_detector_->FrameDataSubject::attachObserver(low_pass_obstacle_tracker);
       // Now the detector that is exposed via the context is a smoothed-out
       // base detector.
-      this->detector_ = smooth_detector;
+      this->detector_ = low_pass_obstacle_tracker;
     } else if (method == "GMM") {
       // parse [ObstacleTracking] parameters
       GMM::ObstacleTrackerParams params = readGMMObstacleTrackerParams();
@@ -748,8 +748,10 @@ private:
 
       auto robotService = getRobotService(agg_array[0]);
 
-      return boost::shared_ptr<RobotAggregator>(
-          new RobotAggregator(*this->robot_service(), frame_rate, *this->robot()));
+      // attach to RGB data here since we always assume we're dealing with FrameDataObservers elsewhere...
+      boost::shared_ptr<RobotAggregator> robotAggregator = boost::make_shared<RobotAggregator>(robotService, update_frequency, datatypes, *this->robot());
+      boost::static_pointer_cast<RGBDataSubject>(this->raw_source_)->attachObserver(robotAggregator);
+      return robotAggregator;
       } else if (type == "ObstacleEvaluator") {
       int const ref_volume = v.find("ref_volume")->as<int>();
       return boost::shared_ptr<ObstacleEvaluator>(
