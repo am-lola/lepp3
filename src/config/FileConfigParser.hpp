@@ -695,9 +695,11 @@ private:
       bool show_surfaces = false;
       show_obstacles = v.find("show_obstacles")->as<bool>();
       show_surfaces = v.find("show_surfaces")->as<bool>();
-
-      return boost::shared_ptr<ObsSurfVisualizer> (
+      
+      boost::shared_ptr<ObsSurfVisualizer> obs_surf_vis(
           new ObsSurfVisualizer(name, show_obstacles, show_surfaces, width, height));
+      this->source()->FrameDataSubject::attachObserver(obs_surf_vis);
+      return obs_surf_vis;
     } else if (type == "GMMTrackingVisualizer") {
       // TODO read all the necessary parameters from the config file.
       bool const debugGUI = v.find("debugGUI")->as<bool>();
