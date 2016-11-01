@@ -1,11 +1,12 @@
 #ifndef LEPP3_VIDEO_RECORDER_H_
 #define LEPP3_VIDEO_RECORDER_H_
 
+#include <ctime>
+#include <fstream>
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <sstream>
-#include <fstream>
-#include <ctime>
 #include <vector>
 #include <boost/filesystem.hpp>
 
@@ -17,6 +18,7 @@
 
 #include "lola/PoseObserver.hpp"
 #include "lepp3/FrameData.hpp"
+#include "lepp3/RGBData.hpp"
 
 #include "lepp3/util/util.h"
 #include "lepp3/debug/timer.hpp"
@@ -53,7 +55,7 @@ namespace {
   * the `setMode` method.
   */
 template<class PointT>
-class VideoRecorder : public TFObserver, public FrameDataObserver {
+class VideoRecorder : public TFObserver, public FrameDataObserver, public RGBDataObserver {
 public:
   VideoRecorder();
   /**
@@ -62,14 +64,10 @@ public:
   virtual void updateFrame(FrameDataPtr frameData);
 
   /**
-   * Implementation of the FrameDataObserver interface.
+   * Implementation of the RGBDataObserver interface.
   **/
-   /*
-  virtual void notifyNewFrame(
-      int idx,
-      const typename boost::shared_ptr<openni_wrapper::Image>& image);
-  void notifyNewFrame(int idx, const cv::Mat& image) {};
-  */
+  virtual void updateFrame(RGBDataPtr rgbData);
+
   /**
    * Implementation of the PoseObserver interface.
    */
@@ -103,7 +101,7 @@ private:
   /**
    * Instance holding the current RGB image.
    */
-  boost::shared_ptr<openni_wrapper::Image> image_;
+  boost::shared_ptr<pcl::io::Image> image_;
   /**
    * Instance holding the current pose parameters.
    */
@@ -194,13 +192,8 @@ void VideoRecorder<PointT>::updateFrame(FrameDataPtr frameData)
   }
 }
 
-/*
 template<class PointT>
-void VideoRecorder<PointT>::notifyNewFrame(
-    int idx,
-    const typename boost::shared_ptr<openni_wrapper::Image>& image) {
-
-  std::cout << "IMAGE CALLBACK" << std::endl;
+void VideoRecorder<PointT>::updateFrame(RGBDataPtr rgbData) {
   // Exception: Make the cloud lock ineffective, if we are not recording any
   // point clouds.
   if (!record_cloud_)
@@ -214,7 +207,7 @@ void VideoRecorder<PointT>::notifyNewFrame(
   if (record_rgb_) {
     if(cloud_lk_ && !image_lk_) {
       image_idx_++;
-      image_ = image;
+      image_ = rgbData->image;
       saveImage();
       // set the image lock only if we are recording pose...
       if (record_pose_)
@@ -225,7 +218,7 @@ void VideoRecorder<PointT>::notifyNewFrame(
         cloud_lk_ = false;
     }
   }
-}*/
+}
 
 template<class PointT>
 void VideoRecorder<PointT>::NotifyNewPose(
@@ -259,14 +252,12 @@ void VideoRecorder<PointT>::NotifyNewPose(
 
 template<class PointT>
 void VideoRecorder<PointT>::savePointCloud() {
-
-  std::stringstream ss;
-  ss << "cloud_" << cloud_idx_ << ".pcd";
-  const std::string file_name = ss.str();
+  std::stringstream file_name;
+  file_name << "cloud_" << std::setfill('0') << std::setw(4) << cloud_idx_ << ".jpg";
 
   Timer t;
   t.start();
-  pcl::io::savePCDFileBinary (file_name, *cloud_);
+  pcl::io::savePCDFileBinary (file_name.str(), *cloud_);
   t.stop();
   // ++counter_;
   std::cout<<"SAVING CLOUD TOOK: " << t.duration() << " ms" << std::endl;
@@ -279,21 +270,10 @@ void VideoRecorder<PointT>::saveImage() {
   cv::Mat frameRGB = cv::Mat(image_->getHeight(), image_->getWidth(), CV_8UC3);
   image_->fillRGB(frameRGB.cols,frameRGB.rows,frameRGB.data,frameRGB.step);
 
-  std::stringstream ss;
-  if (0 <= image_idx_ && image_idx_< 10)
-    ss << "image_000" << image_idx_ << ".jpg";
-  if (10 <= image_idx_ && image_idx_< 100)
-    ss << "image_00" << image_idx_ << ".jpg";
-  if (100 <= image_idx_ && image_idx_< 1000)
-    ss << "image_0" << image_idx_ << ".jpg";
-  if (1000 <= image_idx_ && image_idx_< 10000)
-    ss << "image_" << image_idx_ << ".jpg";
-  if (image_idx_ > 10000) {
-    throw "reached max size for saving RGB images!";
-  }
-  const std::string file_name = ss.str();
+  std::stringstream file_name;
+  file_name << "image_" << std::setfill('0') << std::setw(4) << image_idx_ << ".jpg";
 
-  cv::imwrite(file_name, frameRGB);
+  cv::imwrite(file_name.str(), frameRGB);
   t.stop();
   std::cout<<"SAVING IMAGE TOOK: " << t.duration() << " ms" << std::endl;
 }
