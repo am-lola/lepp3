@@ -10,10 +10,10 @@ namespace lepp
 
 struct RGBData
 {
-	RGBData(long frameNum, const typename boost::shared_ptr<openni_wrapper::Image> &image) 
+	RGBData(long frameNum, const typename boost::shared_ptr<pcl::io::Image> &image)
 		: frameNum(frameNum), image(image) {}
 	long frameNum;
-	const typename boost::shared_ptr<openni_wrapper::Image> &image;
+	const typename boost::shared_ptr<pcl::io::Image> &image;
 };
 
 
