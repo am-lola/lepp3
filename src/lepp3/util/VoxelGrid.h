@@ -80,6 +80,11 @@ private:
   int _numClusters = 0;
 };
 
+constexpr int VoxelGrid::_numCellNeighbors;
+constexpr int VoxelGrid::EMPTY_CELL;
+constexpr int VoxelGrid::UNVISITED_CELL;
+constexpr int VoxelGrid::CLUSTERED_CELL_START;
+
 VoxelGrid::VoxelGrid(float resolution)
 {
   if (resolution > 0.0f)

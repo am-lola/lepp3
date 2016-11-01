@@ -297,7 +297,7 @@ void RobotAggregator::sendPointCloud(PointCloudConstPtr cloud, long frame_num)
   service_->sendMessage(msg);
 }
 
-void RobotAggregator::sendRGBImage(const boost::shared_ptr<openni_wrapper::Image> &image, long frame_num)
+void RobotAggregator::sendRGBImage(const boost::shared_ptr<pcl::io::Image> &image, long frame_num)
 {
   // copy image data to byte array
   unsigned char* img_data = new unsigned char[image->getWidth() * image->getHeight() * 3];

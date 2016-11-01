@@ -2,7 +2,7 @@
 #define LEPP3_RGB_DATA_H__
 
 #include <vector>
-#include <pcl/io/openni_camera/openni_image.h>
+#include <pcl/io/image.h>
 #include "lepp3/Typedefs.hpp"
 
 namespace lepp

@@ -6,7 +6,7 @@
 #include "lepp3/RGBData.hpp"
 #include "VideoSource.hpp"
 
-#include <pcl/io/openni_grabber.h>
+#include <pcl/io/image.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -62,7 +62,7 @@ protected:
    * adaptation of the interface.
    */
   void cloud_cb_(const PointCloudConstPtr& cloud);
-  void image_cb_ (const boost::shared_ptr<openni_wrapper::Image>& rgb);
+  void image_cb_ (const boost::shared_ptr<pcl::io::Image>& rgb);
 
   long frameCount;
   /**
@@ -89,7 +89,7 @@ void GeneralGrabberVideoSource<PointT>::cloud_cb_(
 
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::image_cb_ (
-    const typename boost::shared_ptr<openni_wrapper::Image>& rgb)
+    const typename boost::shared_ptr<pcl::io::Image>& rgb)
 {
   RGBDataPtr rgbData(new RGBData(frameCount, rgb));
   this->setNextFrame(rgbData);
@@ -121,7 +121,7 @@ void GeneralGrabberVideoSource<PointT>::open() {
   }
 
   if (receive_image_) {
-    boost::function<void (const boost::shared_ptr<openni_wrapper::Image>&)> g =
+    boost::function<void (const boost::shared_ptr<pcl::io::Image>&)> g =
          boost::bind (&GeneralGrabberVideoSource::image_cb_, this, _1);
     interface_->registerCallback(g);
   }

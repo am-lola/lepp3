@@ -492,6 +492,8 @@ protected:
 
     if (rec_cloud)
       this->source()->FrameDataSubject::attachObserver(this->recorder());
+    if (rec_rgb)
+      this->raw_source()->RGBDataSubject::attachObserver(this->recorder());
     if (rec_pose)
       this->pose_service_->attachObserver(this->recorder());
   }
