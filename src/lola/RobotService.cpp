@@ -56,17 +56,13 @@ void AsyncRobotService::start() {
 
 void AsyncRobotService::inner_send(VisionMessage const& next_message) {
   am2b_iface::MsgHeader msg_header = { am2b_iface::VISION_MESSAGE, (uint32_t)sizeof(VisionMessageHeader) + next_message.header.len };
-  char const* buf = (char const*)&next_message;
   LINFO << "AsyncRobotService (" << remoteName_ << "): Sending a queued message: "
         << "msg == " << next_message;
   // Synchronously send the message, i.e. block until the send is complete.
   try {
-    socket_.send(
-        boost::asio::buffer((const char*)&msg_header, sizeof(msg_header)));
-    socket_.send(
-        boost::asio::buffer(buf, sizeof(VisionMessageHeader)));
-    socket_.send(
-        boost::asio::buffer(next_message.content, next_message.header.len));
+    sendBytes(reinterpret_cast<char const*>(&msg_header), sizeof(msg_header));
+    sendBytes(reinterpret_cast<char const*>(&next_message), sizeof(VisionMessageHeader));
+    sendBytes(next_message.content, next_message.header.len);
   } catch (...) {
     LERROR << "AsyncRobotService (" << remoteName_ << "): Error sending message.";
   }
@@ -75,6 +71,14 @@ void AsyncRobotService::inner_send(VisionMessage const& next_message) {
   // This is because we do not want to overwhelm the robot with a large
   // number of messages all sent in the same time.
   boost::this_thread::sleep(message_timeout_);
+}
+
+void AsyncRobotService::sendBytes(char const* data, size_t length) {
+  size_t sent_bytes = 0;
+
+  do {
+    sent_bytes += socket_.send(boost::asio::buffer(&data[sent_bytes], length - sent_bytes));
+  } while (sent_bytes < length);
 }
 
 void AsyncRobotService::sendMessage(VisionMessage const& msg) {

@@ -104,6 +104,10 @@ private:
    * to be delayed the necessary amount of time.
    */
   void inner_send(VisionMessage const& msg);
+  /**
+   * Helper method to send all bytes to the remote socket. To be used in inner_send.
+   */
+  void sendBytes(char const* buffer, size_t length);
 };
 
 #endif
