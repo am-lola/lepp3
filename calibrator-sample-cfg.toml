@@ -2,20 +2,20 @@
 # it with the `--cfg` flag).
 # The config file is in the [toml](https://github.com/toml-lang/toml) format,
 
-# Uncomment in presense of Robot, to record pose.
-# IP address and port number may differ.
-# [PoseService]
-# ip = "192.168.0.8"
-# # (The hex port value is equal to the decimal below) port = 0xd001
-# port = 53249
+ #Uncomment in presense of Robot, to record pose.
+ #IP address and port number may differ.
+ [PoseService]
+ ip = "192.168.0.8"
+ # (The hex port value is equal to the decimal below) port = 0xd001
+ port = 53249
 
 [VideoSource]
 # Common options:
 #   - `type`: stream, oni, pcd, am_offline
 # `oni` and `pcd` types require an additional parameter: file_path
 # `am_offline` type requires an additional parameters: dir_path
-type = "oni"
-file_path = "../videos/triangle.oni"
+type = "stream"
+#file_path = "../videos/triangle.oni"
 
 [FilteredVideoSource]
 # type = simple|prob|pt1
@@ -28,10 +28,10 @@ type = "simple"
     a = 1.0117
     b = -0.0100851
 
-  # [[FilteredVideoSource.filters]]
-  #   # The OdoTransformer knows to reference the PoseService found in the IOC
-  #   # container automatically
-  #   type = "RobotOdoTransformer"
+   [[FilteredVideoSource.filters]]
+     # The OdoTransformer knows to reference the PoseService found in the IOC
+     # container automatically
+     type = "RobotOdoTransformer"
 
   [[FilteredVideoSource.filters]]
     type = "TruncateFilter"
