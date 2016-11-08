@@ -13,8 +13,8 @@ SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS
 # crash in boost::math::lanczos::lanczos_initializer<
 #               boost::math::lanczos::lanczos17m64, long double>::init::init()
 # from /usr/lib/libpcl_sample_consensus.so.1.7
-#set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_BUILD_TYPE Release)
 
 find_package(PCL 1.2 REQUIRED)
 find_package(OpenCV REQUIRED)

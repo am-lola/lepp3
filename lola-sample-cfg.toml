@@ -91,13 +91,17 @@ split_axis = "middle"
 # The list of aggregators is also optional.
 # The order of the aggregators themselves IS NOT SIGNIFICANT.
 
+
+# aggregator to send data to QNX
 [[aggregators]]
-# This sends the obstacles to LOLA itself.
-# It does not require additional configuration, as it will use the service
-# already defined before (RobotService).
 type = "RobotAggregator"
-# ...every 3 frames
-frame_rate = 3
+update_frequency= 3
+data = [ "obstacles", "surfaces", "images", "pointclouds"]
+  [[aggregators.RobotService]]
+  target="Vision"
+  ip = "192.168.0.3"  # QNX computer IP
+  port = 61448
+  delay = 10
 
 [Visualization]
 # Whether the results are visualized **locally**
