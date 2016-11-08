@@ -48,26 +48,30 @@ type = "simple"
 #   Recorder requires RecordingOptions
 [[observers]]
 type = "ObstacleDetector"
+# Available methods accepted by ObstacleDetector:
+#   - EuclideanClustering
+#   - GMM
+method = "EuclideanClustering"
 
-#[[observers]]
-#type = "SurfaceDetector"
+[[observers]]
+type = "SurfaceDetector"
 
 # aggregator to send data to QNX
-[[aggregators]]
-type = "RobotAggregator"
-update_frequency= 300
-data = [ "obstacles", "surfaces", "images" ]
-  [[aggregators.RobotService]]
-  target="Qnx"
-  ip = "192.168.0.3"  # QNX computer IP
-  port = 61448
-  delay = 10
+#[[aggregators]]
+#type = "RobotAggregator"
+#update_frequency= 300
+#data = [ "obstacles", "surfaces", "images" ]
+#  [[aggregators.RobotService]]
+#  target="Qnx"
+#  ip = "192.168.0.3"  # QNX computer IP
+#  port = 61448
+#  delay = 10
 
 
 [[aggregators]]
 type = "RobotAggregator"
-frame_rate = 3
-data = [ "obstacles", "surfaces", "images" ]
+update_frequency = 3
+data = [ "obstacles", "surfaces", "pointclouds", "images" ]
   [[aggregators.RobotService]]
   target="Vision"
   ip = "192.168.0.8"  # lepp3 computer IP
@@ -159,30 +163,40 @@ mergeUpdatePercentage = 0.2
 # plane in order to be considered an inlier on this plane
 minDistToPlane = 0.04
 
+[[observers]]
+type = "ARVisualizer"
 
-[Visualization]
+  [[observers.visualizer]]
+  type = "ObsSurfVisualizer"
+  name = "Obs_Surf_Detector"
+  width = 1024
+  height = 768
+  show_obstacles = true
+  show_surfaces = true
+
+#[Visualization]
 # Whether the results are visualized **locally**
 # `cloud` = true|false ---- visualize the point cloud
 # `rgb` = true|false   ---- visualize the rgb image
-cloud = true
-rgb = true
+#cloud = true
+#rgb = true
 
-[ARVisualizer]
+#[ARVisualizer]
 #When the robot runs, frame can be changed to "lola"
 #frame=lola|pcl
 
-frame="lola"
+#frame="lola"
 
 #lola
-lola_positionx = 0
-lola_positiony = 0
-lola_positionz = 0
-lola_forwardx = 1
-lola_forwardy = 0
-lola_forwardz= 0
-lola_upx = 0
-lola_upy = 0
-lola_upz = 1
+#lola_positionx = 0
+#lola_positiony = 0
+#lola_positionz = 0
+#lola_forwardx = 1
+#lola_forwardy = 0
+#lola_forwardz= 0
+#lola_upx = 0
+#lola_upy = 0
+#lola_upz = 1
 
 #PCL
 #pcl_positionx = 0

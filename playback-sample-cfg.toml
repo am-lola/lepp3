@@ -8,6 +8,7 @@
 # `oni` and `pcd` types require an additional parameter: file_path
 # `am_offline` type requires an additional parameters: dir_path
 type = "am_offline"
+enable_rgb = false
 dir_path = "rec_2016-3-8_175619/"
 
 [FilteredVideoSource]
@@ -42,9 +43,13 @@ type = "simple"
 # port = 53249
 
 
-[Visualization]
-# Whether the results are visualized **locally**
-# `cloud` = true|false ---- visualize the point cloud
-# `rgb` = true|false   ---- visualize the rgb image
-cloud = true
-rgb = true
+[[observers]]
+type = "ARVisualizer"
+
+  [[observers.visualizer]]
+  type = "ObsSurfVisualizer"
+  name = "Obs_Surf_Detector"
+  width = 1024
+  height = 768
+  show_obstacles = true
+  show_surfaces = true

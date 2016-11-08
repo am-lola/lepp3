@@ -19,6 +19,7 @@ bubble_size = 1.2
 # `oni` and `pcd` types require an additional parameter: file_path
 # `am_offline` type requires an additional parameters: dir_path
 type = "stream"
+enable_rgb = false
 
 [FilteredVideoSource]
 # type = simple|prob|pt1
@@ -47,6 +48,10 @@ type = "simple"
 #   Recorder requires RecordingOptions
 [[observers]]
 type = "ObstacleDetector"
+# Available methods accepted by ObstacleDetector:
+#   - EuclideanClustering
+#   - GMM
+method = "EuclideanClustering"
 
 [[observers]]
 type = "SurfaceDetector"
@@ -172,19 +177,29 @@ mergeUpdatePercentage = 0.2
 # plane in order to be considered an inlier on this plane
 minDistToPlane = 0.04
 
+[[observers]]
+type = "ARVisualizer"
 
-[Visualization]
+  [[observers.visualizer]]
+  type = "ObsSurfVisualizer"
+  name = "Obs_Surf_Detector"
+  width = 1024
+  height = 768
+  show_obstacles = true
+  show_surfaces = true
+
+#[Visualization]
 # Whether the results are visualized **locally**
 # `cloud` = true|false ---- visualize the point cloud
 # `rgb` = true|false   ---- visualize the rgb image
-cloud = true
-rgb = true
+#cloud = true
+#rgb = true
 
-[ARVisualizer]
+#[ARVisualizer]
 #When the robot runs, frame can be changed to "lola"
 #frame=lola|pcl
 
-frame="lola"
+#frame="lola"
 
 #lola
 lola_positionx = 0

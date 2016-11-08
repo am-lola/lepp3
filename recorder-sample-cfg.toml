@@ -8,6 +8,7 @@
 # `oni` and `pcd` types require an additional parameter: file_path
 # `am_offline` type requires an additional parameters: dir_path
 type = "stream"
+enable_rgb = false
 
 [FilteredVideoSource]
 # type = simple|prob|pt1
