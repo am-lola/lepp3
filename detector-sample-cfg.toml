@@ -174,7 +174,7 @@ type = "ARVisualizer"
   width = 1024
   height = 768
 
-    [[observers.visualizer.debugGUI]]
+    [[observers.visualizer.debugGUIParams]]
     # Just an example: set "some" of the values here. The rest will be set to
     # default by `DebugGUIParams`s ctor.
     draw_gaussians = true

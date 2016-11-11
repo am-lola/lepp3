@@ -101,7 +101,7 @@ private:
   /**
    * Instance holding the current RGB image.
    */
-  boost::shared_ptr<pcl::io::Image> image_;
+  boost::shared_ptr<openni_wrapper::Image> image_;
   /**
    * Instance holding the current pose parameters.
    */

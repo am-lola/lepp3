@@ -42,6 +42,10 @@ int main(int argc, char* argv[]) {
         parser.reset(new FileConfigParser<PointT>(argv[i + 1]));
       }
     }
+  } catch (const std::exception& e) {
+    std::cerr << e.what() << std::endl;
+    PrintUsage();
+    return 1;
   } catch (char const* exc) {
     std::cerr << exc << std::endl;
     PrintUsage();

@@ -2,7 +2,7 @@
 #define LEPP3_RGB_DATA_H__
 
 #include <vector>
-#include <pcl/io/image.h>
+#include <pcl/io/openni_grabber.h>
 #include "lepp3/Typedefs.hpp"
 
 namespace lepp
@@ -10,10 +10,10 @@ namespace lepp
 
 struct RGBData
 {
-	RGBData(long frameNum, const typename boost::shared_ptr<pcl::io::Image> &image)
+	RGBData(long frameNum, const typename boost::shared_ptr<openni_wrapper::Image> &image)
 		: frameNum(frameNum), image(image) {}
 	long frameNum;
-	const typename boost::shared_ptr<pcl::io::Image> &image;
+	const typename boost::shared_ptr<openni_wrapper::Image> &image;
 };
 
 

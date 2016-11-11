@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 #include "Parser.h"
 #include "lepp3/SurfaceDetector.hpp"
@@ -42,7 +43,7 @@ public:
         obstacleDetectorActive(false) {
 
     if (!toml_tree_.valid()) {
-      throw "The config file is not valid";
+      throw std::runtime_error("Config parsing error: " + parser_.errorReason);
     }
 
     this->init();
@@ -616,7 +617,7 @@ private:
     GMM::ObstacleTrackerParams params;
     params.enableTightFit = v->find("enable_tight_fit")->as<bool>();
     params.filterSSVPositions = v->find("filter_ssv_position")->as<bool>();
-    params.voxelGridResolution = v->find("ObstacleTracking.voxel_grid_resolution")->as<double>();
+    params.voxelGridResolution = v->find("voxel_grid_resolution")->as<double>();
     params.kalman_SystemNoisePosition = v->find("kalman_system_noise_position")->as<double>();
     params.kalman_SystemNoiseVelocity = v->find("kalman_system_noise_velocity")->as<double>();
     params.kalman_MeasurementNoise = v->find("kalman_measurement_noise")->as<double>();
@@ -709,7 +710,7 @@ private:
       GMM::DebugGUIParams d_gui_params;
       // If there are debug parameters available in the config, get 'em
       if(debugGUI) {
-        toml::Value const* debug_gui = v.find("debugGUI");
+        toml::Value const* debug_gui = v.find("debugGUIParams");
 
         d_gui_params = readGMMDebugGuiParams(debug_gui);
       }

@@ -139,7 +139,7 @@ private:
   /**
    * Sends an RGB image to the remote host
    */
-  void sendRGBImage(const boost::shared_ptr<pcl::io::Image> &image, long frame_num);
+  void sendRGBImage(const boost::shared_ptr<openni_wrapper::Image> &image, long frame_num);
   /**
    * Obtains the next ID that should be used for a primitive that the robot is
    * notified of.
