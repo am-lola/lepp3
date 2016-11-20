@@ -43,23 +43,29 @@ int main(int argc, char* argv[]) {
       }
     }
   } catch (const std::exception& e) {
-    std::cerr << e.what() << std::endl;
+    std::cerr << "Config: " << e.what() << std::endl;
     PrintUsage();
     return 1;
   } catch (char const* exc) {
-    std::cerr << exc << std::endl;
+    std::cerr << "Config: " << exc << std::endl;
     PrintUsage();
     return 1;
   }
 
-  // Get the video source and start it up
-  if (parser->source())
-    parser->source()->open();
+  try {
+    // Get the video source and start it up
+    if (parser->source())
+      parser->source()->open();
 
-  std::cout << "Waiting forever..." << std::endl;
-  std::cout << "(^C to exit)" << std::endl;
-  while (true)
+    std::cout << "Waiting forever..." << std::endl;
+    std::cout << "(^C to exit)" << std::endl;
+    while (true)
       boost::this_thread::sleep(boost::posix_time::milliseconds(8000));
-
-  return 0;
+  } catch (const std::exception& e) {
+    std::cerr << "Fatal error: " << e.what() << std::endl;
+    return 1;
+  } catch (char const* exc) {
+    std::cerr << "Fatal error: " << exc << std::endl;
+    return 1;
+  }
 }

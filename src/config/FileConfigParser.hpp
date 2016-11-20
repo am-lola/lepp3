@@ -60,9 +60,10 @@ protected:
     if (toml_tree_.find("PoseService"))
       initPoseService();
     else
-      std::cout << "No pose service info found in config file."
+      std::cout << "No pose service info found in config file. "
                 << "Assuming no robot pose information will be available."
                 << std::endl;
+
     // Existence of a Lola is optional.
     // Compatibility for offline use.
     if (toml_tree_.find("Robot"))
@@ -72,9 +73,11 @@ protected:
 
     // Now get the video source ready...
     initRawSource();
+
     // ...along with any possible filters. Method Parser::buildFilteredSource
     // from the base class is called.
     this->buildFilteredSource();
+
     // attach any available observers
     addObservers();
     // ...and additional observer processors.
@@ -82,8 +85,13 @@ protected:
 
     std::cout << "==== Finished parsing the config file. ====" << std::endl;
   }
+
   void initRobot() {
-    double bubble_size = toml_tree_.find("Robot.bubble_size")->as<double>();
+      // Check requirements
+    if (!this->pose_service()) {
+      throw std::runtime_error("[Robot] requires a [PoseService]!");
+    }
+    double bubble_size = getTomlValue<double>(toml_tree_, "Robot.bubble_size");
     this->robot_.reset(new Robot(*this->pose_service(), bubble_size));
   }
 
@@ -127,77 +135,76 @@ protected:
   /// Implementations of initialization of various parts of the pipeline.
   void initRawSource() {
     std::cout << "entered initRawSource" << std::endl;
-    if (!toml_tree_.find("VideoSource.type"))
-      throw "error: no video source found in the config file.";
-    const std::string type = toml_tree_.find(
-          "VideoSource.type")->as<std::string>();
-    bool enable_rgb = false;
-    if (toml_tree_.find("VideoSource.enable_rgb"))
-      enable_rgb = toml_tree_.find("VideoSource.enable_rgb")->as<bool>();
+    const std::string type = getTomlValue<std::string>(toml_tree_, "VideoSource.type");
+
+    bool enable_rgb = getOptionalTomlValue(toml_tree_, "VideoSource.enable_rgb", false);
 
     if (type == "stream") {
-      this->raw_source_ = boost::shared_ptr<VideoSource<PointT> >(
-          new LiveStreamSource<PointT>(enable_rgb));
+      this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(new LiveStreamSource<PointT>(enable_rgb));
     } else if (type == "pcd") {
-      std::string file_path = toml_tree_.find(
-            "VideoSource.file_path")->as<std::string>();
+      const std::string file_path = getTomlValue<std::string>(toml_tree_, "VideoSource.file_path");
       boost::shared_ptr<pcl::Grabber> interface(new pcl::PCDGrabber<PointT>(
             file_path,
-            20.,
+            20.f,
             true));
-      this->raw_source_ = boost::shared_ptr<VideoSource<PointT> >(
-          new GeneralGrabberVideoSource<PointT>(interface));
+      this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(new GeneralGrabberVideoSource<PointT>(interface));
     } else if (type == "oni") {
-      std::string file_path = toml_tree_.find(
-            "VideoSource.file_path")->as<std::string>();
+      const std::string file_path = getTomlValue<std::string>(toml_tree_, "VideoSource.file_path");
       std::cout << "oni file path: " << file_path << std::endl;
       boost::shared_ptr<pcl::Grabber> interface(new pcl::io::OpenNI2Grabber(
             file_path,
             pcl::io::OpenNI2Grabber::OpenNI_Default_Mode,
             pcl::io::OpenNI2Grabber::OpenNI_Default_Mode));
-      this->raw_source_ = boost::shared_ptr<VideoSource<PointT> >(
-          new GeneralGrabberVideoSource<PointT>(interface));
+      this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(new GeneralGrabberVideoSource<PointT>(interface));
     } else if (type == "am_offline") {
-      std::string dir_path = toml_tree_.find(
-            "VideoSource.dir_path")->as<std::string>();
-      std::cout << "oni file path: " << dir_path << std::endl;
+      std::string dir_path = getTomlValue<std::string>(toml_tree_, "VideoSource.dir_path");
+      if ('/' != dir_path[dir_path.size() - 1]
+          && '\\' != dir_path[dir_path.size() - 1]) {
+        dir_path += '/';
+      }
+      std::cout << "am_offline directory path: " << dir_path << std::endl;
       FileManager fm(dir_path);
+
       // Prepare the pcd file names required by PCDGrabber
       const std::vector<std::string> file_names = fm.getFileNames(".pcd");
       boost::shared_ptr<pcl::Grabber> pcd_interface(new pcl::PCDGrabber<PointT>(
         file_names,
         30, // frame rate
         true)); // video loop
-      // Prepare the filename sequence for cv::VideoCapture
-      std::stringstream ss;
-      ss << dir_path << "image_%04d.jpg";
-      std::cout << "image dir: " << ss.str() << std::endl;
-      const boost::shared_ptr<cv::VideoCapture> img_interface(
-          new cv::VideoCapture(ss.str()));
 
-      this->raw_source_ = boost::shared_ptr<OfflineVideoSource<PointT> >(
+      boost::shared_ptr<cv::VideoCapture> img_interface;
+      if (enable_rgb) {
+        // Prepare the filename sequence for cv::VideoCapture
+        std::stringstream ss;
+        ss << dir_path << "image_%04d.jpg";
+        std::cout << "image dir: " << ss.str() << std::endl;
+        img_interface.reset(new cv::VideoCapture(ss.str()));
+      }
+      this->raw_source_ = boost::shared_ptr<OfflineVideoSource<PointT>>(
           new OfflineVideoSource<PointT>(pcd_interface, img_interface));
     } else {
-      throw "Invalid VideoSource configuration";
+      throw "Invalid VideoSource";
     }
   }
 
   /**
-   * Creates and instance of `FilteredVideoSource` based on the previously
+   * Creates an instance of `FilteredVideoSource` based on the previously
    * acquired `VideoSource` object instance.
    */
   virtual void initFilteredVideoSource() override {
-    const std::string type = toml_tree_.find(
-          "FilteredVideoSource.type")->as<std::string>();
+    const std::string type = getTomlValue<std::string>(toml_tree_, "FilteredVideoSource.type");
+
+    if (!this->raw_source_)
+    {
+      throw "FilteredVideoSource: no raw video source!";
+    }
+
     if (type == "simple") {
-      this->filtered_source_.reset(
-          new SimpleFilteredVideoSource<PointT>(this->raw_source_));
+      this->filtered_source_.reset(new SimpleFilteredVideoSource<PointT>(this->raw_source_));
     } else if (type == "prob") {
-      this->filtered_source_.reset(
-          new ProbFilteredVideoSource<PointT>(this->raw_source_));
+      this->filtered_source_.reset(new ProbFilteredVideoSource<PointT>(this->raw_source_));
     } else if (type == "pt1") {
-      this->filtered_source_.reset(
-          new Pt1FilteredVideoSource<PointT>(this->raw_source_));
+      this->filtered_source_.reset(new Pt1FilteredVideoSource<PointT>(this->raw_source_));
     } else {
       throw "Invalid FilteredVideoSource configuration";
     }
@@ -220,8 +227,8 @@ protected:
   }
 
   void initPoseService() {
-    std::string ip = toml_tree_.find("PoseService.ip")->as<std::string>();
-    int port = toml_tree_.find("PoseService.port")->as<int>();
+    std::string ip = getTomlValue<std::string>(toml_tree_, "PoseService.ip");
+    int port = getTomlValue<int>(toml_tree_, "PoseService.port");
 
     this->pose_service_.reset(new PoseService(ip, port));
     this->pose_service_->start();
@@ -641,34 +648,37 @@ private:
    * If the lines are invalid, an exception is thrown.
    */
   boost::shared_ptr<PointFilter<PointT> > getPointFilter(toml::Value const& v) {
-    std::string const type = v.find("type")->as<std::string>();
+    std::string const type = getTomlValue<std::string>(v, "type", "FilteredVideoSource.filters.");
+
     if (type == "SensorCalibrationFilter") {
-      double a = v.find("a")->as<double>();
-      double b = v.find("b")->as<double>();
-      return boost::shared_ptr<PointFilter<PointT> >(
-          new SensorCalibrationFilter<PointT>(a, b));
+      double a = getTomlValue<double>(v, "a", "SensorCalibrationFilter.");
+      double b = getTomlValue<double>(v, "b", "SensorCalibrationFilter.");
+      return boost::shared_ptr<PointFilter<PointT>>(new SensorCalibrationFilter<PointT>(a, b));
+
     } else if (type == "RobotOdoTransformer") {
-      return boost::shared_ptr<PointFilter<PointT> >(
-          new RobotOdoTransformer<PointT>(this->pose_service_));
+      // Check requirements
+      if (!this->pose_service()) {
+        throw std::runtime_error("[RobotOdoTransformer] requires a [PoseService]!");
+      }
+      return boost::shared_ptr<PointFilter<PointT>>(new RobotOdoTransformer<PointT>(this->pose_service()));
+
     } else if (type == "FileOdoTransformer") {
-      std::string const file_name = toml_tree_.find(
-            "file_path")->as<std::string>();
-      return boost::shared_ptr<PointFilter<PointT> >(
-          new FileOdoTransformer<PointT>(file_name));
+      std::string const file_name = getTomlValue<std::string>(v, "file_path", "FileOdoTransformer.");
+      return boost::shared_ptr<PointFilter<PointT>>(new FileOdoTransformer<PointT>(file_name));
+
     } else if (type == "TruncateFilter") {
-      int decimals = v.find("decimal_points")->as<int>();
-      return boost::shared_ptr<PointFilter<PointT> >(
-          new TruncateFilter<PointT>(decimals));
+      int decimals = getTomlValue<int>(v, "decimal_points", "TruncateFilter.");
+      return boost::shared_ptr<PointFilter<PointT>>(new TruncateFilter<PointT>(decimals));
+
     } else if (type == "CropFilter") {
-      double xmax = v.find("xmax")->as<double>();
-      double xmin = v.find("xmin")->as<double>();
-      double ymax = v.find("ymax")->as<double>();
-      double ymin = v.find("ymin")->as<double>();
-      return boost::shared_ptr<PointFilter<PointT> >(
-          new CropFilter<PointT>(xmax, xmin, ymax, ymin));
+      double xmax = getTomlValue<double>(v, "xmax", "CropFilter.");
+      double xmin = getTomlValue<double>(v, "xmin", "CropFilter.");
+      double ymax = getTomlValue<double>(v, "ymax", "CropFilter.");
+      double ymin = getTomlValue<double>(v, "ymin", "CropFilter.");
+      return boost::shared_ptr<PointFilter<PointT>>(new CropFilter<PointT>(xmax, xmin, ymax, ymin));
+
     } else {
-      std::cerr << "Unknown filter type `" << type << "`" << std::endl;
-      throw "Unknown filter type";
+      throw "Unknown filter type " + type;
     }
   }
 
@@ -698,7 +708,7 @@ private:
       bool show_surfaces = false;
       show_obstacles = v.find("show_obstacles")->as<bool>();
       show_surfaces = v.find("show_surfaces")->as<bool>();
-      
+
       boost::shared_ptr<ObsSurfVisualizer> obs_surf_vis(
           new ObsSurfVisualizer(name, show_obstacles, show_surfaces, width, height));
       this->source()->FrameDataSubject::attachObserver(obs_surf_vis);
@@ -766,6 +776,35 @@ private:
       throw "Unknown aggregator type";
     }
   }
+
+  /**
+   * Returns a mandatory toml value.
+   *
+   * Throws an exception if it doesn't exist
+   */
+  template<typename T>
+  T getTomlValue(toml::Value const& v, std::string const& key, std::string const& key_hint = "") {
+    toml::Value const* el = toml_tree_.find(key);
+    if (!el) {
+      throw std::runtime_error("Required key '"  + key_hint + key + "' is missing from the config");
+    }
+
+    return el->as<T>();
+  }
+
+  /**
+   * Returns an optional toml value.
+   */
+  template<typename T>
+  T getOptionalTomlValue(toml::Value const& v, std::string const& key, T const& default_value = T()) {
+    toml::Value const* el = toml_tree_.find(key);
+    if (el) {
+      return el->as<T>();
+    } else {
+      return default_value;
+    }
+  }
+
 
   /// Private members
   std::string const& file_name_;
