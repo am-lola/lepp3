@@ -76,3 +76,23 @@ type = "simple"
   xmin = -1.5
   ymax = 1.5
   ymin = -1.5
+
+###########################################################################
+# Observers is an array
+# this will list all observers and options belonging to them
+
+# This observer saves the input data. The saved data can be replayed later
+# with the "am_offline" video source
+[[observers]]
+type = "Recorder"
+
+
+  [ObserverOptions.Recorder]
+  # Output directory. The final output will end up in a subfolder named
+  # "rec_{datetime}" 
+  output_folder= "recordings"
+  # Defines which data to record
+  #cloud = true
+  #rgb = false
+  #pose = false
+

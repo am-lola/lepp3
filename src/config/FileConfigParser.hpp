@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 
 #include "Parser.h"
 #include "lepp3/SurfaceDetector.hpp"
@@ -196,7 +197,7 @@ protected:
 
     if (!this->raw_source_)
     {
-      throw "FilteredVideoSource: no raw video source!";
+      throw "FilteredVideoSource: no raw video source available!";
     }
 
     if (type == "simple") {
@@ -237,18 +238,21 @@ protected:
   void addObservers()
   {
     std::cout << "entered addObservers" << std::endl;
+
     const toml::Value* available = toml_tree_.find("observers");
     if (!available)
       return;
+
     const toml::Array& obs_arr = available->as<toml::Array>();
+
     // Iterate though all the available observer entries in the config file and
     // set them up accordingly.
     for (const toml::Value& v : obs_arr)
     {
-      std::string const type = v.find("type")->as<std::string>();
+      std::string const type = getTomlValue<std::string>(v, "type", "observers.");
       std::cout << "observer type: " << type << std::endl;
-      if (type == "ObstacleDetector")
-      {
+
+      if (type == "ObstacleDetector") {
         obstacleDetectorActive = true;
         // Set up the basic surface detector for ground removal, if not already
         // initialized.
@@ -256,34 +260,29 @@ protected:
           initSurfaceFinder();
         std::string const method = v.find("method")->as<std::string>();
         initObstacleDetector(method);
-      }
-      else if (type == "SurfaceDetector")
-      {
+
+      } else if (type == "SurfaceDetector") {
         surfaceDetectorActive = true;
         // Set up the basic surface detector for ground removal, if not already
         // initialized.
         if (!ground_removal_)
           initSurfaceFinder();
         initSurfaceDetector();
-      }
-      else if (type == "Recorder")
-      {
+
+      } else if (type == "Recorder") {
         initRecorder();
-      }
-      else if (type == "CameraCalibrator")
-      {
+
+      } else if (type == "CameraCalibrator") {
         initCamCalibrator();
-      }
-      else if (type == "ARVisualizer")
-      {
-        toml::Value const* visualizer = v.find("visualizer");
-        if (!visualizer)
-        {
+
+      } else if (type == "ARVisualizer") {
+        toml::Value const *visualizer = v.find("visualizer");
+        if (!visualizer) {
           std::cout << "[[observers.visualizer]] not found!" << std::endl;
           std::cout << "Cannot create a Visualizer without specifying the parameters!" << std::endl;
           exit(1);
         }
-        toml::Array const& array = visualizer->as<toml::Array>();
+        toml::Array const &array = visualizer->as<toml::Array>();
         /*
          * TODO add sanity check for the case where there's more than one visualizer
          * instance inside one definition (=illegal basewd on definition).
@@ -474,24 +473,22 @@ protected:
 
   virtual void initRecorder() override {
     std::cout << "entered initRecorder" << std::endl;
-    this->recorder_.reset(new VideoRecorder<PointT>());
-    std::cout << "recorder got reset!" << std::endl;
-    const bool rec_cloud = toml_tree_.find(
-          "RecordingOptions.cloud")->as<bool>();
-    const bool rec_rgb = toml_tree_.find(
-          "RecordingOptions.rgb")->as<bool>();
-    const bool rec_pose = toml_tree_.find(
-          "RecordingOptions.pose")->as<bool>();
+
+    std::string const outputPath = getTomlValue<std::string>(toml_tree_, "ObserverOptions.Recorder.output_folder");
+    this->recorder_.reset(new VideoRecorder<PointT>(outputPath));
+
+    const bool rec_cloud = getOptionalTomlValue(toml_tree_, "ObserverOptions.Recorder.cloud", true);
+    const bool rec_rgb   = getOptionalTomlValue(toml_tree_, "ObserverOptions.Recorder.rgb",  false);
+    const bool rec_pose  = getOptionalTomlValue(toml_tree_, "ObserverOptions.Recorder.pose", false);
+
     std::cout << "\trec_cloud: " << rec_cloud
               << "\n\trec_rgb: " << rec_rgb
               << "\n\trec_pose: " << rec_pose << std::endl;
 
     // set the VideoGrabber options (whether to subscribe to cloud/rgb) ...
     std::map<std::string, bool> video_options;
-    video_options.insert(
-          std::pair<std::string, bool>("subscribe_cloud", rec_cloud));
-    video_options.insert(
-          std::pair<std::string, bool>("subscribe_image", rec_rgb));
+    video_options.insert(std::pair<std::string, bool>("subscribe_cloud", rec_cloud));
+    video_options.insert(std::pair<std::string, bool>("subscribe_image", rec_rgb));
 
     this->source()->setOptions(video_options);
 
@@ -502,8 +499,12 @@ protected:
       this->source()->FrameDataSubject::attachObserver(this->recorder());
     if (rec_rgb)
       this->raw_source()->RGBDataSubject::attachObserver(this->recorder());
-    if (rec_pose)
-      this->pose_service_->attachObserver(this->recorder());
+    if (rec_pose) {
+      if (!this->pose_service()) {
+        throw std::runtime_error("[PoseService] is required if it should be recorded...!");
+      }
+      this->pose_service()->attachObserver(this->recorder());
+    }
   }
 
 //  void loadARVisualizerParams(double position[],double up[],double forward[])
@@ -647,7 +648,7 @@ private:
    * as defined in the following lines of the config file.
    * If the lines are invalid, an exception is thrown.
    */
-  boost::shared_ptr<PointFilter<PointT> > getPointFilter(toml::Value const& v) {
+  boost::shared_ptr<PointFilter<PointT>> getPointFilter(toml::Value const& v) {
     std::string const type = getTomlValue<std::string>(v, "type", "FilteredVideoSource.filters.");
 
     if (type == "SensorCalibrationFilter") {
@@ -783,8 +784,8 @@ private:
    * Throws an exception if it doesn't exist
    */
   template<typename T>
-  T getTomlValue(toml::Value const& v, std::string const& key, std::string const& key_hint = "") {
-    toml::Value const* el = toml_tree_.find(key);
+  static T getTomlValue(toml::Value const& v, std::string const& key, std::string const& key_hint = "") {
+    toml::Value const* el = v.find(key);
     if (!el) {
       throw std::runtime_error("Required key '"  + key_hint + key + "' is missing from the config");
     }
@@ -796,8 +797,8 @@ private:
    * Returns an optional toml value.
    */
   template<typename T>
-  T getOptionalTomlValue(toml::Value const& v, std::string const& key, T const& default_value = T()) {
-    toml::Value const* el = toml_tree_.find(key);
+  static T getOptionalTomlValue(toml::Value const& v, std::string const& key, T const& default_value = T()) {
+    toml::Value const* el = v.find(key);
     if (el) {
       return el->as<T>();
     } else {
@@ -826,12 +827,12 @@ private:
    * reference to it to make sure it doesn't get destroyed, although it is
    * never exposed to any outside clients.
    */
-  boost::shared_ptr<ObstacleDetector<PointT> > base_obstacle_detector_;
-  boost::shared_ptr<SurfaceDetector<PointT> > surface_detector_;
-  boost::shared_ptr<SurfaceClusterer<PointT> > surface_clusterer_;
-  boost::shared_ptr<SurfaceTracker<PointT> > surface_tracker_;
+  boost::shared_ptr<ObstacleDetector<PointT>> base_obstacle_detector_;
+  boost::shared_ptr<SurfaceDetector<PointT>> surface_detector_;
+  boost::shared_ptr<SurfaceClusterer<PointT>> surface_clusterer_;
+  boost::shared_ptr<SurfaceTracker<PointT>> surface_tracker_;
   boost::shared_ptr<ConvexHullDetector> convex_hull_detector_;
-  boost::shared_ptr<PlaneInlierFinder<PointT> > inlier_finder_;
+  boost::shared_ptr<PlaneInlierFinder<PointT>> inlier_finder_;
 
   bool surfaceDetectorActive;
   bool obstacleDetectorActive;

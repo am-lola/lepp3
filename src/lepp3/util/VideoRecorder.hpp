@@ -25,9 +25,14 @@
 
 
 namespace {
-  std::string get_dir() {
+  std::string get_dir(std::string const& base_dir) {
     std::stringstream ss;
-    ss << "../recordings/rec_" << lepp::get_current_timestamp();
+    ss << base_dir;
+    if ('/' != base_dir[base_dir.size() - 1]
+        && '/' != base_dir[base_dir.size() - 1]) {
+      ss << '/';
+    }
+    ss << "rec_" << lepp::get_current_timestamp();
     return ss.str();
   }
 }
@@ -57,7 +62,7 @@ namespace {
 template<class PointT>
 class VideoRecorder : public TFObserver, public FrameDataObserver, public RGBDataObserver {
 public:
-  VideoRecorder();
+  VideoRecorder(std::string const& outputPath);
   /**
    * Implementation of the FrameDataObserver interface.
   **/
@@ -125,8 +130,8 @@ private:
 };
 
 template<class PointT>
-VideoRecorder<PointT>::VideoRecorder()
-  : path_( get_dir() ),
+VideoRecorder<PointT>::VideoRecorder(std::string const& outputPath)
+  : path_( get_dir(outputPath) ),
     params_file_name_("params.txt"),
     record_cloud_(true),
     record_rgb_(false),
@@ -253,7 +258,7 @@ void VideoRecorder<PointT>::NotifyNewPose(
 template<class PointT>
 void VideoRecorder<PointT>::savePointCloud() {
   std::stringstream file_name;
-  file_name << "cloud_" << std::setfill('0') << std::setw(4) << cloud_idx_ << ".jpg";
+  file_name << "cloud_" << std::setfill('0') << std::setw(4) << cloud_idx_ << ".pcd";
 
   Timer t;
   t.start();

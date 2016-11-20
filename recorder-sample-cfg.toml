@@ -39,7 +39,10 @@ type = "simple"
 [[observers]]
 type = "Recorder"
 
-[RecordingOptions]
-cloud = true
-rgb = true
-pose = false
+  [ObserverOptions.Recorder]
+  # output directory
+  output_folder= "recordings"
+  # Defines which data to record
+  cloud = true
+  rgb = false
+  pose = false
