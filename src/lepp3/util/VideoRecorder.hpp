@@ -11,6 +11,7 @@
 #include <boost/filesystem.hpp>
 
 #include <pcl/io/pcd_io.h>
+#include <pcl/point_cloud.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -71,7 +72,7 @@ public:
   /**
    * Implementation of the PoseObserver interface.
    */
-  virtual void NotifyNewPose(int idx, const LolaKinematicsParams& params);
+  virtual void NotifyNewPose(int idx, LolaKinematicsParams const& params);
   /**
    * Set different recording options.
    * Determines whether to record the point cloud, rgb image and pose.
@@ -81,31 +82,19 @@ private:
   /**
    * Write the current point cloud on disk.
    */
-  void savePointCloud();
+  void savePointCloud(typename pcl::PointCloud<PointT>::ConstPtr cloud);
   /**
    * Write the current pose parameters in file.
    */
-  void saveParams();
+  void saveParams(LolaKinematicsParams const& params);
   /**
    * Save the current image on disk.
    */
-  void saveImage();
+  void saveImage(cv::Mat const& image);
   /**
    * Recording options
    */
   bool record_cloud_, record_rgb_, record_pose_;
-  /**
-   * Instance holding the current point cloud.
-   */
-  typename pcl::PointCloud<PointT>::ConstPtr cloud_;
-  /**
-   * Instance holding the current RGB image.
-   */
-  boost::shared_ptr<openni_wrapper::Image> image_;
-  /**
-   * Instance holding the current pose parameters.
-   */
-  LolaKinematicsParams params_;
   /**
    * System path to save the captured data.
    */
@@ -181,9 +170,8 @@ void VideoRecorder<PointT>::updateFrame(FrameDataPtr frameData)
   //    chain.
   if (record_cloud_) {
     if (!cloud_lk_) {
-      cloud_ = frameData->cloud;
       cloud_idx_++;
-      savePointCloud();
+      savePointCloud(frameData->cloud);
       // Set the cloud lock only if here is not the end of recording chain (if
       // either rgb or pose is also going to be recorded)
       if (record_pose_ || record_rgb_)
@@ -207,8 +195,7 @@ void VideoRecorder<PointT>::updateFrame(RGBDataPtr rgbData) {
   if (record_rgb_) {
     if(cloud_lk_ && !image_lk_) {
       image_idx_++;
-      image_ = rgbData->image;
-      saveImage();
+      saveImage(rgbData->image);
       // set the image lock only if we are recording pose...
       if (record_pose_)
         image_lk_ = true;
@@ -223,7 +210,7 @@ void VideoRecorder<PointT>::updateFrame(RGBDataPtr rgbData) {
 template<class PointT>
 void VideoRecorder<PointT>::NotifyNewPose(
     int idx,
-    const LolaKinematicsParams& params) {
+    LolaKinematicsParams const& params) {
 
   // Rare case: [DEBUG] Recorder only saves pose params. Make the cloud and
   // image locks ineffective.
@@ -239,10 +226,10 @@ void VideoRecorder<PointT>::NotifyNewPose(
   if (record_pose_) {
     if (cloud_lk_ && image_lk_) {
       params_idx_++;
-      params_ = params;
       // Modify the frame number to the internal counter
-      params_.frame_num = params_idx_;
-      saveParams();
+      LolaKinematicsParams param_copy(params);
+      param_copy.frame_num = params_idx_;
+      saveParams(param_copy);
       // Release the locks for next frames.
       cloud_lk_ = false;
       image_lk_ = false;
@@ -251,54 +238,55 @@ void VideoRecorder<PointT>::NotifyNewPose(
 }
 
 template<class PointT>
-void VideoRecorder<PointT>::savePointCloud() {
+void VideoRecorder<PointT>::savePointCloud(typename pcl::PointCloud<PointT>::ConstPtr cloud) {
   std::stringstream file_name;
-  file_name << "cloud_" << std::setfill('0') << std::setw(4) << cloud_idx_ << ".jpg";
+  file_name << "cloud_" << std::setfill('0') << std::setw(4) << cloud_idx_ << ".pcd";
 
   Timer t;
   t.start();
-  pcl::io::savePCDFileBinary (file_name.str(), *cloud_);
+  pcl::io::savePCDFileBinary (file_name.str(), *cloud);
   t.stop();
   // ++counter_;
   std::cout<<"SAVING CLOUD TOOK: " << t.duration() << " ms" << std::endl;
 }
 
 template<class PointT>
-void VideoRecorder<PointT>::saveImage() {
+void VideoRecorder<PointT>::saveImage(cv::Mat const& image) {
   Timer t;
   t.start();
-  cv::Mat frameRGB = cv::Mat(image_->getHeight(), image_->getWidth(), CV_8UC3);
-  image_->fillRGB(frameRGB.cols,frameRGB.rows,frameRGB.data,frameRGB.step);
 
   std::stringstream file_name;
   file_name << "image_" << std::setfill('0') << std::setw(4) << image_idx_ << ".jpg";
 
-  cv::imwrite(file_name.str(), frameRGB);
+  cv::imwrite(file_name.str(), image);
   t.stop();
   std::cout<<"SAVING IMAGE TOOK: " << t.duration() << " ms" << std::endl;
 }
 
 template<class PointT>
-void VideoRecorder<PointT>::saveParams() {
+void VideoRecorder<PointT>::saveParams(LolaKinematicsParams const& params) {
   Timer t;
   t.start();
   std::ofstream tf_fout_;
   // open the file and add the current params to the end of it
   tf_fout_.open(params_file_name_.c_str(), std::ofstream::app);
   // write the parameters to the file
-  std::stringstream ss;
-  for (size_t i = 0; i < 3; ++i) { ss << params_.t_wr_cl[i] << "\t"; }
+  for (size_t i = 0; i < 3; ++i) {
+    tf_fout_ << params.t_wr_cl[i] << "\t";
+  }
   for (size_t i = 0; i < 3; ++i) {
     for (size_t j = 0; j < 3; ++j) {
-      ss << params_.R_wr_cl[i][j] << "\t";
+      tf_fout_ << params.R_wr_cl[i][j] << "\t";
     }
   }
-  for (size_t i = 0; i < 3; ++i) { ss << params_.t_stance_odo[i] << "\t"; }
-  ss << params_.phi_z_odo << "\t";
-  ss << params_.stance << "\t";
-  ss << params_.frame_num << "\t";
-  ss << params_.stamp;
-  tf_fout_ << ss.str() << std::endl;
+  for (size_t i = 0; i < 3; ++i) {
+    tf_fout_ << params.t_stance_odo[i] << "\t";
+  }
+  tf_fout_ << params.phi_z_odo << "\t";
+  tf_fout_ << params.stance << "\t";
+  tf_fout_ << params.frame_num << "\t";
+  tf_fout_ << params.stamp;
+  tf_fout_ << std::endl;
   // ... and close the file.
   tf_fout_.close();
   t.stop();

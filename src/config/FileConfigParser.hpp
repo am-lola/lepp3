@@ -15,6 +15,7 @@
 
 #include "lepp3/ObstacleEvaluator.hpp"
 #include "lepp3/util/FileManager.hpp"
+#include "lepp3/util/OfflineVideoSource.hpp"
 
 /**
  * A `Parser` implementation that reads the configuration from a config file

@@ -1,8 +1,8 @@
 #ifndef LEPP3_RGB_DATA_H__
 #define LEPP3_RGB_DATA_H__
 
+#include <opencv2/core/mat.hpp>
 #include <vector>
-#include <pcl/io/openni_grabber.h>
 #include "lepp3/Typedefs.hpp"
 
 namespace lepp
@@ -10,10 +10,10 @@ namespace lepp
 
 struct RGBData
 {
-	RGBData(long frameNum, const typename boost::shared_ptr<openni_wrapper::Image> &image)
-		: frameNum(frameNum), image(image) {}
+  RGBData(long frameNum, cv::Mat const& image)
+    : frameNum(frameNum), image(image) {}
 	long frameNum;
-	const typename boost::shared_ptr<openni_wrapper::Image> &image;
+  cv::Mat const& image;
 };
 
 
