@@ -70,7 +70,7 @@ type = "simple"
   [[FilteredVideoSource.filters]]
   # The crop filter erases all points out of the given boundaries.
   # This is used to ignore everything outside of the experimental area 
-  type = CropFilter
+  type = "CropFilter"
   # Unit in meters
   xmax = 4
   xmin = -1.5
@@ -86,7 +86,6 @@ type = "simple"
 [[observers]]
 type = "Recorder"
 
-
   [ObserverOptions.Recorder]
   # Output directory. The final output will end up in a subfolder named
   # "rec_{datetime}" 
@@ -96,3 +95,46 @@ type = "Recorder"
   #rgb = false
   #pose = false
 
+# This helps to calibrate the camera
+# It requires a corresponding visualizer  
+[[observers]]
+type = "CameraCalibrator"
+
+# This defines all available visualizers, there can be more than one
+[[observers]]
+type = "ARVisualizer"
+
+# Every instance has 4 mandatory options:
+# - type: the type of the visualizer
+# - name: its name
+# - width
+# and 
+# - height: the window dimensions
+
+  # This visualizer belongs to the CameraCalibrator. It shows the calibartion parameters
+  [[observers.visualizer]]
+  type = "CameraCalibrator"
+  name = "Camera Calibration"
+  width = 1024
+  height = 768
+
+
+###########################################################################
+# Aggregators is an array
+# this will list all aggregators and options belonging to them
+
+# This aggregator sends data to listeners (Path planning, Lab Visualizer, ...) 
+[[aggregators]]
+type = "RobotAggregator"
+# Number of frames to wait before sending new data
+update_frequency = 3
+# Data to send
+data = [ "obstacles", "surfaces", "images", "pointclouds"]
+# Human readable target name
+target="Vision"
+# Target IP
+ip = "192.168.0.3"  # QNX computer IP
+# Target Port, default is hexadecimal 0xF008
+port = 61448
+# Delay to wait after sending a message
+#delay = 10

@@ -88,7 +88,7 @@ protected:
   }
 
   void initRobot() {
-      // Check requirements
+    // Check requirements
     if (!this->pose_service()) {
       throw std::runtime_error("[Robot] requires a [PoseService]!");
     }
@@ -97,40 +97,35 @@ protected:
   }
 
   void addAggregators() {
-      std::cout << "entered addAggregators" << std::endl;
-      const toml::Value* available = toml_tree_.find("aggregators");
+      toml::Value const* available = toml_tree_.find("aggregators");
       if (!available)
         return;
 
-      const toml::Array& agg_array = available->as<toml::Array>();
+      toml::Array const& agg_array = available->as<toml::Array>();
       std::cout << "# aggregators : ";
       std::cout << agg_array.size() << std::endl;
-      for (const toml::Value& v : agg_array)
-      {
-        this->detector_->attachObserver(getAggregator(v));
+
+      // Check requirements
+      if (!agg_array.empty() && !this->detector()) {
+        throw std::runtime_error("[aggregators] requires some kind of detector (obstacle or surface detection)");
+      }
+
+      for (toml::Value const& v : agg_array) {
+        this->detector()->attachObserver(getAggregator(v));
       }
   }
 
   // constructs a RobotService from the parameters specified by t
-  boost::shared_ptr<AsyncRobotService> getRobotService(const toml::Value& t)
+  boost::shared_ptr<AsyncRobotService> getRobotService(const toml::Value& v)
   {
-      std::cout << "Constructing new RobotService" << std::endl;
+    std::string const target = getTomlValue<std::string>(v, "", "aggregators[RobotAggregator].");
+    std::string const ip = getTomlValue<std::string>(v, "", "aggregators[RobotAggregator].");
+    int const port = getTomlValue<int>(v, "", "aggregators[RobotAggregator].");
+    int const delay = getOptionalTomlValue(v, "delay", 0);
 
-      const std::string target = t.find("target")->as<std::string>();
-      std::cout << "Target connection: " << target << std::endl;
-
-      std::string ip = t.find("ip")->as<std::string>();
-      std::cout << "\tip:    " << ip << std::endl;
-
-      int port = t.find("port")->as<int>();
-      std::cout << "\tPort:  " << port << std::endl;
-
-      int delay = t.find("delay")->as<int>();
-      std::cout << "\tDelay: " << delay << std::endl;
-
-      boost::shared_ptr<AsyncRobotService> async_robot_service(new AsyncRobotService(ip, target, port, delay));
-      async_robot_service->start();
-      return async_robot_service;
+    boost::shared_ptr<AsyncRobotService> async_robot_service(new AsyncRobotService(ip, target, port, delay));
+    async_robot_service->start();
+    return async_robot_service;
   }
 
   /// Implementations of initialization of various parts of the pipeline.
@@ -235,8 +230,7 @@ protected:
     this->pose_service_->start();
   }
 
-  void addObservers()
-  {
+  void addObservers() {
     std::cout << "entered addObservers" << std::endl;
 
     const toml::Value* available = toml_tree_.find("observers");
@@ -278,18 +272,16 @@ protected:
       } else if (type == "ARVisualizer") {
         toml::Value const *visualizer = v.find("visualizer");
         if (!visualizer) {
-          std::cout << "[[observers.visualizer]] not found!" << std::endl;
-          std::cout << "Cannot create a Visualizer without specifying the parameters!" << std::endl;
-          exit(1);
+          std::ostringstream ss;
+          ss << "[[observers.visualizer]] not found!\n"
+             << "Cannot create a Visualizer without specifying the parameters!";
+          throw std::runtime_error(ss.str());
         }
-        toml::Array const &array = visualizer->as<toml::Array>();
-        /*
-         * TODO add sanity check for the case where there's more than one visualizer
-         * instance inside one definition (=illegal basewd on definition).
-         */
-        auto vis = array[0];
-        this->visualizers_.push_back(getVisualizer(vis));
-        std::cout << "visualizer added" << std::endl;
+        toml::Array const& array = visualizer->as<toml::Array>();
+
+        for (auto const& vis : array) {
+          this->visualizers_.push_back(getVisualizer(vis));
+        }
       }
     }
     // Initialize obstacle and surface detector if necessary
@@ -684,20 +676,25 @@ private:
   }
 
   boost::shared_ptr<BaseVisualizer> getVisualizer(toml::Value const& v) {
-    std::cout << "Entered getVisualizer" << std::endl;
+    std::string const type = getTomlValue<std::string>(v, "type", "[[observers.visualizer]].");
+    std::cout << "Entered getVisualizer <" << type << ">" << std::endl;
 
-    std::string const name = v.find("name")->as<std::string>();
-    int const height = v.find("height")->as<int>();
-    int const width = v.find("width")->as<int>();
+    std::string const name = getTomlValue<std::string>(v, "type", "[[observers.visualizer]].");
+    int const height = getTomlValue<int>(v, "height", "[[observers.visualizer]].");
+    int const width = getTomlValue<int>(v, "width", "[[observers.visualizer]].");
 
-    std::string const type = v.find("type")->as<std::string>();
-    std::cout << "visualizer.type: " << type << std::endl;
     if (type == "CameraCalibrator") {
+      // Check requirements
+      if (!this->cam_calibrator()) {
+        throw std::runtime_error("Visualizer 'CameraCalibrator' requires a CameraCalibrator observer!");
+      }
+
       boost::shared_ptr<CalibratorVisualizer<PointT> > calib_visualizer(
           new CalibratorVisualizer<PointT>(name, width, height));
       this->source()->FrameDataSubject::attachObserver(calib_visualizer);
       this->cam_calibrator()->attachCalibrationAggregator(calib_visualizer);
       return calib_visualizer;
+
     } else if (type == "ObsSurfVisualizer") {
       // TODO: [Sahand] decide whether to define the following two variables.
       //       We already have `surfaceDetectorActive` and `obstacleDetectorActive`
@@ -714,6 +711,7 @@ private:
           new ObsSurfVisualizer(name, show_obstacles, show_surfaces, width, height));
       this->source()->FrameDataSubject::attachObserver(obs_surf_vis);
       return obs_surf_vis;
+
     } else if (type == "GMMTrackingVisualizer") {
       // TODO read all the necessary parameters from the config file.
       bool const debugGUI = v.find("debugGUI")->as<bool>();
@@ -727,10 +725,11 @@ private:
       }
       return boost::shared_ptr<ObstacleTrackerVisualizer>(
           new ObstacleTrackerVisualizer(d_gui_params, name, width, height));
-    }
-    else {
-      std::cerr << "Unknown visualizer type `" << type << "`" << std::endl;
-      throw "Unknown visualizer type";
+
+    } else {
+      std::ostringstream ss;
+      ss << "Unknown visualizer type `" << type << "`";
+      throw std::runtime_error(ss.str());
     }
   }
 
@@ -739,42 +738,30 @@ private:
    * as defined in the following lines of the config file.
    * If the lines are invalid, an exception is thrown.
    */
-  boost::shared_ptr<FrameDataObserver> getAggregator(toml::Value const& v) {
-    std::string const type = v.find("type")->as<std::string>();
+  boost::shared_ptr<FrameDataObserver> getAggregator(toml::Value const& v) {    
+    std::string const type = getTomlValue<std::string>(v, "type", "aggregators.");
+
     std::cout << "agg type: " << type << std::endl;
     if (type == "RobotAggregator") {
-      int const update_frequency= v.find("update_frequency")->as<int>();
-      std::vector<std::string> datatypes = v.find("data")->as<std::vector<std::string>>();
+      int const update_frequency = getTomlValue<int>(v, "update_frequency", "aggregators.");
+      std::vector<std::string> datatypes = getTomlValue<std::vector<std::string>>(v, "type", "aggregators.");
 
-      std::cout << "find robot service..."<< std::endl;
-      const toml::Value* robotServiceEntry = v.find("RobotService");
-      if (!robotServiceEntry)
-      {
-        std::cout << "[[aggregators.RobotService]] not found!" << std::endl;
-        std::cout << "  Cannot create RobotAggregator without RobotService!" << std::endl;
-        exit(1);
-      }
-
-      const toml::Array& agg_array = robotServiceEntry->as<toml::Array>();
-      if (agg_array.size() != 1)
-      {
-        std::cout << "Expected exactly 1 RobotService entry, found: " << agg_array.size() << std::endl;
-        exit(1);
-      }
-
-      auto robotService = getRobotService(agg_array[0]);
+      auto robotService = getRobotService(v);
 
       // attach to RGB data here since we always assume we're dealing with FrameDataObservers elsewhere...
       boost::shared_ptr<RobotAggregator> robotAggregator = boost::make_shared<RobotAggregator>(robotService, update_frequency, datatypes, *this->robot());
       boost::static_pointer_cast<RGBDataSubject>(this->raw_source_)->attachObserver(robotAggregator);
       return robotAggregator;
-      } else if (type == "ObstacleEvaluator") {
+
+    } else if (type == "ObstacleEvaluator") {
       int const ref_volume = v.find("ref_volume")->as<int>();
       return boost::shared_ptr<ObstacleEvaluator>(
           new ObstacleEvaluator(ref_volume));
+
     } else {
-      std::cerr << "Unknown aggregator type `" << type << "`" << std::endl;
-      throw "Unknown aggregator type";
+      std::ostringstream ss;
+      ss << "Unknown aggregator type `" << type << "`";
+      throw std::runtime_error(ss.str());
     }
   }
 
