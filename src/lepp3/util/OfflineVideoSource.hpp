@@ -21,13 +21,16 @@ template<class PointT>
 class OfflineVideoSource : public VideoSource<PointT> {
 public:
   OfflineVideoSource(
-    boost::shared_ptr<pcl::Grabber> pcd_interface);
+      boost::shared_ptr<pcl::Grabber> pcd_interface);
+
   OfflineVideoSource(
-    boost::shared_ptr<pcl::Grabber> pcd_interface,
-    boost::shared_ptr<cv::VideoCapture> rgb_interface);
+      boost::shared_ptr<pcl::Grabber> pcd_interface,
+      boost::shared_ptr<cv::VideoCapture> rgb_interface);
+
   virtual ~OfflineVideoSource();
 
   virtual void open();
+
   virtual void setOptions(const std::map<std::string, bool>& options) {}
 
 protected:
@@ -52,17 +55,17 @@ private:
 template<class PointT>
 OfflineVideoSource<PointT>::OfflineVideoSource(
     boost::shared_ptr<pcl::Grabber> pcd_interface)
-  : pcd_interface_(pcd_interface),
-    frameCount(0) { 
+    : pcd_interface_(pcd_interface),
+      frameCount(0) {
 }
 
 template<class PointT>
 OfflineVideoSource<PointT>::OfflineVideoSource(
     boost::shared_ptr<pcl::Grabber> pcd_interface,
     boost::shared_ptr<cv::VideoCapture> rgb_interface)
-  : pcd_interface_(pcd_interface),
-    rgb_interface_(rgb_interface),
-    frameCount(0) { 
+    : pcd_interface_(pcd_interface),
+      rgb_interface_(rgb_interface),
+      frameCount(0) {
 }
 
 template<class PointT>
@@ -78,7 +81,7 @@ void OfflineVideoSource<PointT>::open() {
   // Register the callback and start grabbing frames...
   typedef void (callback_t)(const PointCloudConstPtr&);
   boost::function<callback_t> f = boost::bind(
-              &OfflineVideoSource::cloud_cb_, this, _1);
+      &OfflineVideoSource::cloud_cb_, this, _1);
   pcd_interface_->registerCallback(f);
   pcd_interface_->start();
 }
@@ -96,6 +99,7 @@ void OfflineVideoSource<PointT>::cloud_cb_(
     if (!rgb_interface_->grab()) {
       // We reached the end, wrap around
       rgb_interface_->set(CV_CAP_PROP_POS_FRAMES, 0);
+      rgb_interface_->grab();
     }
 
     cv::Mat image;

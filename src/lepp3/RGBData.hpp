@@ -1,8 +1,8 @@
 #ifndef LEPP3_RGB_DATA_H__
 #define LEPP3_RGB_DATA_H__
 
-#include <opencv2/core/mat.hpp>
 #include <vector>
+#include <opencv2/core/core.hpp>
 #include "lepp3/Typedefs.hpp"
 
 namespace lepp
