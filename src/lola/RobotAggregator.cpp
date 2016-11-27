@@ -297,16 +297,17 @@ void RobotAggregator::sendPointCloud(PointCloudConstPtr cloud, long frame_num)
   service_->sendMessage(msg);
 }
 
-void RobotAggregator::sendRGBImage(const boost::shared_ptr<openni_wrapper::Image> &image, long frame_num)
+void RobotAggregator::sendRGBImage(cv::Mat const& image, long frame_num)
 {
-  // copy image data to byte array
-  unsigned char* img_data = new unsigned char[image->getWidth() * image->getHeight() * 3];
-  image->fillRGB(image->getWidth(), image->getHeight(), img_data);
+  const unsigned char* img_data = nullptr;
+  if (CV_8UC3 == image.type()) {
+    img_data = image.data;
+  } else {
+    std::ostringstream ss;
+    ss << "Unknown image format: " << image.type();
+    throw std::runtime_error(ss.str());
+  }
 
-  VisionMessage msg = VisionMessage(RGBMessage(img_data, image->getWidth(), image->getHeight()), frame_num);
-
-  // VisionMessage will store its own copy of the data
-  delete img_data;
-
+  VisionMessage msg = VisionMessage(RGBMessage(img_data, image.cols, image.rows), frame_num);
   service_->sendMessage(msg);
 }
