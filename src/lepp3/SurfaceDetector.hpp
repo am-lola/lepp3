@@ -14,111 +14,125 @@
 namespace lepp {
 
 template<class PointT>
-class SurfaceDetector : public FrameDataObserver, public FrameDataSubject, 
-                        public SurfaceDataObserver, public SurfaceDataSubject
-{
- public:
-    SurfaceDetector(bool surfaceDetectorActive, std::vector<double> &surfFinderParameters)
+class SurfaceDetector : public FrameDataObserver, public FrameDataSubject,
+                        public SurfaceDataObserver, public SurfaceDataSubject {
+public:
+  SurfaceDetector(bool surfaceDetectorActive, typename SurfaceFinder<PointT>::Parameters const& surfFinderParameters)
       : surfaceDetectorActive(surfaceDetectorActive),
         finder_(new SurfaceFinder<PointT>(surfaceDetectorActive, surfFinderParameters)),
-        frameNum(1), 
-        surfaceDetectionIteration(0), surfaceReferenceFrameNum(0), 
-        planeCoeffsIteration(0), planeCoeffsReferenceFrameNum(0),
-        exchangeCloud(PointCloudPtr(new PointCloudT())), newInputCloud(false)
-    {
-      // start surface pipeline thread
-      if (surfaceDetectorActive)
-      {
-        // Constructs the new thread and runs it. Does not block execution.
-        std::thread sufaceDetectionThread(&SurfaceDetector::clusterTask, this);
-
-        // allow execution to continue independently
-        sufaceDetectionThread.detach();
-      }
-
-      // start thread for RANSAC surface coefficient finder
-      std::thread ransacThread(&SurfaceDetector::ransacTask, this);
-      ransacThread.detach();
+        frameNum(1),
+        surfaceDetectionIteration(0),
+        surfaceReferenceFrameNum(0),
+        planeCoeffsIteration(0),
+        planeCoeffsReferenceFrameNum(0),
+        exchangeCloud(PointCloudPtr(new PointCloudT())),
+        newInputCloud(false),
+        exit_threads_(false) {
+    // start surface pipeline thread
+    if (surfaceDetectorActive) {
+      threads_.emplace_back(&SurfaceDetector::clusterTask, this);
     }
 
-    /**
-     * FrameDataObserver interface method implementation.
-     */
-    virtual void updateFrame(FrameDataPtr frameData);
+    // start thread for RANSAC surface coefficient finder
+    threads_.emplace_back(&SurfaceDetector::ransacTask, this);
+  }
 
-    /**
-    * SurfaceDataObserver interface method implementation.
-    */
-    virtual void updateSurfaces(SurfaceDataPtr surfaceData);
+  virtual ~SurfaceDetector() {
+    exit_threads_ = true;
+    for (auto& t : threads_) {
+      t.join();
+    }
 
-  private:
-    boost::shared_ptr<SurfaceFinder<PointT> > finder_;
+  }
 
-    // boolean indicating whether the surface detector was enabled in config files
-    bool surfaceDetectorActive;
+  /**
+   * FrameDataObserver interface method implementation.
+   */
+  virtual void updateFrame(FrameDataPtr frameData);
 
-    // mutex variables that limits access to exchangePlanes and 
-    // exchangePlaneCoefficients variable
-    std::mutex planeMutex;
-    // mutex variable that limits access to exchangeSurfaces variable
-    std::mutex surfaceMutex;
-    // mutex to fill exchangeCloud
-    std::mutex exchangeCloudMutex;
+  /**
+  * SurfaceDataObserver interface method implementation.
+  */
+  virtual void updateSurfaces(SurfaceDataPtr surfaceData);
 
-    // the exchange planes and exchange coefficients are needed for communication of the
-    // ransac task and the surface detection/main thread. The ransac task fills both vectors
-    // with newly detected planes and their coefficients. The surface detection and main thread
-    // use these data in their computations.
-    std::vector<PointCloudPtr> exchangePlanes;
-    std::vector<pcl::ModelCoefficients> exchangePlaneCoefficients;
+private:
+  boost::shared_ptr<SurfaceFinder<PointT> > finder_;
 
-    // holds the last frame number
-    long frameNum;
+  // boolean indicating whether the surface detector was enabled in config files
+  bool surfaceDetectorActive;
 
-    // counts the iterations the surface detection thread
-    long surfaceDetectionIteration;
+  // mutex variables that limits access to exchangePlanes and
+  // exchangePlaneCoefficients variable
+  std::mutex planeMutex;
+  // mutex variable that limits access to exchangeSurfaces variable
+  std::mutex surfaceMutex;
+  // mutex to fill exchangeCloud
+  std::mutex exchangeCloudMutex;
 
-    // holds the frame number of the cloud to which the current exchange surfaces belong
-    long surfaceReferenceFrameNum;
+  // the exchange planes and exchange coefficients are needed for communication of the
+  // ransac task and the surface detection/main thread. The ransac task fills both vectors
+  // with newly detected planes and their coefficients. The surface detection and main thread
+  // use these data in their computations.
+  std::vector<PointCloudPtr> exchangePlanes;
+  std::vector<pcl::ModelCoefficients> exchangePlaneCoefficients;
 
-    // counts the number of iterations of the SurfaceFinder aka ransac task
-    long planeCoeffsIteration;
 
-    // holds the frame number of the cloud to which the newest plane coefficients belong
-    long planeCoeffsReferenceFrameNum;
+  /**
+   * Container for all threads
+   * Necessary to cleanly exit them
+   */
+  std::vector<std::thread> threads_;
+  /**
+   * Flag to signal threads to exit
+   */
+  bool exit_threads_;
 
-    // this vector is the output from the surface detection pipeline (sufaceDetectionThread).
-    std::vector<SurfaceModelPtr> exchangeSurfaces;
+  // holds the last frame number
+  long frameNum;
 
-    // when there is a new frame, the point cloud from the frame is copied into this
-    // exchange cloud. The exchange cloud is used by the SurfaceFinder to find new model
-    // coefficients. The point cloud in frame data cannot be used for this since the 
-    // SurfaceFinder ransac algorithm runs in its own thread independently.
-    PointCloudPtr exchangeCloud;
+  // counts the iterations the surface detection thread
+  long surfaceDetectionIteration;
 
-    // this boolean indicates whether there is a new input cloud and the model coefficients
-    // should be computed again
-    bool newInputCloud;
+  // holds the frame number of the cloud to which the current exchange surfaces belong
+  long surfaceReferenceFrameNum;
 
-    /**
-    * Method that is called by surfaceDetectionThread. It invokes the clustering and
-    * approximation of surfaces with convex hulls.
-    */
-    void clusterTask();
+  // counts the number of iterations of the SurfaceFinder aka ransac task
+  long planeCoeffsIteration;
 
-    /**
-    * Method that is called by ransac thread. It invokes the detection of surface
-    * coefficients and the corresponding planes using RANSAC
-    */
-    void ransacTask();
+  // holds the frame number of the cloud to which the newest plane coefficients belong
+  long planeCoeffsReferenceFrameNum;
+
+  // this vector is the output from the surface detection pipeline (sufaceDetectionThread).
+  std::vector<SurfaceModelPtr> exchangeSurfaces;
+
+  // when there is a new frame, the point cloud from the frame is copied into this
+  // exchange cloud. The exchange cloud is used by the SurfaceFinder to find new model
+  // coefficients. The point cloud in frame data cannot be used for this since the
+  // SurfaceFinder ransac algorithm runs in its own thread independently.
+  PointCloudPtr exchangeCloud;
+
+  // this boolean indicates whether there is a new input cloud and the model coefficients
+  // should be computed again
+  bool newInputCloud;
+
+  /**
+  * Method that is called by surfaceDetectionThread. It invokes the clustering and
+  * approximation of surfaces with convex hulls.
+  */
+  void clusterTask();
+
+  /**
+  * Method that is called by ransac thread. It invokes the detection of surface
+  * coefficients and the corresponding planes using RANSAC
+  */
+  void ransacTask();
+
 };
 
 
 template<class PointT>
-void SurfaceDetector<PointT>::clusterTask()
-{
-  while (true)
-  {
+void SurfaceDetector<PointT>::clusterTask() {
+  while (!exit_threads_) {
     // copy planes from exchange variables to local variables
     planeMutex.lock();
     SurfaceDataPtr surfaceData(new SurfaceData(frameNum));
@@ -133,20 +147,22 @@ void SurfaceDetector<PointT>::clusterTask()
 }
 
 template<class PointT>
-void SurfaceDetector<PointT>::ransacTask()
-{
-  while(true)
-  {
+void SurfaceDetector<PointT>::ransacTask() {
+  while (!exit_threads_) {
     // copy cloud pointer to local variable
-    exchangeCloudMutex.lock();
-    PointCloudPtr cloud = exchangeCloud;
-    bool computeNewCoefficients = newInputCloud;
-    newInputCloud = false;
-    exchangeCloudMutex.unlock();
+    PointCloudPtr cloud;
+    bool computeNewCoefficients = false;
+
+    {
+      std::lock_guard<std::mutex> lock(exchangeCloudMutex);
+      cloud = exchangeCloud;
+      computeNewCoefficients = newInputCloud;
+      newInputCloud = false;
+    }
+    assert(cloud);
 
     // find plane coefficients with ransac if there is a new cloud set
-    if (computeNewCoefficients)
-    {
+    if (computeNewCoefficients) {
       // store current frame num before calling ransac
       planeMutex.lock();
       long tmpFrameNum = frameNum;
@@ -174,8 +190,7 @@ void SurfaceDetector<PointT>::ransacTask()
 
 
 template<class PointT>
-void SurfaceDetector<PointT>::updateSurfaces(SurfaceDataPtr surfaceData)
-{
+void SurfaceDetector<PointT>::updateSurfaces(SurfaceDataPtr surfaceData) {
   // copy detected surfaces over in exchangeSurfaces variable
   surfaceMutex.lock();
   exchangeSurfaces = surfaceData->surfaces;
@@ -186,26 +201,25 @@ void SurfaceDetector<PointT>::updateSurfaces(SurfaceDataPtr surfaceData)
 
 
 template<class PointT>
-void SurfaceDetector<PointT>::updateFrame(FrameDataPtr frameData) 
-{
+void SurfaceDetector<PointT>::updateFrame(FrameDataPtr frameData) {
   // copy latest coefficients into frameData
   planeMutex.lock();
-  frameData->planeCoefficients = exchangePlaneCoefficients; 
+  frameData->planeCoefficients = exchangePlaneCoefficients;
   // store the planeCoeffsIteration cound and planeCoeffsReferenceFrameNum in frameData
   frameData->planeCoeffsIteration = planeCoeffsIteration;
   frameData->planeCoeffsReferenceFrameNum = planeCoeffsReferenceFrameNum;
   // store frame number of current frame
-  frameNum = frameData->frameNum;   
+  frameNum = frameData->frameNum;
   planeMutex.unlock();
 
   // copy current point cloud into exchange variable
-  exchangeCloudMutex.lock();
-  exchangeCloud = PointCloudPtr(new PointCloudT(*frameData->cloud));
-  newInputCloud = true;
-  exchangeCloudMutex.unlock();
-
-  if (surfaceDetectorActive)
   {
+    std::lock_guard<std::mutex> lock(exchangeCloudMutex);
+    exchangeCloud = PointCloudPtr(new PointCloudT(*frameData->cloud));
+    newInputCloud = true;
+  }
+
+  if (surfaceDetectorActive) {
     // copy latest detected surfaces into frameData
     surfaceMutex.lock();
     frameData->surfaces = exchangeSurfaces;

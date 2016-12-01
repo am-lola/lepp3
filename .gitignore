@@ -8,3 +8,5 @@ evaluation
 *.pcd
 *.txt.user*
 .idea/*
+cmake-build-*
+

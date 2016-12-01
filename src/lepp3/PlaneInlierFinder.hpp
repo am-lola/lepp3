@@ -16,8 +16,8 @@ template<class PointT>
 class PlaneInlierFinder : public FrameDataObserver, public FrameDataSubject
 {
 public:
-	PlaneInlierFinder(std::vector<double> planeInlierFinderParameters) : 
-		MIN_DIST_TO_PLANE(planeInlierFinderParameters[0]) {}
+	PlaneInlierFinder(double min_distance_to_plane) :
+		MIN_DIST_TO_PLANE(min_distance_to_plane) {}
 
 	/**
 	* Update observer with new frame data.

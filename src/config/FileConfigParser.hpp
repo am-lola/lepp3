@@ -41,8 +41,8 @@ public:
         parser_(toml::parse(file_name)),
         toml_tree_(parser_.value),
         ground_removal_(false),
-        surfaceDetectorActive(false),
-        obstacleDetectorActive(false) {
+        surface_detector_active_(false),
+        obstacle_detector_active_(false) {
 
     if (!toml_tree_.valid()) {
       throw std::runtime_error("Config parsing error: " + parser_.errorReason);
@@ -248,16 +248,16 @@ protected:
       std::cout << "observer type: " << type << std::endl;
 
       if (type == "ObstacleDetector") {
-        obstacleDetectorActive = true;
+        obstacle_detector_active_ = true;
         // Set up the basic surface detector for ground removal, if not already
         // initialized.
         if (!ground_removal_)
           initSurfaceFinder();
-        std::string const method = v.find("method")->as<std::string>();
-        initObstacleDetector(method);
+
+        initObstacleDetector(getTomlValue<std::string>(v, "method", "observers."));
 
       } else if (type == "SurfaceDetector") {
-        surfaceDetectorActive = true;
+        surface_detector_active_ = true;
         // Set up the basic surface detector for ground removal, if not already
         // initialized.
         if (!ground_removal_)
@@ -271,7 +271,7 @@ protected:
         initCamCalibrator();
 
       } else if (type == "ARVisualizer") {
-        toml::Value const *visualizer = v.find("visualizer");
+        toml::Value const* visualizer = v.find("visualizer");
         if (!visualizer) {
           std::ostringstream ss;
           ss << "[[observers.visualizer]] not found!\n"
@@ -283,22 +283,32 @@ protected:
         for (auto const& vis : array) {
           this->visualizers_.push_back(getVisualizer(vis));
         }
+
+      } else {
+        std::ostringstream ss;
+        ss << "Unknown observer type: " << type;
+        throw std::runtime_error(ss.str());
       }
     }
     // Initialize obstacle and surface detector if necessary
-    if (surfaceDetectorActive || obstacleDetectorActive) {
+    if (surface_detector_active_ || obstacle_detector_active_) {
       initSurfaceDetector();
     }
   }
 
   virtual boost::shared_ptr<SplitStrategy<PointT> > buildSplitStrategy() override {
     std::cout << "entered buildSplitStrategy" << std::endl;
-    boost::shared_ptr<CompositeSplitStrategy<PointT> > split_strat(
-        new CompositeSplitStrategy<PointT>);
+    boost::shared_ptr<CompositeSplitStrategy<PointT> > split_strat(new CompositeSplitStrategy<PointT>);
+
+    toml::Value const* v = toml_tree_.find("ObstacleDetetction.Euclidean.SplitStrategy");
+    if (!v) {
+      throw std::runtime_error("Missing config section: [ObstacleDetetction.Euclidean.SplitStrategy]");
+    }
 
     // First find the axis on which the splits should be made
-    std::string axis_id = toml_tree_.find(
-          "SplitStrategy.split_axis")->as<std::string>();
+    char const* base_key = "ObstacleDetetction.Euclidean.SplitStrategy.";
+    std::string const axis_id = getTomlValue<std::string>(*v, "split_axis", base_key);
+
     if (axis_id == "largest") {
       split_strat->set_split_axis(SplitStrategy<PointT>::Largest);
     } else if (axis_id == "middle") {
@@ -309,50 +319,52 @@ protected:
       throw "Invalid axis identifier";
     }
 
-    // Now add all conditions
-    const toml::Array& cond_array = toml_tree_.find(
-          "SplitStrategy.conditions")->as<toml::Array>();
-    std::cout << "# conditions: " << cond_array.size() << std::endl;
-    for (const toml::Value &v : cond_array) {
-      const std::string type = v.find("type")->as<std::string>();
-      std::cout << "splitcondition: " << type << std::endl;
-      if (type == "SizeLimit") {
-        double size = v.find("size")->as<double>();
-        split_strat->addSplitCondition(boost::shared_ptr<SplitCondition<PointT> >(
-                new SizeLimitSplitCondition<PointT>(size)));
-      } else if (type == "DepthLimit") {
-        int depth = v.find("depth")->as<int>();
-        split_strat->addSplitCondition(boost::shared_ptr<SplitCondition<PointT> >(
-                new DepthLimitSplitCondition<PointT>(depth)));
-      } else if (type == "DistanceThreshold") {
-        int distance = v.find("distance_threshold")->as<int>();
-        split_strat->addSplitCondition(boost::shared_ptr<SplitCondition<PointT> >(
-                new DistanceThresholdSplitCondition<PointT>(distance, *this->robot())));
-      } else if (type == "ShapeCondition") {
-        double sphere1 = v.find("sphere1")->as<double>();
-        double sphere2 = v.find("sphere2")->as<double>();
-        double cylinder = v.find("cylinder")->as<double>();
-        split_strat->addSplitCondition(boost::shared_ptr<SplitCondition<PointT> >(
-                new ShapeSplitCondition<PointT>(sphere1, sphere2, cylinder)));
-      } else {
-        throw "Unknown split condition given.";
+    toml::Value const* conditions = v->find("conditions");
+    if (!conditions)
+    {
+      std::cout << "No split conditions" << std::endl;
+
+    } else {
+      toml::Array const& cond_array = conditions->as<toml::Array >();
+      std::cout << "# conditions: " << cond_array.size() << std::endl;
+
+      char const* base_key_condition = "[[ObstacleDetetction.Euclidean.SplitStrategy.conditions]].";
+
+      for (const toml::Value& v : cond_array) {
+        std::string const type = getTomlValue<std::string>(v, "type", base_key_condition);
+        std::cout << "splitcondition: " << type << std::endl;
+
+        if (type == "SizeLimit") {
+          double size = getTomlValue<double>(v, "size", base_key_condition);
+          split_strat->addSplitCondition(boost::shared_ptr<SplitCondition<PointT> >(
+              new SizeLimitSplitCondition<PointT>(size)));
+
+        } else if (type == "DepthLimit") {
+          int depth = getTomlValue<int>(v, "depth", base_key_condition);
+          split_strat->addSplitCondition(boost::shared_ptr<SplitCondition<PointT> >(
+              new DepthLimitSplitCondition<PointT>(depth)));
+
+        } else if (type == "DistanceThreshold") {
+          int distance = getTomlValue<int>(v, "distance_threshold", base_key_condition);
+          split_strat->addSplitCondition(boost::shared_ptr<SplitCondition<PointT> >(
+              new DistanceThresholdSplitCondition<PointT>(distance, *this->robot())));
+
+        } else if (type == "ShapeCondition") {
+          double sphere1 = getTomlValue<double>(v, "sphere1", base_key_condition);
+          double sphere2 = getTomlValue<double>(v, "sphere2", base_key_condition);
+          double cylinder = getTomlValue<double>(v, "cylinder", base_key_condition);
+          split_strat->addSplitCondition(boost::shared_ptr<SplitCondition<PointT> >(
+              new ShapeSplitCondition<PointT>(sphere1, sphere2, cylinder)));
+
+        } else {
+          std::ostringstream ss;
+          ss << "Unknown split condition: " << type;
+          throw std::runtime_error(ss.str());
+        }
       }
     }
-    std::cout << "returning current split_strat" << std::endl;
+
     return split_strat;
-  }
-
-  void loadSurfaceFinderParameters(std::vector<double> &surfFinderParameters)
-  {
-    surfFinderParameters.push_back(toml_tree_.find("RANSAC.maxIterations")->as<int>());
-    surfFinderParameters.push_back(toml_tree_.find("RANSAC.distanceThreshold")->as<double>());
-    surfFinderParameters.push_back(toml_tree_.find("RANSAC.minFilterPercentage")->as<double>());
-    surfFinderParameters.push_back(toml_tree_.find("Classification.deviationAngle")->as<double>());
-  }
-
-  void loadPlaneInlierFinderParameters(std::vector<double> &planeInlierFinderParameters)
-  {
-    planeInlierFinderParameters.push_back(toml_tree_.find("InlierFinder.minDistToPlane")->as<double>());
   }
 
 
@@ -389,7 +401,6 @@ protected:
    * Initiailizes the obstacle detector.
    */
   virtual void initObstacleDetector(std::string const& method) {
-
     // Setup plane inlier finder
     // TODO: [Sahand] There's an ambiguity here. There's the `initSurfaceFinder`
     //       which is initialized regardless of having a `SurfaceDetector` or
@@ -398,26 +409,28 @@ protected:
     //       detector. Does it mean the `PlaneInlierFinder` tries to remove all
     //       those surfaces found by the `initSurfaceFinder` to end of with only
     //       obstacles? Or is it a redundant step?
-    std::vector<double> planeInlierFinderParameters;
-    loadPlaneInlierFinderParameters(planeInlierFinderParameters);
-    inlier_finder_.reset(new PlaneInlierFinder<PointT>(planeInlierFinderParameters));
+    double min_distance_to_plane = getTomlValue<double>(toml_tree_, "BasicObstacleDetection.InlierFinder.minDistToPlane");
+    inlier_finder_.reset(new PlaneInlierFinder<PointT>(min_distance_to_plane));
+
+    assert(surface_detector_);
     surface_detector_->FrameDataSubject::attachObserver(inlier_finder_);
 
     if (method == "EuclideanClustering") {
       // Prepare the approximator that the detector is to use.
       // First, the simple approximator...
-      boost::shared_ptr<ObjectApproximator<PointT> > simple_approx(
-          this->getApproximator());
+      boost::shared_ptr<ObjectApproximator<PointT>> simple_approx(this->getApproximator());
+
       // ...then the split strategy
-      boost::shared_ptr<SplitStrategy<PointT> > splitter(
-          this->buildSplitStrategy());
+      boost::shared_ptr<SplitStrategy<PointT>> splitter(this->buildSplitStrategy());
+
       // ...finally, wrap those into a `SplitObjectApproximator` that is given
       // to the detector.
       boost::shared_ptr<ObjectApproximator<PointT> > approx(
           new SplitObjectApproximator<PointT>(simple_approx, splitter));
+
       // Prepare the base detector...
       base_obstacle_detector_.reset(
-          new ObstacleDetector<PointT>(approx, surfaceDetectorActive));
+          new ObstacleDetector<PointT>(approx, surface_detector_active_));
       this->source()->FrameDataSubject::attachObserver(base_obstacle_detector_);
       // Smooth out the basic detector by applying a smooth detector to it
       boost::shared_ptr<LowPassObstacleTracker> low_pass_obstacle_tracker(
@@ -426,6 +439,7 @@ protected:
       // Now the detector that is exposed via the context is a smoothed-out
       // base detector.
       this->detector_ = low_pass_obstacle_tracker;
+
     } else if (method == "GMM") {
       // parse [ObstacleTracking] parameters
       GMM::ObstacleTrackerParams params = readGMMObstacleTrackerParams();
@@ -537,14 +551,14 @@ protected:
 //
 //    loadARVisualizerParams(position,up,forward);
 //
-//    if (surfaceDetectorActive && !obstacleDetectorActive)
+//    if (surface_detector_active_ && !obstacle_detector_active_)
 //    {
-//      ar_visualizer_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive, position,forward,up));
+//      ar_visualizer_.reset(new ARVisualizer(surface_detector_active_, obstacle_detector_active_, position,forward,up));
 //      surface_detector_->FrameDataSubject::attachObserver(ar_visualizer_);
 //    }
-//    else if (obstacleDetectorActive)
+//    else if (obstacle_detector_active_)
 //    {
-//      ar_visualizer_.reset(new ARVisualizer(surfaceDetectorActive, obstacleDetectorActive,position,forward,up));
+//      ar_visualizer_.reset(new ARVisualizer(surface_detector_active_, obstacle_detector_active_,position,forward,up));
 //      this->detector_->FrameDataSubject::attachObserver(ar_visualizer_);
 //    }
 //
@@ -628,10 +642,13 @@ private:
   }
 
   void initSurfaceFinder() {
-    // A basic surfaceDetector is ALWAYS active because ground is always removed
-    std::vector<double> surfFinderParameters;
-    loadSurfaceFinderParameters(surfFinderParameters);
-    surface_detector_.reset(new SurfaceDetector<PointT>(surfaceDetectorActive,surfFinderParameters));
+    typename SurfaceFinder<PointT>::Parameters params;
+    params.MAX_ITERATIONS = getTomlValue<int>(toml_tree_, "BasicSurfaceDetection.RANSAC.maxIterations");
+    params.DISTANCE_THRESHOLD = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.RANSAC.distanceThreshold");
+    params.MIN_FILTER_PERCENTAGE = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.RANSAC.minFilterPercentage");
+    params.DEVIATION_ANGLE = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.Classification.deviationAngle");
+
+    surface_detector_.reset(new SurfaceDetector<PointT>(surface_detector_active_, params));
     this->source()->FrameDataSubject::attachObserver(surface_detector_);
 
     ground_removal_ = true;
@@ -698,7 +715,7 @@ private:
 
     } else if (type == "ObsSurfVisualizer") {
       // TODO: [Sahand] decide whether to define the following two variables.
-      //       We already have `surfaceDetectorActive` and `obstacleDetectorActive`
+      //       We already have `surface_detector_active_` and `obstacle_detector_active_`
       //       which are set according to the availability of their components.
       //       (Reason to have it here as well): There might be the case where
       //       we want to run all of the components, but only visualizing some
@@ -822,8 +839,8 @@ private:
   boost::shared_ptr<ConvexHullDetector> convex_hull_detector_;
   boost::shared_ptr<PlaneInlierFinder<PointT>> inlier_finder_;
 
-  bool surfaceDetectorActive;
-  bool obstacleDetectorActive;
+  bool surface_detector_active_;
+  bool obstacle_detector_active_;
   bool ground_removal_;
 };
 

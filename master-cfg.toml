@@ -118,6 +118,42 @@ type = "ARVisualizer"
   width = 1024
   height = 768
 
+# This enables the obstacle detector
+[[observers]]
+type = "ObstacleDetector"
+# Available methods accepted by ObstacleDetector:
+#   - EuclideanClustering
+#   - GMM (see below)
+method = "EuclideanClustering"
+
+  [ObstacleDetetction.Euclidean.SplitStrategy]
+  # Defines the split axxis
+  # Values: largest|middle|smallest
+  split_axis = "middle"
+  # A number of split conditions that need to be satisfied in order for an object
+  # split to occur.
+  # Care should be taken to define the conditions in a way that guarantees that
+  # splitting eventually stops for each object (possibly the easiest way is to
+  # always include the DepthLimit condition with a fairly high depth limit).
+  # If no split conditions are provided, the objects will never be split.
+    [[ObstacleDetetction.Euclidean.SplitStrategy.conditions]]
+      type = "DepthLimit"
+      depth = 1
+    [[ObstacleDetetction.Euclidean.SplitStrategy.conditions]]
+      type = "SizeLimit"
+      # size is a volume in [cm^3]
+      size = 3000.
+    [[ObstacleDetetction.Euclidean.SplitStrategy.conditions]]
+      type = "ShapeCondition"
+      # The threshold values to consider something "very much" a sphere
+      sphere1 = 0.8
+      sphere2 = 0.1
+      # The threshold value to consider something "very much" a cylinder
+      cylinder = 0.25
+    #[[SplitStrategy.conditions]]
+    #  type = "DistanceThreshold"
+    #  # Distance is in [cm]
+    #  distance_threshold = 150
 
 ###########################################################################
 # Aggregators is an array
@@ -138,3 +174,32 @@ ip = "192.168.0.3"  # QNX computer IP
 port = 61448
 # Delay to wait after sending a message
 #delay = 10
+
+###########################################################################
+# Miscellaneous settings 
+
+# These settings define basic parameters for detecting the ground plane
+# They are mandatory if any kind of surface or obstacle detection is enabled
+[BasicSurfaceDetection]
+  [BasicSurfaceDetection.RANSAC]
+  #max number of ransac iterations
+  maxIterations = 200
+  # How close a point must be to the model in order to be considered an inlier
+  distanceThreshold = 0.03
+  #How small the left (extracted) pointcloud should be for termination of the plane segmentation 
+  minFilterPercentage = 0.08
+
+  [BasicSurfaceDetection.Classification]
+  # The function to classify segmented planes according to deviation in their normals
+  # This step is only for Surface Segmentation
+  # The angle values represent how much deviation is allowed
+  # Given in degrees.
+  deviationAngle = 4.0
+
+# These settings define basic parameters for detecting obstacles
+# They are mandatory if any kind of bstacle detection is enabled
+[BasicObstacleDetection]
+  [BasicObstacleDetection.InlierFinder]
+  # minimum distance a point must have to its projection onto a 
+  # plane in order to be considered an inlier on this plane
+  minDistToPlane = 0.04

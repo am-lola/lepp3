@@ -15,7 +15,22 @@ template<class PointT>
 class SurfaceFinder 
 {
 public:
-    SurfaceFinder(bool surfaceDetectorActive, std::vector<double> &ransacParameters);
+	struct Parameters
+	{
+    int MAX_ITERATIONS;
+
+    //How close a point must be to the model in order to be considered an inlier
+    double DISTANCE_THRESHOLD;
+
+    //How small the left (extracted) pointcloud should be for termination of the plane segmentation
+    double MIN_FILTER_PERCENTAGE;
+
+    // The function to classify segmented planes according to deviation in their normals
+    double DEVIATION_ANGLE;
+
+  };
+
+	SurfaceFinder(bool surfaceDetectorActive, Parameters const& surfFinderParameters);
 
     /**
     * Segment the given cloud into surfaces. Store the found surfaces and surface model 
@@ -69,7 +84,7 @@ private:
 	pcl::SACSegmentation<PointT> segmentation_;
 
 	//max number of RANSAC iterations
-	const double MAX_ITERATIONS;
+	const int MAX_ITERATIONS;
 
 	//How close a point must be to the model in order to be considered an inlier
 	const double DISTANCE_THRESHOLD;
@@ -85,12 +100,12 @@ private:
 };
 
 template<class PointT>
-SurfaceFinder<PointT>::SurfaceFinder(bool surfaceDetectorActive, std::vector<double> &surfFinderParameters) :
-		surfaceDetectorActive(surfaceDetectorActive),
-        MAX_ITERATIONS(surfFinderParameters[0]),
-        DISTANCE_THRESHOLD(surfFinderParameters[1]),
-        MIN_FILTER_PERCENTAGE(surfFinderParameters[2]),
-        DEVIATION_ANGLE(surfFinderParameters[3])
+SurfaceFinder<PointT>::SurfaceFinder(bool surfaceDetectorActive, Parameters const& surfFinderParameters)
+    : surfaceDetectorActive(surfaceDetectorActive)
+    , MAX_ITERATIONS(surfFinderParameters.MAX_ITERATIONS)
+    , DISTANCE_THRESHOLD(surfFinderParameters.DISTANCE_THRESHOLD)
+    , MIN_FILTER_PERCENTAGE(surfFinderParameters.MIN_FILTER_PERCENTAGE)
+    , DEVIATION_ANGLE(surfFinderParameters.DEVIATION_ANGLE)
 { //, cloud_surfaces_(new PointCloudT()) {
 	// Parameter initialization of the plane segmentation
 	segmentation_.setOptimizeCoefficients(true);
