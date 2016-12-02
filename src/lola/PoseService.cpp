@@ -67,7 +67,7 @@ void PoseService::read_handler(
           << "  T_Stance_ODO.Z = " << pose_->t_stance_odo[2]
           << "  Version Nr. = " << pose_->version
           << "  TIC counter = " << pose_->tick_counter
-         << "  Stance = " << pose_->stance
+          << "  Stance = " << static_cast<int>(pose_->stance)
           << "  Size of HR_Pose = " << sizeof(HR_Pose_Red)
           << "  Size of Message = " << bytes_transferred
           << "  Translation.X= " << pose_->t_wr_cl[0]

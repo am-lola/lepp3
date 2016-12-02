@@ -32,6 +32,9 @@ void PrintUsage() {
 
 int main(int argc, char* argv[]) {
   _START_EASYLOGGINGPP(argc, argv);
+
+  easyloggingpp::Loggers::reconfigureAllLoggers(easyloggingpp::ConfigurationType::Filename, "lola.log");
+
   // Initialize the context container
   boost::shared_ptr<Parser<PointT> > parser;
   try {
