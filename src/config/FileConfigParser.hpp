@@ -119,9 +119,9 @@ protected:
   // constructs a RobotService from the parameters specified by t
   boost::shared_ptr<AsyncRobotService> getRobotService(const toml::Value& v)
   {
-    std::string const target = getTomlValue<std::string>(v, "", "aggregators[RobotAggregator].");
-    std::string const ip = getTomlValue<std::string>(v, "", "aggregators[RobotAggregator].");
-    int const port = getTomlValue<int>(v, "", "aggregators[RobotAggregator].");
+    std::string const target = getTomlValue<std::string>(v, "target", "aggregators[RobotAggregator].");
+    std::string const ip = getTomlValue<std::string>(v, "ip", "aggregators[RobotAggregator].");
+    int const port = getTomlValue<int>(v, "port", "aggregators[RobotAggregator].");
     int const delay = getOptionalTomlValue(v, "delay", 0);
 
     boost::shared_ptr<AsyncRobotService> async_robot_service(new AsyncRobotService(ip, target, port, delay));
@@ -368,7 +368,7 @@ protected:
   }
 
   /**
-   * Initiailizes the obstacle detector.
+   * Initializes the obstacle detector.
    */
   virtual void initObstacleDetector(std::string const& method) {
     // Setup plane inlier finder
