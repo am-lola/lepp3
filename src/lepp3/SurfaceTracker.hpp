@@ -87,15 +87,23 @@ template<class PointT>
 class SurfaceTracker: public SurfaceDataObserver, public SurfaceDataSubject {
 
 public:
+  struct Parameters {
+    int LOST_LIMIT;
+    int FOUND_LIMIT;
+
+    double MAX_CENTER_DISTANCE;
+    double MAX_RADIUS_DEVIATION_PERCENTAGE;
+  };
+
 	/**
 	 * Creates a new `SurfaceTracker`.
 	 */
-	SurfaceTracker(std::vector<double> &surfaceTrackerParameters) :
+  SurfaceTracker(Parameters const& params) :
 		next_model_id_(0),
-		LOST_LIMIT(surfaceTrackerParameters[0]),
-		FOUND_LIMIT(surfaceTrackerParameters[1]),
-		MAX_CENTER_DISTANCE(surfaceTrackerParameters[2]),
-		MAX_RADIUS_DEVIATION_PERCENTAGE(surfaceTrackerParameters[3])
+    LOST_LIMIT(params.LOST_LIMIT),
+    FOUND_LIMIT(params.FOUND_LIMIT),
+    MAX_CENTER_DISTANCE(params.MAX_CENTER_DISTANCE),
+    MAX_RADIUS_DEVIATION_PERCENTAGE(params.MAX_RADIUS_DEVIATION_PERCENTAGE)
 	{}
 
 	/**
@@ -115,7 +123,13 @@ private:
 	 *
 	 * The returned map represents a mapping of model IDs (found in the
 	 * `tracked_models_`) to the index of this surface in the `new_surfaces`
-	 * list.
+   * list.	const int LOST_LIMIT;
+  const int FOUND_LIMIT;
+
+  // maximum center distance of two planes in order to be tracked
+  const double MAX_CENTER_DISTANCE;
+  // maximum percentual deviation of two planes in order to be tracked
+  const double MAX_RADIUS_DEVIATION_PERCENTAGE;
 	 */
 	std::map<int, size_t> matchToPrevious(std::vector<SurfaceModelPtr> const& new_surfaces);
 

@@ -90,47 +90,44 @@ type = "ARVisualizer"
   # Given in degrees.
   deviationAngle = 4.0
 
+  [BasicSurfaceDetection.Downsampling]
+  #Voxel grid for reducing the number of points before passing them to the clustering step.
+  coarseVoxelSize_X = 0.01
+  coarseVoxelSize_Y = 0.01
+  coarseVoxelSize_Z = 0.01
+  fineVoxelSize_X = 0.007
+  fineVoxelSize_Y = 0.007
+  fineVoxelSize_Z = 0.007
+  coarseFineLimit = 11000
+
+  [BasicSurfaceDetection.Clustering]
+  #Euclidean clustering to cluster (separate) detected surfaces
+  clusterTolerance = 0.05
+  minClusterSize = 750
+
+  [BasicSurfaceDetection.SurfaceTracking]
+  #How many times an unmaterialized surface should be lost to be completely removed from tracking
+  lostLimit = 5
+  #How many consecutive times a surface should be detected to be materialized
+  foundLimit = 5
+  # Allowed deviation for the position of the center point of a surface at the matching for identification
+  maxCenterDistance = 0.05
+  # Maximum deviation percentage of surface radius such that surfaces can still be mapped to each other
+  maxRadiusDeviationPercentage = 0.5
+
+  [BasicSurfaceDetection.ConvexHullApproximation]
+  #ConvexHull Method for surface point reduction
+  #The number of vertice points of a surface, that is sent to the robot and to the visualizer
+  numHullPoints = 8
+  # When a new convex hull is merged with an old convex hull, all points of the new convex hull are
+  # moved mergeUpdatePercentage percent along the vector pointing to the closest boundary point of
+  # the old convex hull. All points of the old convex hull are moved 1-mergeUpdatePercentage percent
+  # along the vector pointing to the closest boundary point of the new convex hull.
+  mergeUpdatePercentage = 0.2
+
 [BasicObstacleDetection]
   [BasicObstacleDetection.InlierFinder]
   # minimum distance a point must have to its projection onto a 
   # plane in order to be considered an inlier on this plane
   minDistToPlane = 0.04
 
-
-
-
-
-[Downsampling]
-#Voxel grid for reducing the number of points before passing them to the clustering step.
-coarseVoxelSize_X = 0.01
-coarseVoxelSize_Y = 0.01
-coarseVoxelSize_Z = 0.01
-fineVoxelSize_X = 0.007
-fineVoxelSize_Y = 0.007
-fineVoxelSize_Z = 0.007
-coarseFineLimit = 11000
-
-[Clustering]
-#Euclidean clustering to cluster (separate) detected surfaces
-clusterTolerance = 0.05
-minClusterSize = 750
-
-[SurfaceTracking]
-#How many times an unmaterialized surface should be lost to be completely removed from tracking
-lostLimit = 5
-#How many consecutive times a surface should be detected to be materialized
-foundLimit = 5
-# Allowed deviation for the position of the center point of a surface at the matching for identification
-maxCenterDistance = 0.05
-# Maximum deviation percentage of surface radius such that surfaces can still be mapped to each other
-maxRadiusDeviationPercentage = 0.5
-
-[ConvexHullApproximation]
-#ConvexHull Method for surface point reduction
-#The number of vertice points of a surface, that is sent to the robot and to the visualizer
-numHullPoints = 8
-# When a new convex hull is merged with an old convex hull, all points of the new convex hull are
-# moved mergeUpdatePercentage percent along the vector pointing to the closest boundary point of
-# the old convex hull. All points of the old convex hull are moved 1-mergeUpdatePercentage percent
-# along the vector pointing to the closest boundary point of the new convex hull.
-mergeUpdatePercentage = 0.2

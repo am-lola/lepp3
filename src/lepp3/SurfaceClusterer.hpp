@@ -17,16 +17,31 @@ template<class PointT>
 class SurfaceClusterer : public SurfaceDataObserver, public SurfaceDataSubject
 {
 public:
-    SurfaceClusterer(std::vector<double> &clusterParameters) :
-    	CLUSTER_TOLERANCE(clusterParameters[0]),
-    	MIN_CLUSTER_SIZE(clusterParameters[1]),
-    	COARSE_VOXEL_SIZE_X(clusterParameters[2]),
-    	COARSE_VOXEL_SIZE_Y(clusterParameters[3]),
-    	COARSE_VOXEL_SIZE_Z(clusterParameters[4]),
-    	FINE_VOXEL_SIZE_X(clusterParameters[5]),
-    	FINE_VOXEL_SIZE_Y(clusterParameters[6]),
-    	FINE_VOXEL_SIZE_Z(clusterParameters[7]),
-    	FINE_COARSE_LIMIT(clusterParameters[8])
+  struct Parameters {
+    // constant variables for clustering
+    double CLUSTER_TOLERANCE;
+    int MIN_CLUSTER_SIZE;
+
+    // side length of a voxel when applying voxelgridfilter
+    double COARSE_VOXEL_SIZE_X;
+    double COARSE_VOXEL_SIZE_Y;
+    double COARSE_VOXEL_SIZE_Z;
+    double FINE_VOXEL_SIZE_X;
+    double FINE_VOXEL_SIZE_Y;
+    double FINE_VOXEL_SIZE_Z;
+    int FINE_COARSE_LIMIT;
+  };
+
+    SurfaceClusterer(Parameters const& params)
+      : CLUSTER_TOLERANCE(params.CLUSTER_TOLERANCE),
+      MIN_CLUSTER_SIZE(params.MIN_CLUSTER_SIZE),
+      COARSE_VOXEL_SIZE_X(params.COARSE_VOXEL_SIZE_X),
+      COARSE_VOXEL_SIZE_Y(params.COARSE_VOXEL_SIZE_Y),
+      COARSE_VOXEL_SIZE_Z(params.COARSE_VOXEL_SIZE_Z),
+      FINE_VOXEL_SIZE_X(params.FINE_VOXEL_SIZE_X),
+      FINE_VOXEL_SIZE_Y(params.FINE_VOXEL_SIZE_Y),
+      FINE_VOXEL_SIZE_Z(params.FINE_VOXEL_SIZE_Z),
+      FINE_COARSE_LIMIT(params.FINE_COARSE_LIMIT)
     {}
 
     /**
@@ -85,7 +100,7 @@ private:
 	const double FINE_VOXEL_SIZE_X;
 	const double FINE_VOXEL_SIZE_Y;
 	const double FINE_VOXEL_SIZE_Z;
-	const double FINE_COARSE_LIMIT;
+  const int FINE_COARSE_LIMIT;
 };
 
 

@@ -367,36 +367,6 @@ protected:
     return split_strat;
   }
 
-
-  void loadSurfaceClustererParameters(std::vector<double> &surfaceClusterParameters)
-  {
-    surfaceClusterParameters.push_back(toml_tree_.find("Clustering.clusterTolerance")->as<double>());
-    surfaceClusterParameters.push_back(toml_tree_.find("Clustering.minClusterSize")->as<int>());
-    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.coarseVoxelSize_X")->as<double>());
-    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.coarseVoxelSize_Y")->as<double>());
-    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.coarseVoxelSize_Z")->as<double>());
-    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.fineVoxelSize_X")->as<double>());
-    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.fineVoxelSize_Y")->as<double>());
-    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.fineVoxelSize_Z")->as<double>());
-    surfaceClusterParameters.push_back(toml_tree_.find("Downsampling.coarseFineLimit")->as<int>());
-  }
-
-
-  void loadSurfaceTrackerParameters(std::vector<double> &surfaceTrackerParameters)
-  {
-    surfaceTrackerParameters.push_back(toml_tree_.find("SurfaceTracking.lostLimit")->as<int>());
-    surfaceTrackerParameters.push_back(toml_tree_.find("SurfaceTracking.foundLimit")->as<int>());
-    surfaceTrackerParameters.push_back(toml_tree_.find("SurfaceTracking.maxCenterDistance")->as<double>());
-    surfaceTrackerParameters.push_back(toml_tree_.find("SurfaceTracking.maxRadiusDeviationPercentage")->as<double>());
-  }
-
-  void loadConvexHullParameters(std::vector<double> &convexHullParameters)
-  {
-    convexHullParameters.push_back(toml_tree_.find("ConvexHullApproximation.numHullPoints")->as<int>());
-    convexHullParameters.push_back(toml_tree_.find("ConvexHullApproximation.mergeUpdatePercentage")->as<double>());
-  }
-
-
   /**
    * Initiailizes the obstacle detector.
    */
@@ -458,21 +428,39 @@ protected:
   }
 
   virtual void initSurfaceDetector() override {
-    // initialize surface clusterer
-    std::vector<double> surfaceClusterParameters;
-  loadSurfaceClustererParameters(surfaceClusterParameters);
-    surface_clusterer_.reset(new SurfaceClusterer<PointT>(surfaceClusterParameters));
+    typename SurfaceClusterer<PointT>::Parameters cluster_params;
+    cluster_params.CLUSTER_TOLERANCE = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.Clustering.clusterTolerance");
+    cluster_params.MIN_CLUSTER_SIZE = getTomlValue<int>(toml_tree_, "BasicSurfaceDetection.Clustering.minClusterSize");
+
+    cluster_params.COARSE_VOXEL_SIZE_X = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.Downsampling.coarseVoxelSize_X");
+    cluster_params.COARSE_VOXEL_SIZE_Y = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.Downsampling.coarseVoxelSize_Y");
+    cluster_params.COARSE_VOXEL_SIZE_Z = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.Downsampling.coarseVoxelSize_Z");
+    cluster_params.FINE_VOXEL_SIZE_X = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.Downsampling.fineVoxelSize_X");
+    cluster_params.FINE_VOXEL_SIZE_Y = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.Downsampling.fineVoxelSize_Y");
+    cluster_params.FINE_VOXEL_SIZE_Z = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.Downsampling.fineVoxelSize_Z");
+    cluster_params.FINE_COARSE_LIMIT = getTomlValue<int>(toml_tree_, "BasicSurfaceDetection.Downsampling.coarseFineLimit");
+    surface_clusterer_.reset(new SurfaceClusterer<PointT>(cluster_params));
     surface_detector_->SurfaceDataSubject::attachObserver(surface_clusterer_);
+
     // initialize tracking of surfaces
-    std::vector<double> surfaceTrackerParameters;
-    loadSurfaceTrackerParameters(surfaceTrackerParameters);
-    surface_tracker_.reset(new SurfaceTracker<PointT>(surfaceTrackerParameters));
+    typename SurfaceTracker<PointT>::Parameters tracker_params;
+    tracker_params.LOST_LIMIT =
+        getTomlValue<int>(toml_tree_, "BasicSurfaceDetection.SurfaceTracking.lostLimit");
+    tracker_params.FOUND_LIMIT =
+        getTomlValue<int>(toml_tree_, "BasicSurfaceDetection.SurfaceTracking.foundLimit");
+    tracker_params.MAX_CENTER_DISTANCE =
+        getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.SurfaceTracking.maxCenterDistance");
+    tracker_params.MAX_RADIUS_DEVIATION_PERCENTAGE =
+        getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.SurfaceTracking.maxRadiusDeviationPercentage");
+    surface_tracker_.reset(new SurfaceTracker<PointT>(tracker_params));
     surface_clusterer_->SurfaceDataSubject::attachObserver(surface_tracker_);
-    // initialize convex hull detector
-    std::vector<double> convexHullParameters;
-    loadConvexHullParameters(convexHullParameters);
-    convex_hull_detector_.reset(new ConvexHullDetector(convexHullParameters));
+
+    // initialize convex hull detector    
+    int numHullPoints = getTomlValue<int>(toml_tree_, "BasicSurfaceDetection.ConvexHullApproximation.numHullPoints");
+    double mergeUpdatePercentage = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.ConvexHullApproximation.mergeUpdatePercentage");
+    convex_hull_detector_.reset(new ConvexHullDetector(numHullPoints, mergeUpdatePercentage));
     surface_tracker_->SurfaceDataSubject::attachObserver(convex_hull_detector_);
+
     // connect convex hull detector back to surfaceDetector (close the loop)
     convex_hull_detector_->SurfaceDataSubject::attachObserver(surface_detector_);
   }
@@ -795,7 +783,13 @@ private:
       throw std::runtime_error("Required key '"  + key_hint + key + "' is missing from the config");
     }
 
-    return el->as<T>();
+    try {
+      return el->as<T>();
+    } catch (const std::exception& ex) {
+      std::ostringstream ss;
+      ss << key_hint << key << ": " << ex.what();
+      throw std::runtime_error(ss.str());
+    }
   }
 
   /**
@@ -805,7 +799,13 @@ private:
   static T getOptionalTomlValue(toml::Value const& v, std::string const& key, T const& default_value = T()) {
     toml::Value const* el = v.find(key);
     if (el) {
-      return el->as<T>();
+      try {
+        return el->as<T>();
+      } catch (const std::exception& ex) {
+        std::ostringstream ss;
+        ss << key << ": " << ex.what();
+        throw std::runtime_error(ss.str());
+      }
     } else {
       return default_value;
     }

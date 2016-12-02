@@ -121,9 +121,9 @@ public:
 class ConvexHullDetector : public SurfaceDataObserver, public SurfaceDataSubject
 {
 public:
-	ConvexHullDetector(std::vector<double> convexHullParameters) :
-		NUM_HULL_POINTS(convexHullParameters[0]),
-		MERGE_UPDATE_PERCENTAGE(convexHullParameters[1])
+  ConvexHullDetector(int numHullPoints, double mergeUpdatePercentage) :
+    NUM_HULL_POINTS(numHullPoints),
+    MERGE_UPDATE_PERCENTAGE(mergeUpdatePercentage)
 	{}
 
 	// inherited from the SurfaceAggregator interface
