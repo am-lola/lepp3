@@ -153,9 +153,6 @@ void OdoCoordinateTransformer<PointT>::prepareNext() {
 
 template<class PointT>
 void OdoCoordinateTransformer<PointT>::setNext(LolaKinematicsParams const& params) {
-  LTRACE << "Setting new transformation for frame " << current_frame_
-         << " based on parameters: "
-         << params;
   double rotation_matrix[3][3];
   rotationmatrix(params.phi_z_odo, rotation_matrix);
 

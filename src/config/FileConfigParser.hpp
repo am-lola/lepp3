@@ -224,10 +224,18 @@ protected:
   }
 
   void initPoseService() {
-    std::string ip = getTomlValue<std::string>(toml_tree_, "PoseService.ip");
-    int port = getTomlValue<int>(toml_tree_, "PoseService.port");
+    std::string const type = getTomlValue<std::string>(toml_tree_, "PoseService.type");
 
-    this->pose_service_.reset(new PoseService(ip, port));
+    if ("udp" == type) {
+      std::string ip = getTomlValue<std::string>(toml_tree_, "PoseService.ip");
+      int port = getTomlValue<int>(toml_tree_, "PoseService.port");
+
+      this->pose_service_ = PoseService::FromUdp(ip, port);
+    } else {
+      std::ostringstream ss;
+      ss << "Unknown pose service type: " << type;
+      throw std::runtime_error(ss.str());
+    }
     this->pose_service_->start();
   }
 
@@ -289,10 +297,6 @@ protected:
         ss << "Unknown observer type: " << type;
         throw std::runtime_error(ss.str());
       }
-    }
-    // Initialize obstacle and surface detector if necessary
-    if (surface_detector_active_ || obstacle_detector_active_) {
-      initSurfaceDetector();
     }
   }
 
@@ -491,7 +495,7 @@ protected:
     this->recorder_->setMode(rec_cloud, rec_rgb, rec_pose);
 
     if (rec_cloud)
-      this->source()->FrameDataSubject::attachObserver(this->recorder());
+      this->raw_source()->FrameDataSubject::attachObserver(this->recorder());
     if (rec_rgb)
       this->raw_source()->RGBDataSubject::attachObserver(this->recorder());
     if (rec_pose) {

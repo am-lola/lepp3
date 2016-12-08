@@ -1,7 +1,6 @@
 #ifndef TRANSFORM_OBSERVER_H_
 #define TRANSFORM_OBSERVER_H_
 
-namespace {
 /**
  * A struct wrapping the parameters LOLA-provided kinematics parameters that are
  * used to construct the transformation matrices between the camera frame and
@@ -16,7 +15,6 @@ struct LolaKinematicsParams {
   int frame_num;
   int stamp;
 };
-} // namespace
 
 /**
  * An ABC (interface) that classes that wish to observe a pose service
