@@ -49,6 +49,7 @@ public:
     }
 
     this->init();
+    this->finalize();
   }
 
 protected:
@@ -66,15 +67,15 @@ protected:
                 << "Assuming no robot pose information will be available."
                 << std::endl;
 
+    // Now get the video source ready...
+    initRawSource();
+
     // Existence of a Lola is optional.
     // Compatibility for offline use.
     if (toml_tree_.find("Robot"))
       initRobot();
     else
       std::cout << "No robot info found in config file." << std::endl;
-
-    // Now get the video source ready...
-    initRawSource();
 
     // ...along with any possible filters. Method Parser::buildFilteredSource
     // from the base class is called.
@@ -86,12 +87,13 @@ protected:
     addAggregators();
 
     std::cout << "==== Finished parsing the config file. ====" << std::endl;
+
   }
 
   void initRobot() {
     // Check requirements
     if (!this->pose_service()) {
-      throw std::runtime_error("[Robot] requires a [PoseService]!");
+      throw std::runtime_error("[Robot] requires a PoseService!");
     }
     double bubble_size = getTomlValue<double>(toml_tree_, "Robot.bubble_size");
     this->robot_.reset(new Robot(*this->pose_service(), bubble_size));
@@ -117,8 +119,7 @@ protected:
   }
 
   // constructs a RobotService from the parameters specified by t
-  boost::shared_ptr<AsyncRobotService> getRobotService(const toml::Value& v)
-  {
+  boost::shared_ptr<AsyncRobotService> getRobotService(const toml::Value& v) {
     std::string const target = getTomlValue<std::string>(v, "target", "aggregators[RobotAggregator].");
     std::string const ip = getTomlValue<std::string>(v, "ip", "aggregators[RobotAggregator].");
     int const port = getTomlValue<int>(v, "port", "aggregators[RobotAggregator].");
@@ -138,6 +139,7 @@ protected:
 
     if (type == "stream") {
       this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(new LiveStreamSource<PointT>(enable_rgb));
+
     } else if (type == "pcd") {
       const std::string file_path = getTomlValue<std::string>(toml_tree_, "VideoSource.file_path");
       boost::shared_ptr<pcl::Grabber> interface(new pcl::PCDGrabber<PointT>(
@@ -145,6 +147,7 @@ protected:
             20.f,
             true));
       this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(new GeneralGrabberVideoSource<PointT>(interface));
+
     } else if (type == "oni") {
       const std::string file_path = getTomlValue<std::string>(toml_tree_, "VideoSource.file_path");
       std::cout << "oni file path: " << file_path << std::endl;
@@ -153,8 +156,10 @@ protected:
             pcl::io::OpenNI2Grabber::OpenNI_Default_Mode,
             pcl::io::OpenNI2Grabber::OpenNI_Default_Mode));
       this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(new GeneralGrabberVideoSource<PointT>(interface));
+
     } else if (type == "am_offline") {
       std::string dir_path = getTomlValue<std::string>(toml_tree_, "VideoSource.dir_path");
+      bool enable_pose = getOptionalTomlValue(toml_tree_, "VideoSource.enable_pose", false);
       if ('/' != dir_path[dir_path.size() - 1]
           && '\\' != dir_path[dir_path.size() - 1]) {
         dir_path += '/';
@@ -165,9 +170,9 @@ protected:
       // Prepare the pcd file names required by PCDGrabber
       const std::vector<std::string> file_names = fm.getFileNames(".pcd");
       boost::shared_ptr<pcl::Grabber> pcd_interface(new pcl::PCDGrabber<PointT>(
-        file_names,
-        30, // frame rate
-        true)); // video loop
+          file_names,
+          30, // frame rate
+          true)); // video loop
 
       boost::shared_ptr<cv::VideoCapture> img_interface;
       if (enable_rgb) {
@@ -177,8 +182,19 @@ protected:
         std::cout << "image dir: " << ss.str() << std::endl;
         img_interface.reset(new cv::VideoCapture(ss.str()));
       }
+
+      boost::shared_ptr<PoseService> pose;
+      if (enable_pose) {
+        if (this->pose_service())
+        {
+          throw std::runtime_error("Only one pose provider is supported (Service or offline file)");
+        }
+        pose = PoseService::FromFile(dir_path + "params.txt");
+        this->pose_service_ = pose;
+      }
       this->raw_source_ = boost::shared_ptr<OfflineVideoSource<PointT>>(
-          new OfflineVideoSource<PointT>(pcd_interface, img_interface));
+          new OfflineVideoSource<PointT>(pcd_interface, img_interface, pose));
+
     } else {
       throw "Invalid VideoSource";
     }
@@ -224,19 +240,9 @@ protected:
   }
 
   void initPoseService() {
-    std::string const type = getTomlValue<std::string>(toml_tree_, "PoseService.type");
-
-    if ("udp" == type) {
-      std::string ip = getTomlValue<std::string>(toml_tree_, "PoseService.ip");
-      int port = getTomlValue<int>(toml_tree_, "PoseService.port");
-
-      this->pose_service_ = PoseService::FromUdp(ip, port);
-    } else {
-      std::ostringstream ss;
-      ss << "Unknown pose service type: " << type;
-      throw std::runtime_error(ss.str());
-    }
-    this->pose_service_->start();
+    std::string ip = getTomlValue<std::string>(toml_tree_, "PoseService.ip");
+    int port = getTomlValue<int>(toml_tree_, "PoseService.port");
+    this->pose_service_ = PoseService::FromUdp(ip, port);
   }
 
   void addObservers() {
@@ -772,6 +778,15 @@ private:
       std::ostringstream ss;
       ss << "Unknown aggregator type `" << type << "`";
       throw std::runtime_error(ss.str());
+    }
+  }
+
+  /**
+   * Starts asyncronous tasks after config file is parsed
+   */
+  void finalize() {
+    if (this->pose_service_) {
+      this->pose_service_->start();
     }
   }
 

@@ -17,6 +17,10 @@ public:
    * Creates a Pose service which listens on a UDP port
    */
   static boost::shared_ptr<PoseService> FromUdp(std::string const& host, int port);
+  /**
+   * Creates a Pose service from a saved file
+   */
+  static boost::shared_ptr<PoseService> FromFile(std::string const& filename);
 
   /**
    * Virtual destructor because this is an abstract class
@@ -26,7 +30,7 @@ public:
   /**
    * Starts the `PoseService`.
    */
-  virtual void start() = 0;
+  virtual void start() {};
 
   /**
    * Obtains the current pose information. Using this method is completely
@@ -57,6 +61,11 @@ public:
     * has been received.
     */
   void notifyObservers(int idx, LolaKinematicsParams& params);
+
+  /**
+   * Force a dispatch of the next frame
+   */
+  virtual void triggerNextFrame() {};
 
 private:
   std::vector<boost::shared_ptr<TFObserver>> observers_;

@@ -31,6 +31,7 @@ type = "stream"
 #file_path = "path/to/file"
 #dir_path = "path/to/folder"
 #enable_rgb = false  # Capture RGB images
+#enable_pose = false  # Replay pose data (only am_offline)
 
 # This sets up the filtered source, which will be passed to all
 # steps requiring a video 

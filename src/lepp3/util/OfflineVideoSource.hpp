@@ -20,12 +20,9 @@ namespace lepp {
 template<class PointT>
 class OfflineVideoSource : public VideoSource<PointT> {
 public:
-  OfflineVideoSource(
-      boost::shared_ptr<pcl::Grabber> pcd_interface);
-
-  OfflineVideoSource(
-      boost::shared_ptr<pcl::Grabber> pcd_interface,
-      boost::shared_ptr<cv::VideoCapture> rgb_interface);
+  OfflineVideoSource(boost::shared_ptr<pcl::Grabber> pcd_interface,
+                     boost::shared_ptr<cv::VideoCapture> rgb_interface,
+                     boost::shared_ptr<PoseService> pose_service);
 
   virtual ~OfflineVideoSource();
 
@@ -47,24 +44,19 @@ private:
    */
   const boost::shared_ptr<pcl::Grabber> pcd_interface_;
   const boost::shared_ptr<cv::VideoCapture> rgb_interface_;
+  const boost::shared_ptr<PoseService> pose_service_;
 
   long frameCount;
 };
 
-
-template<class PointT>
-OfflineVideoSource<PointT>::OfflineVideoSource(
-    boost::shared_ptr<pcl::Grabber> pcd_interface)
-    : pcd_interface_(pcd_interface),
-      frameCount(0) {
-}
-
 template<class PointT>
 OfflineVideoSource<PointT>::OfflineVideoSource(
     boost::shared_ptr<pcl::Grabber> pcd_interface,
-    boost::shared_ptr<cv::VideoCapture> rgb_interface)
+    boost::shared_ptr<cv::VideoCapture> rgb_interface,
+    boost::shared_ptr<PoseService> pose_service)
     : pcd_interface_(pcd_interface),
       rgb_interface_(rgb_interface),
+      pose_service_(pose_service),
       frameCount(0) {
 }
 
@@ -107,6 +99,10 @@ void OfflineVideoSource<PointT>::cloud_cb_(
 
     RGBDataPtr rgbData(new RGBData(frameCount, image));
     this->setNextFrame(rgbData);
+  }
+
+  if (pose_service_) {
+    pose_service_->triggerNextFrame();
   }
 }
 

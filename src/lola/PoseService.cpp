@@ -1,5 +1,6 @@
 #include "lola/PoseService.h"
 #include <cmath>
+#include "lola/pose/PoseFileService.hpp"
 #include "lola/pose/PoseUdpService.hpp"
 
 namespace {
@@ -37,6 +38,11 @@ boost::shared_ptr<PoseService> PoseService::FromUdp(std::string const& host, int
   assert(p == port);
 
   boost::shared_ptr<PoseService> ps(new PoseUdpService(host, p));
+  return ps;
+}
+
+boost::shared_ptr<PoseService> PoseService::FromFile(std::string const& filename) {
+  boost::shared_ptr<PoseService> ps(new PoseFileService(filename));
   return ps;
 }
 
