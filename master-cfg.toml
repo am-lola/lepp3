@@ -119,6 +119,31 @@ type = "ARVisualizer"
   width = 1024
   height = 768
 
+
+  # This visualizer shows a debug GUI for the GMM obstacle detction
+  [[observers.visualizer]]
+  type = "GMMTrackingVisualizer"
+  name = "GMM Obstacle Tracker Data"
+  debug_gui = true
+  width = 1024
+  height = 768
+
+    [observers.visualizer.debug_gui_params]
+    # Just an example: set "some" of the values here. The rest will be set to
+    # default by `DebugGUIParams`s ctor.
+    draw_gaussians = true
+    draw_velocities = true
+    draw_ssv = true
+    draw_trajectories = false
+    draw_debug_values = true
+    draw_voxels = false
+    downsample_res = 0.03
+    enable_tracker = true
+    enable_tight_fit = true
+    trajectory_length = 128
+    voxel_grid_resolution = 0.1
+    #color_mode = "NONE"
+
 # This enables the obstacle detector
 [[observers]]
 type = "ObstacleDetector"
@@ -155,6 +180,21 @@ method = "EuclideanClustering"
     #  type = "DistanceThreshold"
     #  # Distance is in [cm]
     #  distance_threshold = 150
+
+
+# This enables the GMM obstacle detector
+# Note: USe only one ObstacleDetector
+[[observers]]
+type = "ObstacleDetector"
+method = "GMM"
+
+  [ObstacleDetetction.GMM.ObstacleDetectorParams]
+  enable_tight_fit = true
+  filter_ssv_position = true
+  voxel_grid_resolution = 0.1
+  kalman_system_noise_position = 0.01
+  kalman_system_noise_velocity = 0.15
+  kalman_measurement_noise = 0.10
 
 ###########################################################################
 # Aggregators is an array
