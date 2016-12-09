@@ -475,7 +475,6 @@ protected:
     convex_hull_detector_->SurfaceDataSubject::attachObserver(surface_detector_);
   }
 
-
   virtual void initRecorder() override {
     std::cout << "entered initRecorder" << std::endl;
 
@@ -512,66 +511,11 @@ protected:
     }
   }
 
-//  void loadARVisualizerParams(double position[],double up[],double forward[])
-//  {
-//    std::string type= toml_tree_.find("ARVisualizer.frame")->as<std::string>();
-//    if (type == "pcl") {
-//      position[0]=toml_tree_.find("ARVisualizer.pcl_positionx")->as<int>();
-//      position[1]=toml_tree_.find("ARVisualizer.pcl_positiony")->as<int>();
-//      position[2]=toml_tree_.find("ARVisualizer.pcl_positionz")->as<int>();
-//      up[0]=toml_tree_.find("ARVisualizer.pcl_upx")->as<int>();
-//      up[1]=toml_tree_.find("ARVisualizer.pcl_upy")->as<int>();
-//      up[2]=toml_tree_.find("ARVisualizer.pcl_upz")->as<int>();
-//      forward[0]=toml_tree_.find("ARVisualizer.pcl_forwardx")->as<int>();
-//      forward[1]=toml_tree_.find("ARVisualizer.pcl_forwardy")->as<int>();
-//      forward[2]=toml_tree_.find("ARVisualizer.pcl_forwardz")->as<int>();
-//    }
-//    else if (type == "lola") {
-//      position[0]=toml_tree_.find("ARVisualizer.lola_positionx")->as<int>();
-//      position[1]=toml_tree_.find("ARVisualizer.lola_positiony")->as<int>();
-//      position[2]=toml_tree_.find("ARVisualizer.lola_positionz")->as<int>();
-//      up[0]=toml_tree_.find("ARVisualizer.lola_upx")->as<int>();
-//      up[1]=toml_tree_.find("ARVisualizer.lola_upy")->as<int>();
-//      up[2]=toml_tree_.find("ARVisualizer.lola_upz")->as<int>();
-//      forward[0]=toml_tree_.find("ARVisualizer.lola_forwardx")->as<int>();
-//      forward[1]=toml_tree_.find("ARVisualizer.lola_forwardy")->as<int>();
-//      forward[2]=toml_tree_.find("ARVisualizer.lola_forwardz")->as<int>();
-//    } else {
-//      throw "Unknown AR frame condition given.";
-//    }
-//  }
-//
-//  void initVisualizer()
-//  {
-//    double position[3]={0};
-//    double forward[3]={0};
-//    double up[3]={0};
-//
-//    loadARVisualizerParams(position,up,forward);
-//
-//    if (surface_detector_active_ && !obstacle_detector_active_)
-//    {
-//      ar_visualizer_.reset(new ARVisualizer(surface_detector_active_, obstacle_detector_active_, position,forward,up));
-//      surface_detector_->FrameDataSubject::attachObserver(ar_visualizer_);
-//    }
-//    else if (obstacle_detector_active_)
-//    {
-//      ar_visualizer_.reset(new ARVisualizer(surface_detector_active_, obstacle_detector_active_,position,forward,up));
-//      this->detector_->FrameDataSubject::attachObserver(ar_visualizer_);
-//    }
-//
-//    bool viz_cloud = toml_tree_.find("Visualization.cloud")->as<bool>();
-//    if (viz_cloud) {
-//      // TODO add relevant stuff for cloud visualization and any necessary
-//      // observer
-//    }
-
   virtual void initCamCalibrator() override {
     std::cout << "entered initCamCalibrator" << std::endl;
     this->cam_calibrator_.reset(new CameraCalibrator<PointT>);
     this->source()->FrameDataSubject::attachObserver(this->cam_calibrator());
   }
-
 
 private:
   /// Helper functions for constructing parts of the pipeline.
@@ -579,33 +523,30 @@ private:
    * A helper function that reads all the parameters that are required by the
    * `GMMObstacleTracker`.
    */
-  GMM::DebugGUIParams readGMMDebugGuiParams(toml::Value const* v) {
-    bool const enableTracker = v->find("enable_tracker")->as<bool>();
-    bool const enableTightFit = v->find("enable_tight_fit")->as<bool>();
-    bool const drawGaussians = v->find("draw_gaussians")->as<bool>();
-    bool const drawSSVs = v->find("draw_ssv")->as<bool>();
-    bool const drawTrajectories = v->find("draw_trajectories")->as<bool>();
-    bool const drawVelocities = v->find("draw_velocities")->as<bool>();
-    bool const drawDebugValues = v->find("draw_debug_values")->as<bool>();
-    bool const drawVoxels = v->find("draw_voxels")->as<bool>();
+  GMM::DebugGUIParams readGMMDebugGuiParams(toml::Value const& v) {
+    const char* base_key = "observers.visualizer.debug_gui_params";
 
-    int const trajectoryLength = v->find("trajectory_length")->as<int>();
+    bool const enableTracker = getTomlValue<bool>(v, "enable_tracker", base_key);
+    bool const enableTightFit = getTomlValue<bool>(v, "enable_tight_fit", base_key);
+    bool const drawGaussians = getTomlValue<bool>(v, "draw_gaussians", base_key);
+    bool const drawSSVs = getTomlValue<bool>(v, "draw_ssv", base_key);
+    bool const drawTrajectories = getTomlValue<bool>(v, "draw_trajectories", base_key);
+    bool const drawVelocities = getTomlValue<bool>(v, "draw_velocities", base_key);
+    bool const drawDebugValues = getTomlValue<bool>(v, "draw_debug_values", base_key);
+    bool const drawVoxels = getTomlValue<bool>(v, "draw_voxels", base_key);
+
+    int const trajectoryLength = getTomlValue<int>(v, "trajectory_length", base_key);
+    float const downsampleResolution = static_cast<float>(getTomlValue<double>(v, "downsample_res", base_key));
+
     // TODO decide how to read ar::color info from config file
     // ar::Color gaussianColor;
     // ar::Color ssvColor;
-    float const downsampleResolution = static_cast<float>(v->find("downsample_res")->as<double>());
-
-    GMM::ColorMode colorMode;
-    if (v->find("color_mode")) {
-      std::string const m = v->find("color_mode")->as<std::string>();
-
-      if (m == "NONE") {
-        colorMode = GMM::ColorMode::NONE;
-      } else if (m == "SOFT_ASSIGNMENT") {
-        colorMode = GMM::ColorMode::SOFT_ASSIGNMENT;
-      } else if (m == "HARD_ASSIGNMENT") {
-        colorMode = GMM::ColorMode::HARD_ASSIGNMENT;
-      } // TODO set the last missing value in GMM::ColorMode
+    GMM::ColorMode colorMode = GMM::ColorMode::NONE;
+    std::string const mode = getOptionalTomlValue<std::string>(v, "color_mode", "NONE");
+    if (mode == "SOFT_ASSIGNMENT") {
+      colorMode = GMM::ColorMode::SOFT_ASSIGNMENT;
+    } else if (mode == "HARD_ASSIGNMENT") {
+      colorMode = GMM::ColorMode::HARD_ASSIGNMENT;
     }
 
     GMM::DebugGUIParams params;
@@ -626,17 +567,22 @@ private:
   }
 
   GMM::ObstacleTrackerParams readGMMObstacleTrackerParams() {
-    toml::Value const* v = toml_tree_.find("GMMObstacleDetectorParams");
+    const char* base_key = "ObstacleDetetction.GMM.ObstacleDetectorParams";
+    toml::Value const* v = toml_tree_.find(base_key);
+
+    if (!v) {
+      throw std::runtime_error("Missing config: " + std::string(base_key));
+    }
+
     GMM::ObstacleTrackerParams params;
-    params.enableTightFit = v->find("enable_tight_fit")->as<bool>();
-    params.filterSSVPositions = v->find("filter_ssv_position")->as<bool>();
-    params.voxelGridResolution = v->find("voxel_grid_resolution")->as<double>();
-    params.kalman_SystemNoisePosition = v->find("kalman_system_noise_position")->as<double>();
-    params.kalman_SystemNoiseVelocity = v->find("kalman_system_noise_velocity")->as<double>();
-    params.kalman_MeasurementNoise = v->find("kalman_measurement_noise")->as<double>();
+    params.enableTightFit = getTomlValue<bool>(*v, "enable_tight_fit", base_key);
+    params.filterSSVPositions = getTomlValue<bool>(*v, "filter_ssv_position", base_key);
+    params.voxelGridResolution = getTomlValue<double>(*v, "voxel_grid_resolution", base_key);
+    params.kalman_SystemNoisePosition = getTomlValue<double>(*v, "kalman_system_noise_position", base_key);
+    params.kalman_SystemNoiseVelocity = getTomlValue<double>(*v, "kalman_system_noise_velocity", base_key);
+    params.kalman_MeasurementNoise = getTomlValue<double>(*v, "kalman_measurement_noise", base_key);
 
     return params;
-
   }
 
   void initSurfaceFinder() {
@@ -651,6 +597,7 @@ private:
 
     ground_removal_ = true;
   }
+
   /**
    * A helper function that constructs the next `PointFilter` instance,
    * as defined in the following lines of the config file.
@@ -718,10 +665,8 @@ private:
       //       (Reason to have it here as well): There might be the case where
       //       we want to run all of the components, but only visualizing some
       //       of them.
-      bool show_obstacles = false;
-      bool show_surfaces = false;
-      show_obstacles = v.find("show_obstacles")->as<bool>();
-      show_surfaces = v.find("show_surfaces")->as<bool>();
+      bool show_obstacles = getOptionalTomlValue(v, "show_obstacles", false);
+      bool show_surfaces = getOptionalTomlValue(v, "show_surfaces", false);
 
       boost::shared_ptr<ObsSurfVisualizer> obs_surf_vis(
           new ObsSurfVisualizer(name, show_obstacles, show_surfaces, width, height));
@@ -730,14 +675,16 @@ private:
 
     } else if (type == "GMMTrackingVisualizer") {
       // TODO read all the necessary parameters from the config file.
-      bool const debugGUI = v.find("debugGUI")->as<bool>();
+      bool const debugGUI = getOptionalTomlValue(v, "debug_gui", false);
       // Set default values for GUI Debug parameters.
       GMM::DebugGUIParams d_gui_params;
       // If there are debug parameters available in the config, get 'em
-      if(debugGUI) {
-        toml::Value const* debug_gui = v.find("debugGUIParams");
-
-        d_gui_params = readGMMDebugGuiParams(debug_gui);
+      if (debugGUI) {
+        toml::Value const* debug_gui = v.find("debug_gui_params");
+        if (!debug_gui) {
+          throw std::runtime_error("To use the debug gui, you need to set its parameters [observers.visualizer.debug_gui_params]");
+        }
+        d_gui_params = readGMMDebugGuiParams(*debug_gui);
       }
       return boost::shared_ptr<ObstacleTrackerVisualizer>(
           new ObstacleTrackerVisualizer(d_gui_params, name, width, height));
