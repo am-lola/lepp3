@@ -2,176 +2,180 @@
 # it with the `--cfg` flag).
 # The config file is in the [toml](https://github.com/toml-lang/toml) format,
 
+# All IPs and ports given in here are the defaults for a lab setup.
+
+# Mandatory options are given, optional options are commented out
+# and listed with the default values 
+
+# Video source 
 [VideoSource]
 # Common options:
-#   - `type`: stream, oni, pcd, am_offline
+#   - `type`: "stream", "oni", "pcd", "am_offline"
 # `oni` and `pcd` types require an additional parameter: file_path
 # `am_offline` type requires an additional parameters: dir_path
 type = "stream"
-# enable_rgb = true
-# file_path="../Videos/Stairs.oni"
+#file_path = "path/to/file"
+#dir_path = "path/to/folder"
+#enable_rgb = false  # Capture RGB images
+#enable_pose = false  # Replay pose data (only am_offline, [PoseService] must be disabled)
 
+# This sets up the filtered source, which will be passed to all
+# steps requiring a video
 [FilteredVideoSource]
-# type = simple|prob|pt1
+# options: "simple", "prob", "pt1"; These options activate 'source' or 'raw-data' filters.
+# * simple - the point cloud is taken directly from the latest frame
+# For the next two options, a voxel grid (or environment map) in world coordinates is created,
+# consisting of a big 3D matrix, which is used as a filtered point cloud source
+# * prob - each voxel has a probabilistic filter, i.e. is active if it was occupied most times in the last frames
+# * pt1 - each voxel has a pt1 filter, i.e. is active if (f*actualframe+(1-f)*previousframe > 0.5)
 type = "simple"
 
   # The following list of filters is optional
   # The order of the filters themselves IS NOT SIGNIFICANT.
-  [[FilteredVideoSource.filters]]
-    type = "SensorCalibrationFilter"
-    a = 1.0117
-    b = -0.0100851
+  # each filter requires a "type" and may need additional options
 
   [[FilteredVideoSource.filters]]
-    type = "TruncateFilter"
-    decimal_points = 2
+  # Calibration filters. Sets the calibration parameters of the used camera
+  type = "SensorCalibrationFilter" # Makes a linear correction of the sensor's z value
+  a = 1.0117
+  b = -0.0100851
 
-# Available `observer` types: ObstacleDetector|SurfaceDetector|Recorder
-#   ObstacleDetector requires *SplitStrategy*
-#   ObstacleDetector implies having a SurfaceDetector as well, so do not 
-#     specify an ObstacleDetector and a SurfaceDetector at the same time.
-#   Recorder requires RecordingOptions
-[[observers]]
-type = "ObstacleDetector"
-#method = "EuclideanClustering"
-method = "GMM"
+  [[FilteredVideoSource.filters]]
+  # This filter truncates all values to the specified amount of digits
+  # after the dot.
+  type = "TruncateFilter"
+  # Base unit is meters, so 2 truncates to millimeters
+  decimal_points = 2
 
-[[observers]]
-type = "SurfaceDetector"
+###########################################################################
+# Observers is an array
+# this will list all observers and options belonging to them
 
+# This observer saves the input data. The saved data can be replayed later
+# with the "am_offline" video source
 
-[SplitStrategy]
-# split_axis = largest|middle|smallest
-split_axis = "middle"
-# A number of split conditions that need to be satisfied in order for an object
-# split to occur.
-# Care should be taken to define the conditions in a way that guarantees that
-# splitting eventually stops for each object (possibly the easiest way is to
-# always include the DepthLimit condition with a fairly high depth limit).
-# If no split conditions are provided, the objects will never be split.
-  [[SplitStrategy.conditions]]
-    type = "DepthLimit"
-    depth = 1
-  [[SplitStrategy.conditions]]
-    type = "SizeLimit"
-    # size is a volume in [cm^3]
-    size = 3000.
-  [[SplitStrategy.conditions]]
-    type = "ShapeCondition"
-    # The threshold values to consider something "very much" a sphere
-    sphere1 = 0.8
-    sphere2 = 0.1
-    # The threshold value to consider something "very much" a cylinder
-    cylinder = 0.25
-  #[[SplitStrategy.conditions]]
-  #  type = "DistanceThreshold"
-  #  # Distance is in [cm]
-  #  distance_threshold = 150
-
-# Uncomment if any information needs to be sent to the robot.
-# [RobotService]
-# ip = 192.168.0.7
-# port = 61448
-# # Delay is given in milliseconds. 0 is a valid value.
-# delay = 10
-
-# Uncomment in the presense of the robot
-# [Robot]
-# # The size of the "bubble" in which no modifications or deletions of objects
-# # are sent to the robot. **In meters**
-# bubble_size = 1.2
-
-
-
-#Parameters for Surface Segmentation
-#SurfaceFinder.hpp
-[RANSAC]
-#max number of ransac iterations
-maxIterations = 200
-# How close a point must be to the model in order to be considered an inlier
-distanceThreshold = 0.03
-#How small the left (extracted) pointcloud should be for termination of the plane segmentation 
-minFilterPercentage = 0.08
-
-[Classification]
-#The function to classify segmented planes according to deviation in their normals
-#This step is only for Surface Segmentation
-#The angle values represent how much deviation is allowed
-#Given in degrees.
-deviationAngle = 4.0
-
-[Downsampling]
-#Voxel grid for reducing the number of points before passing them to the clustering step.
-coarseVoxelSize_X = 0.01
-coarseVoxelSize_Y = 0.01
-coarseVoxelSize_Z = 0.01
-fineVoxelSize_X = 0.007
-fineVoxelSize_Y = 0.007
-fineVoxelSize_Z = 0.007
-coarseFineLimit = 11000
-
-[Clustering]
-#Euclidean clustering to cluster (separate) detected surfaces
-clusterTolerance = 0.05
-minClusterSize = 750
-
-[SurfaceTracking]
-#How many times an unmaterialized surface should be lost to be completely removed from tracking 
-lostLimit = 5
-#How many consecutive times a surface should be detected to be materialized
-foundLimit = 5
-# Allowed deviation for the position of the center point of a surface at the matching for identification
-maxCenterDistance = 0.05
-# Maximum deviation percentage of surface radius such that surfaces can still be mapped to each other
-maxRadiusDeviationPercentage = 0.5
-
-[ConvexHullApproximation]
-#ConvexHull Method for surface point reduction
-#The number of vertice points of a surface, that is sent to the robot and to the visualizer
-numHullPoints = 8
-# When a new convex hull is merged with an old convex hull, all points of the new convex hull are
-# moved mergeUpdatePercentage percent along the vector pointing to the closest boundary point of 
-# the old convex hull. All points of the old convex hull are moved 1-mergeUpdatePercentage percent 
-# along the vector pointing to the closest boundary point of the new convex hull.
-mergeUpdatePercentage = 0.2
-
-[InlierFinder]
-# minimum distance a point must have to its projection onto a 
-# plane in order to be considered an inlier on this plane
-minDistToPlane = 0.04
-
-
+# This defines all available visualizers, there can be more than one
 [[observers]]
 type = "ARVisualizer"
 
+# Every instance has 4 mandatory options:
+# - type: the type of the visualizer
+# - name: its name
+# - width
+# and 
+# - height: the window dimensions
+
+
+
+  # This visualizer shows a debug GUI for the GMM obstacle detction
   [[observers.visualizer]]
-  type = "ObsSurfVisualizer"
-  name = "Obs_Surf_Detector"
+  type = "GMMTrackingVisualizer"
+  name = "GMM Obstacle Tracker Data"
+  debug_gui = true
   width = 1024
   height = 768
-  show_obstacles = true
-  show_surfaces = true
-#
-#[[observers]]
-#type = "ARVisualizer"
-#
-#  [[observers.visualizer]]
-#  type = "GMMTrackingVisualizer"
-#  name = "GMM Obstacle Tracker Data"
-#  debugGUI = false
-#  width = 1024
-#  height = 768
-#    [[observers.visualizer.debugGUIParams]]
-#    # Just an example: set "some" of the values here.
-#    enable_tight_fit = true
-#    draw_gaussians = true
 
-[GMMObstacleDetectorParams]
-# if the method is GMM, set the following parameters..
-enable_tight_fit = true
-filter_ssv_position = true
-voxel_grid_resolution = 0.1
-kalman_system_noise_position = 0.01
-kalman_system_noise_velocity = 0.15
-kalman_measurement_noise = 0.10
+    [observers.visualizer.debug_gui_params]
+    # Just an example: set "some" of the values here. The rest will be set to
+    # default by `DebugGUIParams`s ctor.
+    draw_gaussians = true
+    draw_velocities = true
+    draw_ssv = true
+    draw_trajectories = false
+    draw_debug_values = true
+    draw_voxels = false
+    downsample_res = 0.03 # downsampling leaf size in meters
+    enable_tracker = true
+    enable_tight_fit = true # use pc-based fitting instead of gaussian-based fitting
+    trajectory_length = 128
+    voxel_grid_resolution = 0.1 # voxel grid used for clustering, leaf size in meters
+    #color_mode = "NONE"
 
+# This enables the obstacle detector
+[[observers]]
+type = "ObstacleDetector"
+# Available methods accepted by ObstacleDetector:
+#   - "EuclideanClustering"
+#   - "GMM" (see below)
+method = "GMM"
+
+
+
+# This enables the GMM obstacle detector
+# Note: USe only one ObstacleDetector
+[[observers]]
+type = "ObstacleDetector"
+method = "GMM"
+
+  [ObstacleDetetction.GMM.ObstacleDetectorParams]
+  enable_tight_fit = true # use pc-based fitting instead of gaussian-based fitting
+  #TODO: compare with observers.visualizer.debug_gui_params!!
+  filter_ssv_position = true
+  voxel_grid_resolution = 0.1 # voxel grid used for clustering, leaf size in meters
+  kalman_system_noise_position = 0.01 # standard expected noise, in meters
+  kalman_system_noise_velocity = 0.15 # standard expected noise, in meters/second
+  kalman_measurement_noise = 0.10
+
+###########################################################################
+# Miscellaneous settings 
+
+# These settings define basic parameters for detecting the ground plane
+# They are mandatory if any kind of surface or obstacle detection is enabled
+[BasicSurfaceDetection]
+  [BasicSurfaceDetection.RANSAC]
+  #max number of ransac iterations
+  maxIterations = 200
+  # How close a point must be to the model [in meters] in order to be considered an inlier
+  distanceThreshold = 0.03
+  #How small the left (extracted) pointcloud should be for termination of the plane segmentation 
+  minFilterPercentage = 0.08
+
+  [BasicSurfaceDetection.Classification]
+  # The function to classify segmented planes according to deviation in their normals
+  # This step is only for Surface Segmentation
+  # The angle values represent how much deviation is allowed
+  # Given in degrees.
+  deviationAngle = 4.0
+
+  [BasicSurfaceDetection.Downsampling]
+  #Voxel grid for reducing the number of points before passing them to the clustering step.
+  coarseVoxelSize_X = 0.01
+  coarseVoxelSize_Y = 0.01
+  coarseVoxelSize_Z = 0.01
+  fineVoxelSize_X = 0.007
+  fineVoxelSize_Y = 0.007
+  fineVoxelSize_Z = 0.007
+  coarseFineLimit = 11000
+
+  [BasicSurfaceDetection.Clustering]
+  #Euclidean clustering to cluster (separate) detected surfaces
+  clusterTolerance = 0.05 # distance between clusters, in meters
+  minClusterSize = 750 # in number of points
+
+  [BasicSurfaceDetection.SurfaceTracking]
+  #How many times an unmaterialized surface should be lost to be completely removed from tracking
+  lostLimit = 5
+  #How many consecutive times a surface should be detected to be materialized
+  foundLimit = 5
+  # Allowed deviation for the position of the center point of a surface at the matching for identification
+  maxCenterDistance = 0.05
+  # Maximum deviation percentage of surface radius such that surfaces can still be mapped to each other
+  maxRadiusDeviationPercentage = 0.5
+
+  [BasicSurfaceDetection.ConvexHullApproximation]
+  #ConvexHull Method for surface point reduction
+  #The number of vertice points of a surface, that is sent to the robot and to the visualizer
+  numHullPoints = 8
+  # When a new convex hull is merged with an old convex hull, all points of the new convex hull are
+  # moved mergeUpdatePercentage percent along the vector pointing to the closest boundary point of
+  # the old convex hull. All points of the old convex hull are moved 1-mergeUpdatePercentage percent
+  # along the vector pointing to the closest boundary point of the new convex hull.
+  mergeUpdatePercentage = 0.2
+
+# These settings define basic parameters for detecting obstacles
+# They are mandatory if any kind of bstacle detection is enabled
+[BasicObstacleDetection]
+  [BasicObstacleDetection.InlierFinder]
+  # minimum distance a point must have to its projection onto a 
+  # plane in order to be considered an inlier on this plane
+  minDistToPlane = 0.04

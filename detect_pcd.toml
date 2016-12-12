@@ -1,5 +1,6 @@
-# This is the master config. It is most likely not runnable but lists all 
-# available options
+# This is a sample of a config file for the vision subsystem (when running
+# it with the `--cfg` flag).
+# The config file is in the [toml](https://github.com/toml-lang/toml) format,
 
 # All IPs and ports given in here are the defaults for a lab setup.
 
@@ -10,30 +11,30 @@
 # Video source 
 [VideoSource]
 # Common options:
-#   - `type`: stream, oni, pcd, am_offline
+#   - `type`: "stream", "oni", "pcd", "am_offline"
 # `oni` and `pcd` types require an additional parameter: file_path
 # `am_offline` type requires an additional parameters: dir_path
 type = "pcd"
 file_path = "../../am2b/etc/model/pcd_creation/pcd_single/scene.pcd"
 #dir_path = "path/to/folder"
 enable_rgb = false  # Capture RGB images
-enable_pose = false  # Replay pose data (only am_offline)
-
+enable_pose = false  # Replay pose data (only am_offline, [PoseService] must be disabled)
 
 # This sets up the filtered source, which will be passed to all
-# steps requiring a video 
+# steps requiring a video
 [FilteredVideoSource]
-# TODO: describe options
-# options: "simple", "prob", "pt1"
+# options: "simple", "prob", "pt1"; These options activate 'source' or 'raw-data' filters.
+# * simple - the point cloud is taken directly from the latest frame
+# For the next two options, a voxel grid (or environment map) in world coordinates is created,
+# consisting of a big 3D matrix, which is used as a filtered point cloud source
+# * prob - each voxel has a probabilistic filter, i.e. is active if it was occupied most times in the last frames
+# * pt1 - each voxel has a pt1 filter, i.e. is active if (f*actualframe+(1-f)*previousframe > 0.5)
 type = "simple"
 
   # The following list of filters is optional
   # The order of the filters themselves IS NOT SIGNIFICANT.
   # each filter requires a "type" and may need additional options
 
-
-
-  
   [[FilteredVideoSource.filters]]
   # This filter truncates all values to the specified amount of digits
   # after the dot.
@@ -48,9 +49,6 @@ type = "simple"
 # this will list all observers and options belonging to them
 
 
-
-
-
 # This defines all available visualizers, there can be more than one
 [[observers]]
 type = "ARVisualizer"
@@ -62,6 +60,7 @@ type = "ARVisualizer"
 # and 
 # - height: the window dimensions
 
+  # Basic visualizer: shows obstacles (euclidean) and surfaces
   [[observers.visualizer]]
   type = "ObsSurfVisualizer"
   name = "Obs_Surf_Detector"
@@ -76,12 +75,13 @@ type = "ARVisualizer"
 [[observers]]
 type = "ObstacleDetector"
 # Available methods accepted by ObstacleDetector:
-#   - EuclideanClustering
-#   - GMM (see below)
+#   - "EuclideanClustering"
+#   - "GMM" (see below)
 method = "EuclideanClustering"
 
   [ObstacleDetetction.Euclidean.SplitStrategy]
-  # Defines the split axxis
+  # Defines the split axis.
+  # The point cloud is splitted with a plane through the centroid and perpendicular to the chosen axis.
   # Values: largest|middle|smallest
   split_axis = "middle"
   # A number of split conditions that need to be satisfied in order for an object
@@ -91,10 +91,10 @@ method = "EuclideanClustering"
   # always include the DepthLimit condition with a fairly high depth limit).
   # If no split conditions are provided, the objects will never be split.
     [[ObstacleDetetction.Euclidean.SplitStrategy.conditions]]
-      type = "DepthLimit"
+      type = "DepthLimit" # How many 'splitting steps' are performed. Max number of SSV's per obstacle = 2 ^ DepthLimit
       depth = 1
     [[ObstacleDetetction.Euclidean.SplitStrategy.conditions]]
-      type = "SizeLimit"
+      type = "SizeLimit" # After this volume is reached, a sub point cloud is not splitted any more
       # size is a volume in [cm^3]
       size = 3000.
     [[ObstacleDetetction.Euclidean.SplitStrategy.conditions]]
@@ -120,7 +120,7 @@ method = "EuclideanClustering"
   [BasicSurfaceDetection.RANSAC]
   #max number of ransac iterations
   maxIterations = 200
-  # How close a point must be to the model in order to be considered an inlier
+  # How close a point must be to the model [in meters] in order to be considered an inlier
   distanceThreshold = 0.03
   #How small the left (extracted) pointcloud should be for termination of the plane segmentation 
   minFilterPercentage = 0.08
@@ -144,8 +144,8 @@ method = "EuclideanClustering"
 
   [BasicSurfaceDetection.Clustering]
   #Euclidean clustering to cluster (separate) detected surfaces
-  clusterTolerance = 0.05
-  minClusterSize = 750
+  clusterTolerance = 0.05 # distance between clusters, in meters
+  minClusterSize = 750 # in number of points
 
   [BasicSurfaceDetection.SurfaceTracking]
   #How many times an unmaterialized surface should be lost to be completely removed from tracking

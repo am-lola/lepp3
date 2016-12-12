@@ -127,7 +127,8 @@ type = "ARVisualizer"
   name = "Camera Calibration"
   width = 1024
   height = 768
-
+  show_obstacles = true
+  show_surfaces = false
 
   # This visualizer shows a debug GUI for the GMM obstacle detction
   [[observers.visualizer]]
