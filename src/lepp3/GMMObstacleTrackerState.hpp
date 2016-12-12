@@ -1,7 +1,7 @@
 #ifndef LEPP3_OBSTACLETRACKERSTATE_H
 #define LEPP3_OBSTACLETRACKERSTATE_H
 
-#include <am2b-arvis/ARVisualizer.hpp>
+#include <ARVisualizer.hpp>
 
 #include "lepp3/Typedefs.hpp"
 #include "lepp3/GMMObstacleFilter.hpp"

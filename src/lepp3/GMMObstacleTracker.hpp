@@ -2,7 +2,7 @@
 #define LEPP3_GMM_OBSTACLE_TRACKER_H__
 
 // Needed for PointcloudData definition
-#include <am2b-arvis/ARVisualizer.hpp>
+
 
 #include "lepp3/Typedefs.hpp"
 #include "lepp3/Utils.hpp"
@@ -15,7 +15,7 @@
 // #include "lepp3/util/Timer.hpp"
 #include "lepp3/debug/timer.hpp"
 
-#include <am2b-arvis/ARVisualizer.hpp>
+#include <ARVisualizer.hpp>
 
 #include <algorithm>
 #include <pcl/filters/voxel_grid.h>
