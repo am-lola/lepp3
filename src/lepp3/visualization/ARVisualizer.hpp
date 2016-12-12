@@ -6,17 +6,17 @@
 #include "lepp3/models/ObjectModel.h"
 #include "lepp3/models/SurfaceModel.h"
 
-#include <am2b-arvis/ARVisualizer.hpp>
+#include <ARVisualizer.hpp>
 #include <vector>
 #include <algorithm>
-#include <iostream> 
+#include <iostream>
 
-namespace lepp 
+namespace lepp
 {
 /**
 * Visitor class for obstacles.
 */
-class ModelDrawer : public ModelVisitor 
+class ModelDrawer : public ModelVisitor
 {
 public:
   ModelDrawer(ar::ARVisualizer *arvis, std::vector<mesh_handle_t> &visHandles) : arvis(arvis), visHandles(visHandles) {}
@@ -56,12 +56,12 @@ public:
     double center2[3] = {capsule.second().x, capsule.second().y, capsule.second().z};
     double radius = capsule.radius();
     ar::Capsule obstacle(center1, center2, radius, ar::Color(0.5,0,0.5,0.3));
-     
+
     // capsule was not drawn before
     if (capsule.get_meshHandle() == -1)
     {
       mesh_handle_t mh = arvis->Add(obstacle);
-      
+
       capsule.set_meshHandle(mh);
     }
     // update capsule
@@ -93,8 +93,8 @@ class SurfaceDrawer : public SurfaceVisitor
 {
 public:
   SurfaceDrawer(ar::ARVisualizer *arvis, std::vector<mesh_handle_t> &visHandles,
-    std::vector<int> &usedColors) : 
-    arvis(arvis), visHandles(visHandles), usedColors(usedColors) 
+    std::vector<int> &usedColors) :
+    arvis(arvis), visHandles(visHandles), usedColors(usedColors)
   {
     computeUnusedColors();
   }
@@ -119,11 +119,11 @@ public:
 
     // compute color ID for surface to be drawn
     int colorID = computeColorID(plane);
-    
+
     // create polygon object with correct color
     ar::Polygon surfPoly(points, numPoints, ar::Color(r[colorID],g[colorID],b[colorID],1));
-     
- 
+
+
     // plane was not drawn before
     if (plane.get_meshHandle() == -1)
     {
@@ -215,15 +215,15 @@ const double SurfaceDrawer::b[numColors] = {1, 0, 0.0, 0.6, 0.6, 0, 1, 1, 0, 0, 
 /**
 * Wrapper class for ARVisualizer. Does communication with library visualizer.
 */
-class ARVisualizer : public FrameDataObserver  
+class ARVisualizer : public FrameDataObserver
 {
 public:
-	ARVisualizer(bool visualizeSurfaces, bool visualizeObstacles,double position[],double forward[],double up[]) : 
+	ARVisualizer(bool visualizeSurfaces, bool visualizeObstacles,double position[],double forward[],double up[]) :
     arvis(new ar::ARVisualizer()),
     visualizeSurfaces(visualizeSurfaces),
     visualizeObstacles(visualizeObstacles),
     cloudHandle(-1)
-	{  
+	{
     // Updates the camera parameters used for rendering.
     // @position Position of the camera in world-coordinates
     // @forward  Vector pointing in the direction the camera is facing
@@ -231,9 +231,9 @@ public:
     //double position[3] = {0,0,0};
     //double forward[3] = {1,0,0};
     //double up[3] = {0,0,1};
-    
+
 		arvis->Start();
-                arvis->SetCameraPose(position, forward, up);   
+                arvis->SetCameraPose(position, forward, up);
 	}
 	~ARVisualizer()
 	{
@@ -317,15 +317,15 @@ void ARVisualizer::drawObstacles(std::vector<ObjectModelPtr> obstacles, std::vec
 
 void ARVisualizer::outputFrameNum(FrameDataPtr frameData)
 {
-  std::cout << "Frame " << frameData->frameNum << "    " 
-    << "Ransac " << frameData->planeCoeffsIteration << "    " 
+  std::cout << "Frame " << frameData->frameNum << "    "
+    << "Ransac " << frameData->planeCoeffsIteration << "    "
     << "RansacRef " << frameData->planeCoeffsReferenceFrameNum;
   if (visualizeSurfaces)
     std::cout << "    ";
   else
     std::cout << std::endl;
-  
-  
+
+
   if (visualizeSurfaces)
   {
     std::cout << "Surfaces " << frameData->surfaceDetectionIteration << "    "

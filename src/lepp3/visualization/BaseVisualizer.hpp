@@ -1,7 +1,7 @@
 #ifndef LEPP3_VISUALIZATION_BASE_VISUALIZER_H__
 #define LEPP3_VISUALIZATION_BASE_VISUALIZER_H__
 
-#include <am2b-arvis/ARVisualizer.hpp>
+#include <ARVisualizer.hpp>
 
 #include "lepp3/FrameData.hpp"
 
