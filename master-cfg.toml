@@ -39,7 +39,7 @@ type = "stream"
 [FilteredVideoSource]
 # options: "simple", "prob", "pt1"; These options activate 'source' or 'raw-data' filters.
 # * simple - the point cloud is taken directly from the latest frame
-# For the next two options, a voxelized environment map in world coordinates is created,
+# For the next two options, a voxel grid (or environment map) in world coordinates is created,
 # consisting of a big 3D matrix, which is used as a filtered point cloud source
 # * prob - each voxel has a probabilistic filter, i.e. is active if it was occupied most times in the last frames
 # * pt1 - each voxel has a pt1 filter, i.e. is active if (f*actualframe+(1-f)*previousframe > 0.5)
@@ -69,11 +69,11 @@ type = "simple"
   decimal_points = 2
 
   [[FilteredVideoSource.filters]]
-  # The crop filter erases all points out of the given boundaries.
+  # The crop filter erases all points out of an xy rectangle with the given boundaries respect to world's origin.
   # This is used to ignore everything outside of the experimental area 
   type = "CropFilter"
   # Unit in meters
-  xmax = 4
+  xmax = 4.0
   xmin = -1.5
   ymax = 1.5
   ymin = -1.5
@@ -96,7 +96,7 @@ type = "Recorder"
   #rgb = false
   #pose = false
 
-# This helps to calibrate the camera
+# This helps calibrating the camera
 # It requires a corresponding visualizer  
 [[observers]]
 type = "CameraCalibrator"
@@ -112,6 +112,7 @@ type = "ARVisualizer"
 # and 
 # - height: the window dimensions
 
+  # Basic visualizer: shows obstacles (euclidean) and surfaces
   [[observers.visualizer]]
   type = "ObsSurfVisualizer"
   name = "Obs_Surf_Detector"
@@ -145,23 +146,24 @@ type = "ARVisualizer"
     draw_trajectories = false
     draw_debug_values = true
     draw_voxels = false
-    downsample_res = 0.03
+    downsample_res = 0.03 # downsampling leaf size in meters
     enable_tracker = true
-    enable_tight_fit = true
+    enable_tight_fit = true # use pc-based fitting instead of gaussian-based fitting
     trajectory_length = 128
-    voxel_grid_resolution = 0.1
+    voxel_grid_resolution = 0.1 # voxel grid used for clustering, leaf size in meters
     #color_mode = "NONE"
 
 # This enables the obstacle detector
 [[observers]]
 type = "ObstacleDetector"
 # Available methods accepted by ObstacleDetector:
-#   - EuclideanClustering
-#   - GMM (see below)
+#   - "EuclideanClustering"
+#   - "GMM" (see below)
 method = "EuclideanClustering"
 
   [ObstacleDetetction.Euclidean.SplitStrategy]
-  # Defines the split axxis
+  # Defines the split axis.
+  # The point cloud is splitted with a plane through the centroid and perpendicular to the chosen axis.
   # Values: largest|middle|smallest
   split_axis = "middle"
   # A number of split conditions that need to be satisfied in order for an object
@@ -171,10 +173,10 @@ method = "EuclideanClustering"
   # always include the DepthLimit condition with a fairly high depth limit).
   # If no split conditions are provided, the objects will never be split.
     [[ObstacleDetetction.Euclidean.SplitStrategy.conditions]]
-      type = "DepthLimit"
+      type = "DepthLimit" # How many 'splitting steps' are performed. Max number of SSV's per obstacle = 2 ^ DepthLimit
       depth = 1
     [[ObstacleDetetction.Euclidean.SplitStrategy.conditions]]
-      type = "SizeLimit"
+      type = "SizeLimit" # After this volume is reached, a sub point cloud is not splitted any more
       # size is a volume in [cm^3]
       size = 3000.
     [[ObstacleDetetction.Euclidean.SplitStrategy.conditions]]
@@ -197,11 +199,12 @@ type = "ObstacleDetector"
 method = "GMM"
 
   [ObstacleDetetction.GMM.ObstacleDetectorParams]
-  enable_tight_fit = true
+  enable_tight_fit = true # use pc-based fitting instead of gaussian-based fitting
+  #TODO: compare with observers.visualizer.debug_gui_params!!
   filter_ssv_position = true
-  voxel_grid_resolution = 0.1
-  kalman_system_noise_position = 0.01
-  kalman_system_noise_velocity = 0.15
+  voxel_grid_resolution = 0.1 # voxel grid used for clustering, leaf size in meters
+  kalman_system_noise_position = 0.01 # standard expected noise, in meters
+  kalman_system_noise_velocity = 0.15 # standard expected noise, in meters/second
   kalman_measurement_noise = 0.10
 
 ###########################################################################
@@ -215,7 +218,7 @@ type = "RobotAggregator"
 update_frequency = 3
 # Data to send
 data = [ "obstacles", "surfaces", "images", "pointclouds"]
-# Human readable target name
+# Human readable target name, just for terminal/log output
 target="Vision"
 # Target IP
 ip = "192.168.0.3"  # QNX computer IP
@@ -233,7 +236,7 @@ port = 61448
   [BasicSurfaceDetection.RANSAC]
   #max number of ransac iterations
   maxIterations = 200
-  # How close a point must be to the model in order to be considered an inlier
+  # How close a point must be to the model [in meters] in order to be considered an inlier
   distanceThreshold = 0.03
   #How small the left (extracted) pointcloud should be for termination of the plane segmentation 
   minFilterPercentage = 0.08
@@ -257,8 +260,8 @@ port = 61448
 
   [BasicSurfaceDetection.Clustering]
   #Euclidean clustering to cluster (separate) detected surfaces
-  clusterTolerance = 0.05
-  minClusterSize = 750
+  clusterTolerance = 0.05 # distance between clusters, in meters
+  minClusterSize = 750 # in number of points
 
   [BasicSurfaceDetection.SurfaceTracking]
   #How many times an unmaterialized surface should be lost to be completely removed from tracking
