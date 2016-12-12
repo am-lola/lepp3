@@ -618,10 +618,6 @@ private:
       }
       return boost::shared_ptr<PointFilter<PointT>>(new RobotOdoTransformer<PointT>(this->pose_service()));
 
-    } else if (type == "FileOdoTransformer") {
-      std::string const file_name = getTomlValue<std::string>(v, "file_path", "FileOdoTransformer.");
-      return boost::shared_ptr<PointFilter<PointT>>(new FileOdoTransformer<PointT>(file_name));
-
     } else if (type == "TruncateFilter") {
       int decimals = getTomlValue<int>(v, "decimal_points", "TruncateFilter.");
       return boost::shared_ptr<PointFilter<PointT>>(new TruncateFilter<PointT>(decimals));

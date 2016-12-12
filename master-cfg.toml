@@ -1,5 +1,6 @@
 # This is the master config. It is most likely not runnable but lists all 
 # available options
+# The config file is in the [toml](https://github.com/toml-lang/toml) format
 
 # All IPs and ports given in here are the defaults for a lab setup.
 
@@ -24,20 +25,24 @@ bubble_size = 1.2
 # Video source 
 [VideoSource]
 # Common options:
-#   - `type`: stream, oni, pcd, am_offline
+#   - `type`: "stream", "oni", "pcd", "am_offline"
 # `oni` and `pcd` types require an additional parameter: file_path
 # `am_offline` type requires an additional parameters: dir_path
 type = "stream"
 #file_path = "path/to/file"
 #dir_path = "path/to/folder"
 #enable_rgb = false  # Capture RGB images
-#enable_pose = false  # Replay pose data (only am_offline)
+#enable_pose = false  # Replay pose data (only am_offline, [PoseService] must be disabled)
 
 # This sets up the filtered source, which will be passed to all
-# steps requiring a video 
+# steps requiring a video
 [FilteredVideoSource]
-# TODO: describe options
-# options: "simple", "prob", "pt1"
+# options: "simple", "prob", "pt1"; These options activate 'source' or 'raw-data' filters.
+# * simple - the point cloud is taken directly from the latest frame
+# For the next two options, a voxelized environment map in world coordinates is created,
+# consisting of a big 3D matrix, which is used as a filtered point cloud source
+# * prob - each voxel has a probabilistic filter, i.e. is active if it was occupied most times in the last frames
+# * pt1 - each voxel has a pt1 filter, i.e. is active if (f*actualframe+(1-f)*previousframe > 0.5)
 type = "simple"
 
   # The following list of filters is optional
@@ -46,7 +51,7 @@ type = "simple"
 
   [[FilteredVideoSource.filters]]
   # Calibration filters. Sets the calibration parameters of the used camera
-  type = "SensorCalibrationFilter"
+  type = "SensorCalibrationFilter" # Makes a linear correction of the sensor's z value
   a = 1.0117
   b = -0.0100851
 
@@ -56,11 +61,6 @@ type = "simple"
   # Requirements: PoseService
   type = "RobotOdoTransformer"
 
-  [[FilteredVideoSource.filters]]
-  # TODO: What's that?
-  type = "FileOdoTransformer"
-  file_path = "some/path"
-  
   [[FilteredVideoSource.filters]]
   # This filter truncates all values to the specified amount of digits
   # after the dot.
@@ -111,6 +111,14 @@ type = "ARVisualizer"
 # - width
 # and 
 # - height: the window dimensions
+
+  [[observers.visualizer]]
+  type = "ObsSurfVisualizer"
+  name = "Obs_Surf_Detector"
+  width = 1024
+  height = 768
+  show_obstacles = true
+  show_surfaces = false
 
   # This visualizer belongs to the CameraCalibrator. It shows the calibartion parameters
   [[observers.visualizer]]
