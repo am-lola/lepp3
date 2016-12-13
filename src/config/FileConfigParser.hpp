@@ -638,7 +638,7 @@ private:
     std::string const type = getTomlValue<std::string>(v, "type", "[[observers.visualizer]].");
     std::cout << "Entered getVisualizer <" << type << ">" << std::endl;
 
-    std::string const name = getTomlValue<std::string>(v, "type", "[[observers.visualizer]].");
+    std::string const name = getTomlValue<std::string>(v, "name", "[[observers.visualizer]].");
     int const height = getTomlValue<int>(v, "height", "[[observers.visualizer]].");
     int const width = getTomlValue<int>(v, "width", "[[observers.visualizer]].");
 
