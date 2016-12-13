@@ -703,7 +703,7 @@ private:
     std::cout << "agg type: " << type << std::endl;
     if (type == "RobotAggregator") {
       int const update_frequency = getTomlValue<int>(v, "update_frequency", "aggregators.");
-      std::vector<std::string> datatypes = getTomlValue<std::vector<std::string>>(v, "type", "aggregators.");
+      std::vector<std::string> datatypes = getTomlValue<std::vector<std::string>>(v, "data", "aggregators.");
 
       auto robotService = getRobotService(v);
 
