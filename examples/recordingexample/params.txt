@@ -1,0 +1,5 @@
+# t_wr_cl[0],	t_wr_cl[1],	t_wr_cl[2],	R_wr_cl[0][0],	R_wr_cl[0][1],	R_wr_cl[0][2],	R_wr_cl[1][0],	R_wr_cl[1][1],	R_wr_cl[1][2],	R_wr_cl[2][0],	R_wr_cl[2][1],	R_wr_cl[2][2],	t_stance_odo[0],	t_stance_odo[1],	t_stance_odo[2],	phi_z_odo,	stance,	frame_num,	stamp
+0	0	1.78	1	0	0	0	1	0	0	0	1	0	0	0	0	0	0	1
+0	0	1.78	1	0	0	0	1	0	0	0	1	0	0	0	0	0	1	1
+0	0	1.78	1	0	0	0	1	0	0	0	1	0	0	0	0	0	2	1
+0	0	1.78	1	0	0	0	1	0	0	0	1	0	0	0	0	0	3	1
