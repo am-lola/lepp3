@@ -182,7 +182,8 @@ public:
       : BaseVisualizer(name, width, height),
         show_surfaces_(visualizeSurfaces),
         show_obstacles_(visualizeObstacles),
-        pointCloudData(ar::PCL_PointXYZ) {
+        pointCloudData(ar::PCL_PointXYZ),
+        gridData(gridVector, gridSize, gridThickness){
     // Updates the camera parameters used for rendering.
     // @position Position of the camera in world-coordinates
     // @forward  Vector pointing in the direction the camera is facing
@@ -193,6 +194,7 @@ public:
 
     //arvis->SetCameraPose(position, forward, up);
     pointCloudHandle = arvis_->Add(pointCloudData);
+    gridHandle = arvis_->Add(gridData);
 	}
 
   /**
@@ -245,6 +247,37 @@ private:
 
   ar::mesh_handle pointCloudHandle;
   ar::PointCloudData pointCloudData;
+
+//  Grid for visualization reference: 4m x 4m, with corners at
+//  (0,-2, 0)
+//  (0, 2, 0)
+//  (4,-2, 0)
+//  (4, 2, 0)
+  ar::mesh_handle gridHandle;
+  float gridThickness = 0.001f;
+  size_t gridSize = 19;
+  double gridVector[57] = {
+          0.0,-2.0, 0.0,
+          0.0, 2.0, 0.0,
+          1.0, 2.0, 0.0,
+          1.0,-2.0, 0.0,
+          2.0,-2.0, 0.0,
+          2.0, 2.0, 0.0,
+          3.0, 2.0, 0.0,
+          3.0,-2.0, 0.0,
+          4.0,-2.0, 0.0,
+          4.0, 2.0, 0.0,
+          0.0, 2.0, 0.0,
+          0.0, 1.0, 0.0,
+          4.0, 1.0, 0.0,
+          4.0, 0.0, 0.0,
+          0.0, 0.0, 0.0,
+          0.0,-1.0, 0.0,
+          4.0,-1.0, 0.0,
+          4.0,-2.0, 0.0,
+          0.0,-2.0, 0.0
+  };
+  ar::LinePath gridData;
 };
 
 
