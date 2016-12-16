@@ -195,7 +195,9 @@ public:
     //arvis->SetCameraPose(position, forward, up);
     pointCloudHandle = arvis_->Add(pointCloudData);
     gridHandle = arvis_->Add(gridData);
-	}
+    gridWindow = arvis_->AddUIWindow("Grid");
+    gridCheckBox = gridWindow->AddCheckBox("Draw", true);
+    }
 
   /**
    * Destructor
@@ -278,6 +280,8 @@ private:
           0.0,-2.0, 0.0
   };
   ar::LinePath gridData;
+  ar::IUIWindow* gridWindow;
+  ar::ui_element_handle gridCheckBox;
 };
 
 
@@ -357,6 +361,7 @@ void ObsSurfVisualizer::updateFrame(FrameDataPtr frameData)
   pointCloudData.pointData = reinterpret_cast<const void*>(&(frameData->cloud->points[0]));
   pointCloudData.numPoints = frameData->cloud->size();
   arvis_->Update(pointCloudHandle, pointCloudData);
+  arvis_->SetVisibility(gridHandle, (bool)gridWindow->GetCheckBoxState(gridCheckBox));
 }
 
 
