@@ -183,7 +183,7 @@ public:
         show_surfaces_(visualizeSurfaces),
         show_obstacles_(visualizeObstacles),
         pointCloudData(ar::PCL_PointXYZ),
-        gridData(gridVector, gridSize, gridThickness){
+        gridData(gridVector, gridSize, gridThickness, ar::Color( 0.5, 0.5, 0.5, 0.5 )){
     // Updates the camera parameters used for rendering.
     // @position Position of the camera in world-coordinates
     // @forward  Vector pointing in the direction the camera is facing
