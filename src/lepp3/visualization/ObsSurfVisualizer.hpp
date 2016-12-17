@@ -183,7 +183,10 @@ public:
         show_surfaces_(visualizeSurfaces),
         show_obstacles_(visualizeObstacles),
         pointCloudData(ar::PCL_PointXYZ),
-        gridData(gridVector, gridSize, gridThickness, ar::Color( 0.5, 0.5, 0.5, 0.5 )){
+        gridData(gridVector, gridSize, gridThickness, ar::Color( 0.5, 0.5, 0.5, 0.5 )),
+        cosyX(cosy_o, cosy_x, 0.01f, ar::Color( 1.0, 0.0, 0.0 )),
+        cosyY(cosy_o, cosy_y, 0.01f, ar::Color( 0.0, 1.0, 0.0 )),
+        cosyZ(cosy_o, cosy_z, 0.01f, ar::Color( 0.0, 0.0, 1.0 )){
     // Updates the camera parameters used for rendering.
     // @position Position of the camera in world-coordinates
     // @forward  Vector pointing in the direction the camera is facing
@@ -194,6 +197,9 @@ public:
 
     //arvis->SetCameraPose(position, forward, up);
     pointCloudHandle = arvis_->Add(pointCloudData);
+    arvis_->Add(cosyX);
+    arvis_->Add(cosyY);
+    arvis_->Add(cosyZ);
     gridHandle = arvis_->Add(gridData);
     gridWindow = arvis_->AddUIWindow("Grid");
     gridCheckBox = gridWindow->AddCheckBox("Draw", true);
@@ -249,6 +255,15 @@ private:
 
   ar::mesh_handle pointCloudHandle;
   ar::PointCloudData pointCloudData;
+
+//  Coordinate System xyz = rgb, size 0,2m x 0,01m
+  double cosy_o[3] = { 0.0, 0.0, 0.0 };
+  double cosy_x[3] = { 0.2, 0.0, 0.0 };
+  double cosy_y[3] = { 0.0, 0.2, 0.0 };
+  double cosy_z[3] = { 0.0, 0.0, 0.2 };
+  ar::LineSegment cosyX;
+  ar::LineSegment cosyY;
+  ar::LineSegment cosyZ;
 
 //  Grid for visualization reference: 4m x 4m, with corners at
 //  (0,-2, 0)
