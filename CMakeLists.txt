@@ -16,6 +16,7 @@ find_package(Kalman REQUIRED) # https://github.com/mherb/kalman
 
 include_directories(${PCL_INCLUDE_DIRS})
 include_directories(${am2b-arvis_INCLUDE_DIR})
+include_directories(${KALMAN_INCLUDE_DIR})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 

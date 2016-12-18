@@ -243,22 +243,23 @@ void SurfaceFinder<PointT>::findPlanes(
 
 template<class PointT>
 void SurfaceFinder<PointT>::removeNonGroundCoefficients(
-	std::vector<PointCloudPtr> &planes, 
-	std::vector<pcl::ModelCoefficients>  &planeCoefficients)
-{
+		std::vector<PointCloudPtr>& planes,
+		std::vector<pcl::ModelCoefficients>& planeCoefficients) {
+	if (0 == planes.size()) {
+		return;
+	}
+
 	// compute centroid for each plane and find minimum
 	double minHeight = std::numeric_limits<double>::max();
-	size_t minIndex = -1;
-	for (size_t i = 0; i < planes.size(); i++)
-	{
+	size_t minIndex = 0;
+	for (size_t i = 0; i < planes.size(); i++) {
 		Eigen::Vector4f centroid;
-		pcl::compute3DCentroid (*planes[i], centroid);
-		if (centroid[2] < minHeight)
-		{
+		pcl::compute3DCentroid(*planes[i], centroid);
+		if (centroid[2] < minHeight) {
 			minHeight = centroid[2];
 			minIndex = i;
 		}
-	}		
+	}
 
 	// replace planes and plane coefficients by new vectors that only include the ground
 	std::vector<PointCloudPtr> ground;

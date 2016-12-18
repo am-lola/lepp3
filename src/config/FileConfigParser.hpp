@@ -2,9 +2,11 @@
 #define LEPP3_CONFIG_FILE_PARSER_H_
 
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "Parser.h"
 #include "lepp3/SurfaceDetector.hpp"
@@ -254,55 +256,70 @@ protected:
 
     const toml::Array& obs_arr = available->as<toml::Array>();
 
-    // Iterate though all the available observer entries in the config file and
-    // set them up accordingly.
-    for (const toml::Value& v : obs_arr)
-    {
+    std::map<std::string, std::vector<toml::Value const*>> observers;
+
+    for (const toml::Value& v : obs_arr) {
       std::string const type = getTomlValue<std::string>(v, "type", "observers.");
+      observers[type].push_back(&v);
+    }
+
+    std::vector<std::string> type_order = {"ObstacleDetector", "SurfaceDetector", "Recorder", "CameraCalibrator",
+                                           "ARVisualizer"};
+
+    for (std::string const& type : type_order) {
       std::cout << "observer type: " << type << std::endl;
+      for (toml::Value const* p : observers[type]) {
+        toml::Value const& v = *p;
 
-      if (type == "ObstacleDetector") {
-        obstacle_detector_active_ = true;
-        // Set up the basic surface detector for ground removal, if not already
-        // initialized.
-        if (!ground_removal_)
-          initSurfaceFinder();
+        if (type == "ObstacleDetector") {
+          obstacle_detector_active_ = true;
+          // Set up the basic surface detector for ground removal, if not already
+          // initialized.
+          if (!ground_removal_)
+            initSurfaceFinder();
 
-        initObstacleDetector(getTomlValue<std::string>(v, "method", "observers."));
+          initObstacleDetector(getTomlValue<std::string>(v, "method", "observers."));
 
-      } else if (type == "SurfaceDetector") {
-        surface_detector_active_ = true;
-        // Set up the basic surface detector for ground removal, if not already
-        // initialized.
-        if (!ground_removal_)
-          initSurfaceFinder();
-        initSurfaceDetector();
+        } else if (type == "SurfaceDetector") {
+          surface_detector_active_ = true;
+          // Set up the basic surface detector for ground removal, if not already
+          // initialized.
+          if (!ground_removal_)
+            initSurfaceFinder();
+          initSurfaceDetector();
 
-      } else if (type == "Recorder") {
-        initRecorder();
+        } else if (type == "Recorder") {
+          initRecorder();
 
-      } else if (type == "CameraCalibrator") {
-        initCamCalibrator();
+        } else if (type == "CameraCalibrator") {
+          initCamCalibrator();
 
-      } else if (type == "ARVisualizer") {
-        toml::Value const* visualizer = v.find("visualizer");
-        if (!visualizer) {
-          std::ostringstream ss;
-          ss << "[[observers.visualizer]] not found!\n"
-             << "Cannot create a Visualizer without specifying the parameters!";
-          throw std::runtime_error(ss.str());
+        } else if (type == "ARVisualizer") {
+          toml::Value const* visualizer = v.find("visualizer");
+          if (!visualizer) {
+            std::ostringstream ss;
+            ss << "[[observers.visualizer]] not found!\n"
+               << "Cannot create a Visualizer without specifying the parameters!";
+            throw std::runtime_error(ss.str());
+          }
+          toml::Array const& array = visualizer->as<toml::Array>();
+
+          for (auto const& vis : array) {
+            this->visualizers_.push_back(getVisualizer(vis));
+          }
+
         }
-        toml::Array const& array = visualizer->as<toml::Array>();
-
-        for (auto const& vis : array) {
-          this->visualizers_.push_back(getVisualizer(vis));
-        }
-
-      } else {
-        std::ostringstream ss;
-        ss << "Unknown observer type: " << type;
-        throw std::runtime_error(ss.str());
       }
+
+      observers.erase(type);
+    }
+
+    if (!observers.empty()) {
+      std::string const type = observers.begin()->first;
+
+      std::ostringstream ss;
+      ss << "Unknown observer type: " << type;
+      throw std::runtime_error(ss.str());
     }
   }
 
@@ -411,7 +428,7 @@ protected:
       // Prepare the base detector...
       base_obstacle_detector_.reset(
           new ObstacleDetector<PointT>(approx, surface_detector_active_));
-      this->source()->FrameDataSubject::attachObserver(base_obstacle_detector_);
+      this->surface_detector_->FrameDataSubject::attachObserver(base_obstacle_detector_);
       // Smooth out the basic detector by applying a smooth detector to it
       boost::shared_ptr<LowPassObstacleTracker> low_pass_obstacle_tracker(
           new LowPassObstacleTracker);
@@ -655,6 +672,9 @@ private:
       return calib_visualizer;
 
     } else if (type == "ObsSurfVisualizer") {
+      if (!this->detector_) {
+        throw std::runtime_error("Visualizer 'ObsSurfVisualizer' requires a detector!!");
+      }
       // TODO: [Sahand] decide whether to define the following two variables.
       //       We already have `surface_detector_active_` and `obstacle_detector_active_`
       //       which are set according to the availability of their components.
@@ -663,10 +683,9 @@ private:
       //       of them.
       bool show_obstacles = getOptionalTomlValue(v, "show_obstacles", false);
       bool show_surfaces = getOptionalTomlValue(v, "show_surfaces", false);
-
       boost::shared_ptr<ObsSurfVisualizer> obs_surf_vis(
           new ObsSurfVisualizer(name, show_obstacles, show_surfaces, width, height));
-      this->source()->FrameDataSubject::attachObserver(obs_surf_vis);
+      this->detector_->FrameDataSubject::attachObserver(obs_surf_vis);
       return obs_surf_vis;
 
     } else if (type == "GMMTrackingVisualizer") {
