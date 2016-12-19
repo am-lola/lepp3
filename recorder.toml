@@ -67,23 +67,23 @@ type = "Recorder"
 
 # This helps calibrating the camera
 # It requires a corresponding visualizer
-
-# This defines all available visualizers, there can be more than one
-[[observers]]
-type = "ARVisualizer"
-
-# Every instance has 4 mandatory options:
-# - type: the type of the visualizer
-# - name: its name
-# - width
-# and
-# - height: the window dimensions
-
-  # Basic visualizer: shows obstacles (euclidean) and surfaces
-  [[observers.visualizer]]
-  type = "ObsSurfVisualizer"
-  name = "Obs_Surf_Detector"
-  width = 1024
-  height = 768
-  show_obstacles = false
-  show_surfaces = false
+# 
+# # This defines all available visualizers, there can be more than one
+# [[observers]]
+# type = "ARVisualizer"
+#
+# # Every instance has 4 mandatory options:
+# # - type: the type of the visualizer
+# # - name: its name
+# # - width
+# # and
+# # - height: the window dimensions
+#
+#   # Basic visualizer: shows obstacles (euclidean) and surfaces
+#   [[observers.visualizer]]
+#   type = "ObsSurfVisualizer"
+#   name = "Obs_Surf_Detector"
+#   width = 1024
+#   height = 768
+#   show_obstacles = false
+#   show_surfaces = false
