@@ -721,6 +721,9 @@ private:
 
     std::cout << "agg type: " << type << std::endl;
     if (type == "RobotAggregator") {
+      if (!this->robot()) {
+        throw std::runtime_error("RobotAggregator requires a [Robot]");
+      }
       int const update_frequency = getTomlValue<int>(v, "update_frequency", "aggregators.");
       std::vector<std::string> datatypes = getTomlValue<std::vector<std::string>>(v, "data", "aggregators.");
 
