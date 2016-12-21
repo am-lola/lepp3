@@ -664,9 +664,9 @@ private:
       if (!this->cam_calibrator()) {
         throw std::runtime_error("Visualizer 'CameraCalibrator' requires a CameraCalibrator observer!");
       }
-
+      bool show_obstacles = getOptionalTomlValue(v, "show_obstacles", false);
       boost::shared_ptr<CalibratorVisualizer<PointT> > calib_visualizer(
-          new CalibratorVisualizer<PointT>(name, width, height));
+          new CalibratorVisualizer<PointT>(name, show_obstacles, width, height));
       this->source()->FrameDataSubject::attachObserver(calib_visualizer);
       this->cam_calibrator()->attachCalibrationAggregator(calib_visualizer);
       return calib_visualizer;

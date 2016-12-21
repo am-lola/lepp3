@@ -7,9 +7,14 @@
 #include "lepp3/visualization/BaseVisualizer.hpp"
 #include "lepp3/models/ObjectModel.h"
 #include "lepp3/CalibrationAggregator.hpp"
+#include "lepp3/visualization/ObsSurfVisualizer.hpp"
 
+#include <vector>
+#include <algorithm>
+#include <iostream>
 
 namespace lepp {
+
 
 template<class PointT>
 class CalibratorVisualizer
@@ -18,10 +23,11 @@ class CalibratorVisualizer
 
 public:
   CalibratorVisualizer(
-    std::string const& name = "lepp3", int const& width = 1024, int const& height = 768)
+    std::string const& name = "lepp3", bool visualizeObstacles = false, int const& width = 1024, int const& height = 768)
     : BaseVisualizer(name, width, height),
       main_cloud_data_(ar::PCL_PointXYZ),
       largest_plane_data_(ar::PCL_PointXYZRGBA),
+      show_obstacles_(visualizeObstacles),
       gridData(gridVector, gridSize, gridThickness, ar::Color( 0.5, 0.5, 0.5, 0.5 )),
       cosyX(cosy_o, cosy_x, 0.01f, ar::Color( 1.0, 0.0, 0.0 )),
       cosyY(cosy_o, cosy_y, 0.01f, ar::Color( 0.0, 1.0, 0.0 )),
@@ -69,6 +75,22 @@ private:
   ar::ui_element_handle mean_z_txt;
   ar::ui_element_handle var_z_txt;
 
+
+  /**
+ * Visualize obstacles in given vector with ARVisualizer.
+ */
+  void drawObstacles(std::vector<ObjectModelPtr> obstacles, std::vector<mesh_handle_t> &visHandles);
+  /**
+* Remove old obstacles and surfaces that are no longer visualized.
+*/
+  void removeOldObst(std::vector<mesh_handle_t> &visHandles);
+
+  // visulize obstacles and surfaces only if options were chosen in config file
+  bool show_obstacles_;
+
+  // vector that holds the handles to all obstacles and surfaces that were visualized in the previous frame
+  std::vector<mesh_handle_t> oldHandles;
+
   //  Coordinate System xyz = rgb, size 0,2m x 0,01m
   double cosy_o[3] = { 0.0, 0.0, 0.0 };
   double cosy_x[3] = { 0.2, 0.0, 0.0 };
@@ -111,6 +133,18 @@ private:
   ar::IUIWindow* gridWindow;
   ar::ui_element_handle gridCheckBox;
 };
+
+  template<class PointT>
+void CalibratorVisualizer<PointT>::drawObstacles(std::vector<ObjectModelPtr> obstacles, std::vector<mesh_handle_t> &visHandles)
+{
+  // create model drawer object
+  ModelDrawer md(arvis_, visHandles);
+
+  // draw obstacles
+  for (size_t i = 0; i < obstacles.size(); i++)
+    obstacles[i]->accept(md);
+}
+
 
 template<class PointT>
 void CalibratorVisualizer<PointT>::updateMeanVar(float const& mean_z, float const& var_z) {
@@ -161,7 +195,23 @@ void CalibratorVisualizer<PointT>::drawLargestPlane(PointCloudPtr const& plane) 
   arvis_->Update(largest_plane_handle_, largest_plane_data_);
 }
 
-template<class PointT>
+  template<class PointT>
+void CalibratorVisualizer<PointT>::removeOldObst(std::vector<mesh_handle_t> &visHandles)
+{
+  // compare the newly visualized handles with the old ones. Remove all handles that appear
+  // in the old handle list but not in the new one.
+  std::sort(visHandles.begin(), visHandles.end());
+  for (mesh_handle_t &mh : oldHandles)
+  {
+    // if mesh handle is not contained in newly visualized handles, remove it from visualizer
+    if (!std::binary_search(visHandles.begin(), visHandles.end(), mh))
+      arvis_->Remove(mh);
+  }
+  oldHandles = visHandles;
+}
+
+
+  template<class PointT>
 void CalibratorVisualizer<PointT>::updateFrame(FrameDataPtr frameData) {
   // visualize the point cloud
   // TODO: Decide whether to show the full point cloud in this visualizer
@@ -169,6 +219,13 @@ void CalibratorVisualizer<PointT>::updateFrame(FrameDataPtr frameData) {
   main_cloud_data_.numPoints = frameData->cloud->size();
   arvis_->Update(main_cloud_handle_, main_cloud_data_);
   arvis_->SetVisibility(gridHandle, (bool)gridWindow->GetCheckBoxState(gridCheckBox));
+
+  // visualize all obstacles and surfaces and store their handles
+  std::vector<mesh_handle_t> visHandles;
+  if (show_obstacles_)
+      drawObstacles(frameData->obstacles, visHandles);
+  // Remove old obstacles and surfaces that are no longer visualized
+  removeOldObst(visHandles);
 }
 
 template<class PointT>

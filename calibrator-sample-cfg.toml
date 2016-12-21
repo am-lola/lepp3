@@ -64,7 +64,7 @@ type = "simple"
 # this will list all observers and options belonging to them
 
 # This helps calibrating the camera
-# It requires a corresponding visualizer  
+# It requires a corresponding visualizer, as well as an obstacle detector
 [[observers]]
 type = "CameraCalibrator"
 
@@ -86,8 +86,15 @@ type = "ARVisualizer"
   width = 1024
   height = 768
   show_obstacles = true
-  show_surfaces = false
 
+
+# This enables the obstacle detector
+[[observers]]
+type = "ObstacleDetector"
+# Available methods accepted by ObstacleDetector:
+#   - "EuclideanClustering"
+#   - "GMM" (see below)
+method = "EuclideanClustering"
 ###########################################################################
 # Miscellaneous settings 
 
