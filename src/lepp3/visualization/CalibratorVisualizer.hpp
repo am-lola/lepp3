@@ -46,6 +46,10 @@ public:
   ui_values_window_ = arvis_->AddUIWindow("Values", 200.0f, 100.0f);
   mean_z_txt = ui_values_window_->AddText("");
   var_z_txt  = ui_values_window_->AddText("");
+  if(show_obstacles_) {
+    obstacle_window_ = arvis_->AddUIWindow("Obstacle List");
+    obstacle_txt = obstacle_window_->AddText("");
+  }
   }
 
   ~CalibratorVisualizer() {}
@@ -74,7 +78,9 @@ private:
   ar::IUIWindow* ui_values_window_;
   ar::ui_element_handle mean_z_txt;
   ar::ui_element_handle var_z_txt;
-
+  ar::IUIWindow* obstacle_window_;
+  ar::ui_element_handle obstacle_txt;
+  std::vector<double> obstaclelist;
 
   /**
  * Visualize obstacles in given vector with ARVisualizer.
@@ -140,9 +146,21 @@ void CalibratorVisualizer<PointT>::drawObstacles(std::vector<ObjectModelPtr> obs
   // create model drawer object
   ModelDrawer md(arvis_, visHandles);
 
-  // draw obstacles
-  for (size_t i = 0; i < obstacles.size(); i++)
+  // resize vector with coordinates for the ui
+  obstaclelist.resize(7 * obstacles.size());
+
+  for (size_t i = 0; i < obstacles.size(); i++) {
+    // draw obstacles
     obstacles[i]->accept(md);
+    // save coordinates for the ui
+    obstaclelist[7*i] = md.model_ax();
+    obstaclelist[7*i+1] = md.model_ay();
+    obstaclelist[7*i+2] = md.model_az();
+    obstaclelist[7*i+3] = md.model_bx();
+    obstaclelist[7*i+4] = md.model_by();
+    obstaclelist[7*i+5] = md.model_bz();
+    obstaclelist[7*i+6] = md.model_radius();
+  }
 }
 
 
@@ -154,10 +172,28 @@ void CalibratorVisualizer<PointT>::updateMeanVar(float const& mean_z, float cons
   std::stringstream v;
   v << "Var_Z : " << var_z;
 
+  std::stringstream o;
+  if(show_obstacles_) {
+    for (size_t j = 0; j < (obstaclelist.size()/7); j++)
+    {
+      o
+      << "a.x= " << obstaclelist[7*j] << "  "
+      << "a.y= " << obstaclelist[7*j+1] << "  "
+      << "a.z= " << obstaclelist[7*j+2] << "  "
+      << "b.x= " << obstaclelist[7*j+3] << "  "
+      << "b.y= " << obstaclelist[7*j+4] << "  "
+      << "b.z= " << obstaclelist[7*j+5] << "  "
+      << "r= " << obstaclelist[7*j+6] << '\n';
+    }
+  }
   std::string const mean = m.str();
   std::string const var = v.str();
+  std::string const obstacle = o.str();
   ui_values_window_->UpdateText(mean_z_txt, "%s", mean.c_str());
   ui_values_window_->UpdateText(var_z_txt, "%s", var.c_str());
+  if(show_obstacles_) {
+    obstacle_window_->UpdateText(obstacle_txt, "%s", obstacle.c_str());
+  }
 }
 
 template<class PointT>
@@ -233,7 +269,6 @@ void CalibratorVisualizer<PointT>::updateCalibrationParams(
     typename pcl::PointCloud<PointT>::Ptr const& largest_plane,
     const float& mean_z,
     const float& var_z) {
-
   // Show the new Mean and variance values on the visualizer.
   updateMeanVar(mean_z, var_z);
   // Draw the largest plane found on the scene.

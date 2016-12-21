@@ -27,6 +27,13 @@ public:
       visHandles(visHandles) { }
   virtual ~ModelDrawer() { }
 
+  double model_radius() const { return model_radius_; }
+  double model_ax() const { return model_ax_; }
+  double model_ay() const { return model_ay_; }
+  double model_az() const { return model_az_; }
+  double model_bx() const { return model_bx_; }
+  double model_by() const { return model_by_; }
+  double model_bz() const { return model_bz_; }
   /**
   * Draw visited sphere.
   */
@@ -35,6 +42,16 @@ public:
     Coordinate const& center = sphere.center();
     double centerPoint[3] = {center.x, center.y, center.z};
     double radius = sphere.radius();
+
+    // update drawing variables
+    model_radius_ = radius;
+    model_ax_ = centerPoint[0];
+    model_ay_ = centerPoint[1];
+    model_az_ = centerPoint[2];
+    model_bx_ = 0;
+    model_by_ = 0;
+    model_bz_ = 0;
+
     // ar::Sphere obstacle(centerPoint, radius, ar::Color(0,127,127,0.3));
     ar::Sphere obstacle(centerPoint, radius, ar::Color(0.6, 0.35, 0.2, 0.4));
 
@@ -61,6 +78,16 @@ public:
     double center1[3] = {capsule.first().x, capsule.first().y, capsule.first().z};
     double center2[3] = {capsule.second().x, capsule.second().y, capsule.second().z};
     double radius = capsule.radius();
+
+    // update drawing variables
+    model_radius_ = radius;
+    model_ax_ = center1[0];
+    model_ay_ = center1[1];
+    model_az_ = center1[2];
+    model_bx_ = center2[0];
+    model_by_ = center2[1];
+    model_bz_ = center2[2];
+
     // ar::Capsule obstacle(center1, center2, radius, ar::Color(127,0,127,0.3));
     ar::Capsule obstacle(center1, center2, radius, ar::Color(0.0, 0.5, 0.5, 0.4));
     // capsule was not drawn before
@@ -87,6 +114,15 @@ private:
   * Vector of all handles that are visualized in this frame.
   */
   std::vector<mesh_handle_t> &visHandles;
+
+  double model_radius_;
+  double model_ax_;
+  double model_ay_;
+  double model_az_;
+  double model_bx_;
+  double model_by_;
+  double model_bz_;
+
 };
 
 
