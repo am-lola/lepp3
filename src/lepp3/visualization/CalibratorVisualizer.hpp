@@ -5,6 +5,7 @@
 
 #include "lepp3/Typedefs.hpp"
 #include "lepp3/visualization/BaseVisualizer.hpp"
+#include "lepp3/models/ObjectModel.h"
 #include "lepp3/CalibrationAggregator.hpp"
 
 
@@ -20,10 +21,20 @@ public:
     std::string const& name = "lepp3", int const& width = 1024, int const& height = 768)
     : BaseVisualizer(name, width, height),
       main_cloud_data_(ar::PCL_PointXYZ),
-      largest_plane_data_(ar::PCL_PointXYZRGBA) {
+      largest_plane_data_(ar::PCL_PointXYZRGBA),
+      gridData(gridVector, gridSize, gridThickness, ar::Color( 0.5, 0.5, 0.5, 0.5 )),
+      cosyX(cosy_o, cosy_x, 0.01f, ar::Color( 1.0, 0.0, 0.0 )),
+      cosyY(cosy_o, cosy_y, 0.01f, ar::Color( 0.0, 1.0, 0.0 )),
+      cosyZ(cosy_o, cosy_z, 0.01f, ar::Color( 0.0, 0.0, 1.0 )){
 
   main_cloud_handle_ = arvis_->Add(main_cloud_data_);
   largest_plane_handle_ = arvis_->Add(largest_plane_data_);
+  arvis_->Add(cosyX);
+  arvis_->Add(cosyY);
+  arvis_->Add(cosyZ);
+  gridHandle = arvis_->Add(gridData);
+  gridWindow = arvis_->AddUIWindow("Grid");
+  gridCheckBox = gridWindow->AddCheckBox("Draw", true);
 
   // Set up the values windows
   ui_values_window_ = arvis_->AddUIWindow("Values", 200.0f, 100.0f);
@@ -57,6 +68,48 @@ private:
   ar::IUIWindow* ui_values_window_;
   ar::ui_element_handle mean_z_txt;
   ar::ui_element_handle var_z_txt;
+
+  //  Coordinate System xyz = rgb, size 0,2m x 0,01m
+  double cosy_o[3] = { 0.0, 0.0, 0.0 };
+  double cosy_x[3] = { 0.2, 0.0, 0.0 };
+  double cosy_y[3] = { 0.0, 0.2, 0.0 };
+  double cosy_z[3] = { 0.0, 0.0, 0.2 };
+  ar::LineSegment cosyX;
+  ar::LineSegment cosyY;
+  ar::LineSegment cosyZ;
+
+//  Grid for visualization reference: 4m x 4m, with corners at
+//  (0,-2, 0)
+//  (0, 2, 0)
+//  (4,-2, 0)
+//  (4, 2, 0)
+  ar::mesh_handle gridHandle;
+  float gridThickness = 0.001f;
+  size_t gridSize = 19;
+  double gridVector[57] = {
+          0.0,-2.0, 0.0,
+          0.0, 2.0, 0.0,
+          1.0, 2.0, 0.0,
+          1.0,-2.0, 0.0,
+          2.0,-2.0, 0.0,
+          2.0, 2.0, 0.0,
+          3.0, 2.0, 0.0,
+          3.0,-2.0, 0.0,
+          4.0,-2.0, 0.0,
+          4.0, 2.0, 0.0,
+          0.0, 2.0, 0.0,
+          0.0, 1.0, 0.0,
+          4.0, 1.0, 0.0,
+          4.0, 0.0, 0.0,
+          0.0, 0.0, 0.0,
+          0.0,-1.0, 0.0,
+          4.0,-1.0, 0.0,
+          4.0,-2.0, 0.0,
+          0.0,-2.0, 0.0
+  };
+  ar::LinePath gridData;
+  ar::IUIWindow* gridWindow;
+  ar::ui_element_handle gridCheckBox;
 };
 
 template<class PointT>
@@ -115,6 +168,7 @@ void CalibratorVisualizer<PointT>::updateFrame(FrameDataPtr frameData) {
   main_cloud_data_.pointData = reinterpret_cast<const void*>(&(frameData->cloud->points[0]));
   main_cloud_data_.numPoints = frameData->cloud->size();
   arvis_->Update(main_cloud_handle_, main_cloud_data_);
+  arvis_->SetVisibility(gridHandle, (bool)gridWindow->GetCheckBoxState(gridCheckBox));
 }
 
 template<class PointT>
