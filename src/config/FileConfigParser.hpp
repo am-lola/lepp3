@@ -639,6 +639,10 @@ private:
       int decimals = getTomlValue<int>(v, "decimal_points", "TruncateFilter.");
       return boost::shared_ptr<PointFilter<PointT>>(new TruncateFilter<PointT>(decimals));
 
+    } else if (type == "GroundFilter") {
+      double threshold = getTomlValue<double>(v, "threshold", "GroundFilter.");
+      return boost::shared_ptr<PointFilter<PointT>>(new GroundFilter<PointT>(threshold));
+
     } else if (type == "CropFilter") {
       double xmax = getTomlValue<double>(v, "xmax", "CropFilter.");
       double xmin = getTomlValue<double>(v, "xmin", "CropFilter.");
