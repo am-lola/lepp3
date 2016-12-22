@@ -51,7 +51,7 @@ type = "stream"
 
   [FilteredVideoSource.downsample]
   # Size in meters for the "downsample" pre-filter
-  downsample_cube_size = 0.01
+  cube_size = 0.01
 
   # The following list of filters is optional
   # The order of the filters themselves IS NOT SIGNIFICANT.
@@ -75,13 +75,6 @@ type = "stream"
   # sytem to the global one referenced in Lola's right foot sole
   # Requirements: PoseService
   type = "RobotOdoTransformer"
-
-  [[FilteredVideoSource.filters]]
-  # This filter truncates all values to the specified amount of digits
-  # after the dot.
-  type = "TruncateFilter"
-  # Base unit is meters, so 2 truncates to millimeters
-  decimal_points = 2
 
   [[FilteredVideoSource.filters]]
   # The ground filter erases all points near z=0 in the world coordinate system.
