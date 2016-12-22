@@ -31,6 +31,10 @@ public:
   }
 
   void prepareNext() {}
+
+  virtual int order() const override { return -5; }
+  virtual const char* name() const override { return "SensorCalibrationFilter"; }
+
 private:
   double const scale_;
   double const offset_;

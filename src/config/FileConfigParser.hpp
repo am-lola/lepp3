@@ -235,9 +235,34 @@ protected:
     if (value == nullptr)
       return;
 
+    std::vector<boost::shared_ptr<PointFilter<PointT>>> filters;
+
     const toml::Array& filter_array = value->as<toml::Array>();
     for (const toml::Value& v : filter_array) {
-      this->filtered_source_->addFilter(getPointFilter(v));
+      filters.emplace_back(getPointFilter(v));
+    }
+    std::sort(std::begin(filters),
+              std::end(filters),
+              [](const boost::shared_ptr<PointFilter<PointT>>& lhs, const boost::shared_ptr<PointFilter<PointT>>&rhs) {
+                return lhs->order() < rhs->order();
+              });
+
+    std::vector<std::string> applied_filters;
+
+    for (boost::shared_ptr<PointFilter<PointT>>& filter : filters) {
+      const std::vector<std::string>& pre_reqs = filter->dependencies();
+
+      if (!pre_reqs.empty()) {
+        for (const auto& p : pre_reqs) {
+          if (std::end(applied_filters) == std::find(std::begin(applied_filters), std::end(applied_filters), p)) {
+            std::ostringstream err;
+            err << "Filter '" << filter->name() << "' is missing a dependency: " << p;
+            throw std::runtime_error(err.str());
+          }
+        }
+      }
+      applied_filters.push_back(filter->name());
+      this->filtered_source_->addFilter(filter);
     }
   }
 
@@ -263,7 +288,7 @@ protected:
       observers[type].push_back(&v);
     }
 
-    std::vector<std::string> type_order = {"ObstacleDetector", "SurfaceDetector", "Recorder", "CameraCalibrator",
+    std::vector<std::string> type_order = {"SurfaceDetector", "ObstacleDetector", "Recorder", "CameraCalibrator",
                                            "ARVisualizer"};
 
     for (std::string const& type : type_order) {

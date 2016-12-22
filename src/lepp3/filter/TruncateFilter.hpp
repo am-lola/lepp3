@@ -35,6 +35,8 @@ public:
   }
 
   void prepareNext() {}
+  virtual const char* name() const override { return "TruncateFilter"; }
+
 private:
   int const factor_;
 };
