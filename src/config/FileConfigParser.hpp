@@ -288,7 +288,7 @@ protected:
       observers[type].push_back(&v);
     }
 
-    std::vector<std::string> type_order = {"ObstacleDetector", "SurfaceDetector", "Recorder", "CameraCalibrator",
+    std::vector<std::string> type_order = {"SurfaceDetector", "ObstacleDetector", "Recorder", "CameraCalibrator",
                                            "ARVisualizer"};
 
     for (std::string const& type : type_order) {
