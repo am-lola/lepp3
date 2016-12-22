@@ -56,6 +56,13 @@ type = "simple"
   b = -0.0100851
 
   [[FilteredVideoSource.filters]]
+  # The background filter erases all points far away from the camera (below z=threshold in the camera coordinate system).
+  # This is used to remove points that are noisy anyway and simplify further processing
+  type = "BackgroundFilter"
+  # Unit in meters
+  threshold = 2.8
+
+  [[FilteredVideoSource.filters]]
   # The RobotOdoTransformer transforms coordinates from the local coordinate
   # sytem to the global one referenced in Lola's right foot sole
   # Requirements: PoseService

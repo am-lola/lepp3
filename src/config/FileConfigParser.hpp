@@ -628,6 +628,10 @@ private:
       double b = getTomlValue<double>(v, "b", "SensorCalibrationFilter.");
       return boost::shared_ptr<PointFilter<PointT>>(new SensorCalibrationFilter<PointT>(a, b));
 
+    } else if (type == "BackgroundFilter") {
+      double threshold = getTomlValue<double>(v, "threshold", "BackgroundFilter.");
+      return boost::shared_ptr<PointFilter<PointT>>(new BackgroundFilter<PointT>(threshold));
+
     } else if (type == "RobotOdoTransformer") {
       // Check requirements
       if (!this->pose_service()) {
