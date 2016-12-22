@@ -25,6 +25,10 @@ public:
   }
 
   void prepareNext() {}
+
+  virtual int order() const override { return -4; }
+  virtual const char* name() const override { return "BackgroundFilter"; }
+
 private:
   double const threshold_;
 };

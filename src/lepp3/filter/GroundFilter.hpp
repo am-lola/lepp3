@@ -25,6 +25,10 @@ public:
   }
 
   void prepareNext() {}
+
+  virtual int order() const override { return 2; }
+  virtual const char* name() const override { return "GroundFilter"; }
+  virtual std::vector<std::string> dependencies() const override { return { "RobotOdoTransformer" }; }
 private:
   double const threshold_;
 };

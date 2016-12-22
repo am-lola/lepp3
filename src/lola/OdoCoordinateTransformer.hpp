@@ -230,6 +230,8 @@ class RobotOdoTransformer : public OdoCoordinateTransformer<PointT> {
 public:
   RobotOdoTransformer(boost::shared_ptr<PoseService> service)
       : service_(service) {}
+
+  virtual const char* name() const override { return "RobotOdoTransformer"; }
 protected:
   LolaKinematicsParams getNextParams();
 private:
