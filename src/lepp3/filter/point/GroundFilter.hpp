@@ -1,7 +1,7 @@
-#ifndef LEPP3_FILTER_SENSOR_GROUND_FILTER_H__
-#define LEPP3_FILTER_SENSOR_GROUND_FILTER_H__
+#ifndef LEPP3_FILTER_POINT_GROUND_FILTER_H__
+#define LEPP3_FILTER_POINT_GROUND_FILTER_H__
 
-#include "lepp3/filter/PointFilter.hpp"
+#include "lepp3/filter/point/PointFilter.hpp"
 
 
 /**

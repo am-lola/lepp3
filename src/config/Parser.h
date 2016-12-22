@@ -25,11 +25,14 @@
 #include "lepp3/visualization/LegacyVisualizer.hpp"
 #include "lepp3/visualization/CalibratorVisualizer.hpp"
 
-#include "lepp3/filter/TruncateFilter.hpp"
-#include "lepp3/filter/SensorCalibrationFilter.hpp"
-#include "lepp3/filter/CropFilter.hpp"
-#include "lepp3/filter/GroundFilter.hpp"
-#include "lepp3/filter/BackgroundFilter.hpp"
+#include "lepp3/filter/point/SensorCalibrationFilter.hpp"
+#include "lepp3/filter/point/CropFilter.hpp"
+#include "lepp3/filter/point/GroundFilter.hpp"
+#include "lepp3/filter/point/BackgroundFilter.hpp"
+
+#include "lepp3/filter/cloud/pre/DownsampleFilter.hpp"
+#include "lepp3/filter/cloud/post/ProbFilter.hpp"
+#include "lepp3/filter/cloud/post/Pt1Filter.hpp"
 
 #include "lepp3/util/VideoRecorder.hpp"
 #include "lepp3/CameraCalibrator.hpp"

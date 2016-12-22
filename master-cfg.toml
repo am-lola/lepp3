@@ -37,13 +37,21 @@ type = "stream"
 # This sets up the filtered source, which will be passed to all
 # steps requiring a video
 [FilteredVideoSource]
-# options: "simple", "prob", "pt1"; These options activate 'source' or 'raw-data' filters.
-# * simple - the point cloud is taken directly from the latest frame
-# For the next two options, a voxel grid (or environment map) in world coordinates is created,
+# Pre-filters are applied before pointfilters take effect
+# * downsample: reduces the size of the pointcloud by merging neighboring voxels
+#pre_filter = "downsample"
+
+# Post-filters are applied after the point filters
+# options: "prob", "pt1"; These options activate 'source' or 'raw-data' filters.
+# For the two options, a voxel grid (or environment map) in world coordinates is created,
 # consisting of a big 3D matrix, which is used as a filtered point cloud source
 # * prob - each voxel has a probabilistic filter, i.e. is active if it was occupied most times in the last frames
 # * pt1 - each voxel has a pt1 filter, i.e. is active if (f*actualframe+(1-f)*previousframe > 0.5)
-type = "simple"
+#post_filter = "prob"
+
+  [FilteredVideoSource.downsample]
+  # Size in meters for the "downsample" pre-filter
+  downsample_cube_size = 0.01
 
   # The following list of filters is optional
   # The order of the filters themselves IS NOT SIGNIFICANT.

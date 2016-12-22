@@ -207,21 +207,20 @@ protected:
    * acquired `VideoSource` object instance.
    */
   virtual void initFilteredVideoSource() override {
-    const std::string type = getTomlValue<std::string>(toml_tree_, "FilteredVideoSource.type");
-
     if (!this->raw_source_)
     {
       throw "FilteredVideoSource: no raw video source available!";
     }
+    this->filtered_source_.reset(new FilteredVideoSource<PointT>(this->raw_source_));
 
-    if (type == "simple") {
-      this->filtered_source_.reset(new SimpleFilteredVideoSource<PointT>(this->raw_source_));
-    } else if (type == "prob") {
-      this->filtered_source_.reset(new ProbFilteredVideoSource<PointT>(this->raw_source_));
-    } else if (type == "pt1") {
-      this->filtered_source_.reset(new Pt1FilteredVideoSource<PointT>(this->raw_source_));
-    } else {
-      throw "Invalid FilteredVideoSource configuration";
+    const std::string& pre_filter = getOptionalTomlValue<std::string>(toml_tree_, "FilteredVideoSource.pre_filter");
+    const std::string& post_filter = getOptionalTomlValue<std::string>(toml_tree_, "FilteredVideoSource.post_filter");
+
+    if (!pre_filter.empty()) {
+      addFilteredVideoSourcePreFilter(pre_filter);
+    }
+    if (!post_filter.empty()) {
+      addFilteredVideoSourcePostFilter(post_filter);
     }
   }
 
@@ -664,10 +663,6 @@ private:
       }
       return boost::shared_ptr<PointFilter<PointT>>(new RobotOdoTransformer<PointT>(this->pose_service()));
 
-    } else if (type == "TruncateFilter") {
-      int decimals = getTomlValue<int>(v, "decimal_points", "TruncateFilter.");
-      return boost::shared_ptr<PointFilter<PointT>>(new TruncateFilter<PointT>(decimals));
-
     } else if (type == "GroundFilter") {
       double threshold = getTomlValue<double>(v, "threshold", "GroundFilter.");
       return boost::shared_ptr<PointFilter<PointT>>(new GroundFilter<PointT>(threshold));
@@ -680,7 +675,32 @@ private:
       return boost::shared_ptr<PointFilter<PointT>>(new CropFilter<PointT>(xmax, xmin, ymax, ymin));
 
     } else {
-      throw "Unknown filter type " + type;
+      throw std::runtime_error("Unknown point filter type " + type);
+    }
+  }
+
+  void addFilteredVideoSourcePreFilter(const std::string& type) {
+    if (type == "downsample") {
+      double cube_size = getTomlValue<double>(toml_tree_, "FilteredVideoSource.downsample.cube_size");
+      boost::shared_ptr<lepp::CloudPreFilter<PointT>> filter(new lepp::DownsampleFilter<PointT>(cube_size));
+      this->filtered_source_->setPreFilter(filter);
+
+    } else {
+      throw std::runtime_error("Unknown pre filter type " + type);
+    }
+  }
+
+  void addFilteredVideoSourcePostFilter(const std::string& type) {
+    if (type == "prob") {
+      boost::shared_ptr<lepp::CloudPostFilter<PointT>> filter(new lepp::ProbFilter<PointT>());
+      this->filtered_source_->setPostFilter(filter);
+
+    } else if (type == "pt1") {
+      boost::shared_ptr<lepp::CloudPostFilter<PointT>> filter(new lepp::Pt1Filter<PointT>());
+      this->filtered_source_->setPostFilter(filter);
+
+    } else {
+      throw std::runtime_error("Unknown post filter type " + type);
     }
   }
 

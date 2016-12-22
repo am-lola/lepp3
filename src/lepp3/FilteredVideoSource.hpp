@@ -2,7 +2,9 @@
 #define LEPP3_FILTERED_VIDEO_SOURCE_H__
 
 #include "lepp3/VideoSource.hpp"
-#include "lepp3/filter/PointFilter.hpp"
+#include "lepp3/filter/point/PointFilter.hpp"
+#include "lepp3/filter/cloud/post/CloudPostFilter.hpp"
+#include "lepp3/filter/cloud/pre/CloudPreFilter.hpp"
 #include "lepp3/FrameData.hpp"
 
 #include <algorithm>
@@ -13,45 +15,12 @@
 #include <opencv2/core/core.hpp>
 
 #include <boost/enable_shared_from_this.hpp>
-#include <boost/unordered_set.hpp>
-#include <boost/unordered_map.hpp>
 #include <boost/circular_buffer.hpp>
 
 #include "lepp3/Typedefs.hpp"
 #include "lepp3/debug/timer.hpp"
 
 #include "deps/easylogging++.h"
-
-/**
- * A struct that is used to describe a single point in space that can be used
- * to index sets and maps of such points.
- */
-struct MapPoint {
-  int x;
-  int y;
-  int z;
-  MapPoint(int x, int y, int z) : x(x), y(y), z(z) {}
-  MapPoint() {}
-};
-
-/**
- * Structs that are to be placed in associative containers must be comparable.
- */
-bool operator==(MapPoint const& lhs, MapPoint const& rhs) {
-  return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
-}
-
-/**
- * Provides a hash value for a `MapPoint` in order to allow for it to be
- * placed in boost's map and set.
- */
-size_t hash_value(MapPoint const& pt) {
-  std::size_t seed = 0;
-  boost::hash_combine(seed, pt.x);
-  boost::hash_combine(seed, pt.y);
-  boost::hash_combine(seed, pt.z);
-  return seed;
-}
 
 /**
  * ABC.
@@ -89,7 +58,7 @@ public:
    * The FilteredVideoSource instance does not assume ownership of the given
    * source, but shares it.
    */
-  FilteredVideoSource(boost::shared_ptr<VideoSource<PointT> > source)
+  FilteredVideoSource(boost::shared_ptr<VideoSource<PointT>> source)
       : source_(source) {}
   /**
    * Implementation of the VideoSource interface.
@@ -113,32 +82,19 @@ public:
     point_filters_.push_back(filter);
   }
 
-protected:
   /**
-   * A hook method that concrete implementations of the `FilteredVideoSource`
-   * should implement in order to prepare for a new frame's filtering.
+   * Add a cloud filter to apply before the point filters
    */
-  virtual void newFrame() = 0;
+  void setPreFilter(boost::shared_ptr<lepp::CloudPreFilter<PointT>> filter) {
+    pre_filter_ = filter;
+  }
+
   /**
-   * A hook method that concrete implementations of the `FilteredVideoSource`
-   * should implement to handle new points received in the latest frame.
-   *
-   * It receives a reference to the cloud that will contain the final filtered
-   * representation already, if the implementation wishes to examine or modify
-   * it.
+   * Add a cloud filter to apply after the point filters
    */
-  virtual void newPoint(PointT& p, PointCloudT& filtered) = 0;
-  /**
-   * A hook method that concrete implementations of the `FilteredVideoSource`
-   * should implement to return the filtered cloud assembled from the points
-   * given by the `newPoint` calls since the previous `newFrame` call.
-   * Implementations are free to take into account any historic data and throw
-   * away or otherwise modify the points given in `newPoint` calls, though.
-   *
-   * The filtered cloud should be put into the cloud instance passed as the
-   * parameter.
-   */
-  virtual void getFiltered(PointCloudT& filtered) = 0;
+  void setPostFilter(boost::shared_ptr<lepp::CloudPostFilter<PointT>> filter) {
+    post_filter_ = filter;
+  }
 
 private:
   /**
@@ -151,6 +107,12 @@ private:
    * implementation.
    */
   std::vector<boost::shared_ptr<PointFilter<PointT> > > point_filters_;
+
+  /**
+   * Filters which are applied to the whole cloud
+   */
+  boost::shared_ptr<lepp::CloudPreFilter<PointT>> pre_filter_;
+  boost::shared_ptr<lepp::CloudPostFilter<PointT>> post_filter_;
 
   /**
   * Remove NaN points from input cloud.
@@ -200,20 +162,28 @@ void FilteredVideoSource<PointT>::updateFrame(
       point_filters_[i]->prepareNext();
     }
   }
-  // Prepare the concrete cloud filter implementation for a new frame.
-  this->newFrame();
 
   // Process the cloud received from the wrapped instance and put the filtered
   // result in a new point cloud.
+  PointCloudConstPtr source_cloud = frameData->cloud;
+
+  if (this->pre_filter_) {
+    this->pre_filter_->newFrame();
+    this->pre_filter_->getFiltered(source_cloud);
+  }
+  if (this->post_filter_) {
+    this->post_filter_->newFrame();
+  }
+
   PointCloudPtr cloud_filtered(new PointCloudT());
   PointCloudT& filtered = *cloud_filtered;
   cloud_filtered->is_dense = true;
-  cloud_filtered->sensor_origin_ = frameData->cloud->sensor_origin_;
+  cloud_filtered->sensor_origin_ = source_cloud->sensor_origin_;
 
   // Apply point-wise filters to each received point and then pass it to the
   // concrete implementation to figure out how to filter the entire cloud.
-  for (typename PointCloudT::const_iterator it = frameData->cloud->begin();
-        it != frameData->cloud->end();
+  for (typename PointCloudT::const_iterator it = source_cloud->begin();
+        it != source_cloud->end();
         ++it) {
     PointT p = *it;
     // Filter out NaN points already, since we're already iterating through the
@@ -232,12 +202,20 @@ void FilteredVideoSource<PointT>::updateFrame(
       }
     }
     // And pass such a filtered/modified point to the cloud-level filter.
-    if (valid) this->newPoint(p, filtered);
+    if (valid) {
+      if (this->post_filter_) {
+        this->post_filter_->newPoint(p, filtered);
+      } else {
+        filtered.push_back(p);
+      }
+    }
+
   }
 
   // Now we obtain the fully filtered cloud...
-  this->getFiltered(filtered);
-
+  if (this->post_filter_) {
+    this->post_filter_->getFiltered(filtered);
+  }
   this->preprocessCloud(cloud_filtered);
 
   // ...and we're done!
@@ -255,154 +233,4 @@ void FilteredVideoSource<PointT>::updateFrame(
  * An implementation of a `FilteredVideoSource` that only applies the
  * point-wise filters, without performing any additional cloud-level filtering.
  */
-template<class PointT>
-class SimpleFilteredVideoSource : public FilteredVideoSource<PointT> {
-public:
-  SimpleFilteredVideoSource(boost::shared_ptr<VideoSource<PointT> > source)
-      : FilteredVideoSource<PointT>(source) {}
-protected:
-  void newFrame() {}
-  void newPoint(PointT& p, PointCloudT& filtered) { filtered.push_back(p); }
-  void getFiltered(PointCloudT& filtered) {}
-};
-
-/**
- * An implementation of a `FilteredVideoSource` where points are included only
- * if they have been seen in a certain percentage of frames of the last N
- * frames.
- */
-template<class PointT>
-class ProbFilteredVideoSource : public FilteredVideoSource<PointT> {
-public:
-  //using typename FilteredVideoSource<PointT>::PointCloudT;
-
-  ProbFilteredVideoSource(boost::shared_ptr<VideoSource<PointT> > source)
-      : FilteredVideoSource<PointT>(source),
-        larger_voxelization_(false) {}
-  ProbFilteredVideoSource(boost::shared_ptr<VideoSource<PointT> > source,
-                          bool larger_voxelization)
-      : FilteredVideoSource<PointT>(source),
-        larger_voxelization_(larger_voxelization) {}
-protected:
-  void newFrame() {
-    this_frame_.clear();
-    min_pt.x = std::numeric_limits<int>::max();
-    min_pt.y = std::numeric_limits<int>::max();
-    min_pt.z = std::numeric_limits<int>::max();
-    max_pt.x = std::numeric_limits<int>::min();
-    max_pt.y = std::numeric_limits<int>::min();
-    max_pt.z = std::numeric_limits<int>::min();
-  }
-
-  void newPoint(PointT& p, PointCloudT& filtered) {
-    MapPoint map_point = MapPoint(p.x * 100, p.y * 100, p.z * 100);
-
-    if (larger_voxelization_) {
-      int const mask = 0xFFFFFFFE;
-      map_point.x &= mask;
-      map_point.y &= mask;
-      map_point.z &= mask;
-    }
-
-    uint32_t& ref = all_points_[map_point];
-    ref <<= 1;
-    ref |= 1;
-    this_frame_.insert(map_point);
-    // Keep track of the min/max points so that we know the bounding box of
-    // the current cloud.
-    min_pt.x = std::min(min_pt.x, map_point.x);
-    min_pt.y = std::min(min_pt.y, map_point.y);
-    min_pt.z = std::min(min_pt.z, map_point.z);
-    max_pt.x = std::max(max_pt.x, map_point.x);
-    max_pt.y = std::max(max_pt.y, map_point.y);
-    max_pt.z = std::max(max_pt.z, map_point.z);
-  }
-
-  void getFiltered(PointCloudT& filtered) {
-    boost::unordered_map<MapPoint, uint32_t>::iterator it =
-        all_points_.begin();
-    while (it != all_points_.end()) {
-      if (this_frame_.find(it->first) == this_frame_.end()) {
-        it->second <<= 1;
-      }
-      int count = __builtin_popcount(it->second);
-      if (count >= 10) {
-        PointT pt;
-        pt.x = it->first.x / 100.;
-        pt.y = it->first.y / 100.;
-        pt.z = it->first.z / 100.;
-        filtered.push_back(pt);
-      }
-
-      // Allow for a bit of leeway with removing points at the very boundary of
-      // the bounding box. To do this, the bounding box is increased by 10 [cm]
-      // in each direction. Only points within *this* bounding box are kept in
-      // the map -- all others removed.
-      // TODO See if tweaking these values up/down yields any benefits.
-      min_pt.x -= 10;
-      min_pt.y -= 10;
-      min_pt.z -= 10;
-      max_pt.x += 10;
-      max_pt.y += 10;
-      max_pt.z += 10;
-      MapPoint const& pt = it->first;
-      if (pt.x < min_pt.x || pt.x > max_pt.x ||
-          pt.y < min_pt.y || pt.y > max_pt.y ||
-          pt.z < min_pt.z || pt.z > max_pt.z) {
-        all_points_.erase(it++);
-      } else {
-        ++it;
-      }
-    }
-  }
-private:
-  boost::unordered_set<MapPoint> this_frame_;
-  boost::unordered_map<MapPoint, uint32_t> all_points_;
-  MapPoint min_pt;
-  MapPoint max_pt;
-
-  bool const larger_voxelization_;
-};
-
-/**
- * An implementation of a `FilteredVideoSource` that applies a PT1 filter on the
- * stream of clouds.
- */
-template<class PointT>
-class Pt1FilteredVideoSource : public FilteredVideoSource<PointT> {
-public:
-  Pt1FilteredVideoSource(boost::shared_ptr<VideoSource<PointT> > source)
-      : FilteredVideoSource<PointT>(source) {}
-protected:
-  void newFrame() { this_frame_.clear(); }
-
-  void newPoint(PointT& p, PointCloudT& filtered) {
-    MapPoint map_point = MapPoint(p.x * 100, p.y * 100, p.z * 100);
-    float& ref = all_points_[map_point];
-    // TODO Factor out the parameter value to a member constant.
-    ref = 0.9*ref + 0.1*10;
-    this_frame_.insert(map_point);
-  }
-
-  void getFiltered(PointCloudT& filtered) {
-    boost::unordered_map<MapPoint, float>::iterator it =
-        all_points_.begin();
-    while (it != all_points_.end()) {
-      if (this_frame_.find(it->first) == this_frame_.end()) {
-        it->second = 0.9*it->second + 0.1*0.;
-      }
-      if (it->second >= 4.) {
-        PointT pt;
-        pt.x = it->first.x / 100.;
-        pt.y = it->first.y / 100.;
-        pt.z = it->first.z / 100.;
-        filtered.push_back(pt);
-      }
-      ++it;
-    }
-  }
-private:
-  boost::unordered_set<MapPoint> this_frame_;
-  boost::unordered_map<MapPoint, float> all_points_;
-};
 #endif

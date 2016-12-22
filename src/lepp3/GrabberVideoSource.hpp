@@ -139,7 +139,7 @@ class LiveStreamSource : public GeneralGrabberVideoSource<PointT> {
 public:
   LiveStreamSource(bool enable_rgb = false)
       : GeneralGrabberVideoSource<PointT>(boost::shared_ptr<pcl::Grabber>(
-            new pcl::io::OpenNI2Grabber("", pcl::io::OpenNI2Grabber::OpenNI_QVGA_30Hz)),
+            new pcl::io::OpenNI2Grabber()),
             enable_rgb
           ) {
     // Empty... All work performed in the initializer list.

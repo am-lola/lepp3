@@ -1,7 +1,7 @@
 #ifndef LEPP3_LOLA_ODO_COORDINATE_TRANSFORMER_H_
 #define LEPP3_LOLA_ODO_COORDINATE_TRANSFORMER_H_
 
-#include "lepp3/filter/PointFilter.hpp"
+#include "lepp3/filter/point/PointFilter.hpp"
 
 #include "lola/PoseService.h"
 

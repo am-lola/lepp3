@@ -1,5 +1,5 @@
-#ifndef LEPP3_FILTER_POINT_FILTER_H__
-#define LEPP3_FILTER_POINT_FILTER_H__
+#ifndef LEPP3_FILTER_POINT_POINT_FILTER_H__
+#define LEPP3_FILTER_POINT_POINT_FILTER_H__
 
 #include <string>
 #include <vector>
