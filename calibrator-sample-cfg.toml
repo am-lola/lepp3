@@ -5,7 +5,7 @@
 # All IPs and ports given in here are the defaults for a lab setup.
 
 # Mandatory options are given, optional options are commented out
-# and listed with the default values 
+# and listed with the default values
 
 # This defines the pose service to use.
 # Requirements: None
@@ -13,7 +13,7 @@
 ip = "192.168.0.8"
 port = 53249        # default value is hexadecimal 0xd001
 
-# Video source 
+# Video source
 [VideoSource]
 # Common options:
 #   - `type`: "stream", "oni", "pcd", "am_offline"
@@ -76,7 +76,7 @@ type = "ARVisualizer"
 # - type: the type of the visualizer
 # - name: its name
 # - width
-# and 
+# and
 # - height: the window dimensions
 
   # This visualizer belongs to the CameraCalibrator. It shows the calibartion parameters
@@ -95,8 +95,15 @@ type = "ObstacleDetector"
 #   - "EuclideanClustering"
 #   - "GMM" (see below)
 method = "EuclideanClustering"
+
+[ObstacleDetetction.Euclidean.SplitStrategy]
+# Defines the split axis.
+# The point cloud is splitted with a plane through the centroid and perpendicular to the chosen axis.
+# Values: largest|middle|smallest
+split_axis = "middle"
+
 ###########################################################################
-# Miscellaneous settings 
+# Miscellaneous settings
 
 # These settings define basic parameters for detecting the ground plane
 # They are mandatory if any kind of surface or obstacle detection is enabled
@@ -106,7 +113,7 @@ method = "EuclideanClustering"
   maxIterations = 200
   # How close a point must be to the model [in meters] in order to be considered an inlier
   distanceThreshold = 0.03
-  #How small the left (extracted) pointcloud should be for termination of the plane segmentation 
+  #How small the left (extracted) pointcloud should be for termination of the plane segmentation
   minFilterPercentage = 0.08
 
   [BasicSurfaceDetection.Classification]
@@ -155,6 +162,6 @@ method = "EuclideanClustering"
 # They are mandatory if any kind of bstacle detection is enabled
 [BasicObstacleDetection]
   [BasicObstacleDetection.InlierFinder]
-  # minimum distance a point must have to its projection onto a 
+  # minimum distance a point must have to its projection onto a
   # plane in order to be considered an inlier on this plane
   minDistToPlane = 0.04

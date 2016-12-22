@@ -173,10 +173,11 @@ void CalibratorVisualizer<PointT>::updateMeanVar(float const& mean_z, float cons
   v << "Var_Z : " << var_z;
 
   std::stringstream o;
+  o.precision(3);
   if(show_obstacles_) {
     for (size_t j = 0; j < (obstaclelist.size()/7); j++)
     {
-      o
+      o << std::fixed
       << "a.x= " << obstaclelist[7*j] << "  "
       << "a.y= " << obstaclelist[7*j+1] << "  "
       << "a.z= " << obstaclelist[7*j+2] << "  "
