@@ -151,10 +151,6 @@ private:
    * implementation.
    */
   std::vector<boost::shared_ptr<PointFilter<PointT> > > point_filters_;
-  /**
-  * Remove all points from the given point cloud that are too far away from Lola.
-  */
-  void removeBackground(PointCloudPtr &cloudPtr);
 
   /**
   * Remove NaN points from input cloud.
@@ -183,28 +179,6 @@ void FilteredVideoSource<PointT>::preprocessCloud(PointCloudPtr &cloud) {
   pcl::removeNaNFromPointCloud<PointT>(*cloud, *cloud_filtered, index);
 
   cloud = cloud_filtered;
-}
-
-/**
-* Remove all points from the given point cloud that are too far away from Lola.
-*/
-template<class PointT>
-void FilteredVideoSource<PointT>::removeBackground(PointCloudPtr &cloudPtr)
-{
-  pcl::ExtractIndices<PointT> extract;
-  pcl::PointIndices::Ptr currentPlaneIndices(new pcl::PointIndices);
-
-  int i = 0;
-  for (PointCloudT::iterator it = cloudPtr->begin(); it != cloudPtr->end(); it++, i++)
-  {
-    if (it->y < -2.8)
-      currentPlaneIndices->indices.push_back(i);
-  }
-
-  extract.setInputCloud(cloudPtr);
-  extract.setIndices(currentPlaneIndices);
-  extract.setNegative(true);
-  extract.filter(*cloudPtr);
 }
 
 template<class PointT>
@@ -263,8 +237,7 @@ void FilteredVideoSource<PointT>::updateFrame(
 
   // Now we obtain the fully filtered cloud...
   this->getFiltered(filtered);
-  // TODO: [Sahand] detele this function??
-  this->removeBackground(cloud_filtered);
+
   this->preprocessCloud(cloud_filtered);
 
   // ...and we're done!
