@@ -10,8 +10,8 @@
 # This defines the pose service to use.
 # Requirements: None
 [PoseService]
-ip = "127.0.0.1"
-port = 11111        # default value is hexadecimal 0xd001
+ip = "192.168.0.8"
+port = 53249        # default value is hexadecimal 0xd001
 
 # This defines the specifics for the robot
 # Requirements: PoseService
@@ -68,4 +68,3 @@ type = "Recorder"
   cloud = true
   rgb = true
   pose = true
-
