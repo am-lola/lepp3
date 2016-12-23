@@ -55,10 +55,27 @@ pre_filter = "downsample"
   b = -0.0100851
 
   [[FilteredVideoSource.filters]]
+  # The background filter erases all points far away from the camera (below z=threshold in the camera coordinate system).
+  # This is used to remove points that are noisy anyway and simplify further processing
+  type = "BackgroundFilter"
+  # Unit in meters
+  threshold = 2.8
+
+  [[FilteredVideoSource.filters]]
   # The RobotOdoTransformer transforms coordinates from the local coordinate
   # sytem to the global one referenced in Lola's right foot sole
   # Requirements: PoseService
   type = "RobotOdoTransformer"
+
+  [[FilteredVideoSource.filters]]
+  # The crop filter erases all points out of an xy rectangle with the given boundaries respect to world's origin.
+  # This is used to ignore everything outside of the experimental area
+  type = "CropFilter"
+  # Unit in meters
+  xmax = 2.5
+  xmin = -1.0
+  ymax = 1.0
+  ymin = -1.0
 
 ###########################################################################
 # Observers is an array
