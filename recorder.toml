@@ -4,23 +4,23 @@
 
 # All IPs and ports given in here are the defaults for a lab setup.
 
-# # Mandatory options are given, optional options are commented out
-# # # and listed with the default values
-# #
+# Mandatory options are given, optional options are commented out
+# and listed with the default values
+
 # This defines the pose service to use.
 # Requirements: None
 [PoseService]
 ip = "127.0.0.1"
 port = 11111        # default value is hexadecimal 0xd001
-#
-# # This defines the specifics for the robot
-# # Requirements: PoseService
-# [Robot]
-# # The size of the "bubble" in which no modifications or deletions of objects
-# # are sent to the robot. **In meters**
-# # This is required because the camera angle prevents the robot from seeing
-# # the environment directly below its feet
-# bubble_size = 1.2
+
+# This defines the specifics for the robot
+# Requirements: PoseService
+[Robot]
+# The size of the "bubble" in which no modifications or deletions of objects
+# are sent to the robot. **In meters**
+# This is required because the camera angle prevents the robot from seeing
+# the environment directly below its feet
+bubble_size = 1.2
 
 # Video source
 [VideoSource]
@@ -37,13 +37,17 @@ enable_rgb = true  # Capture RGB images
 # This sets up the filtered source, which will be passed to all
 # steps requiring a video
 [FilteredVideoSource]
-# options: "simple", "prob", "pt1"; These options activate 'source' or 'raw-data' filters.
-# * simple - the point cloud is taken directly from the latest frame
-# For the next two options, a voxel grid (or environment map) in world coordinates is created,
+# Pre-filters are applied before pointfilters take effect
+# * downsample: reduces the size of the pointcloud by merging neighboring voxels
+#pre_filter = "downsample"
+
+# Post-filters are applied after the point filters
+# options: "prob", "pt1"; These options activate 'source' or 'raw-data' filters.
+# For the two options, a voxel grid (or environment map) in world coordinates is created,
 # consisting of a big 3D matrix, which is used as a filtered point cloud source
 # * prob - each voxel has a probabilistic filter, i.e. is active if it was occupied most times in the last frames
 # * pt1 - each voxel has a pt1 filter, i.e. is active if (f*actualframe+(1-f)*previousframe > 0.5)
-type = "simple"
+#post_filter = "prob"
 
 
 
@@ -65,25 +69,3 @@ type = "Recorder"
   rgb = true
   pose = true
 
-# This helps calibrating the camera
-# It requires a corresponding visualizer
-# 
-# # This defines all available visualizers, there can be more than one
-# [[observers]]
-# type = "ARVisualizer"
-#
-# # Every instance has 4 mandatory options:
-# # - type: the type of the visualizer
-# # - name: its name
-# # - width
-# # and
-# # - height: the window dimensions
-#
-#   # Basic visualizer: shows obstacles (euclidean) and surfaces
-#   [[observers.visualizer]]
-#   type = "ObsSurfVisualizer"
-#   name = "Obs_Surf_Detector"
-#   width = 1024
-#   height = 768
-#   show_obstacles = false
-#   show_surfaces = false

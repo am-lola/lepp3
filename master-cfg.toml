@@ -1,11 +1,11 @@
-# This is the master config. It is most likely not runnable but lists all 
+# This is the master config. It is most likely not runnable but lists all
 # available options
 # The config file is in the [toml](https://github.com/toml-lang/toml) format
 
 # All IPs and ports given in here are the defaults for a lab setup.
 
 # Mandatory options are given, optional options are commented out
-# and listed with the default values 
+# and listed with the default values
 
 # This defines the pose service to use.
 # Requirements: None
@@ -19,10 +19,10 @@ port = 53249        # default value is hexadecimal 0xd001
 # The size of the "bubble" in which no modifications or deletions of objects
 # are sent to the robot. **In meters**
 # This is required because the camera angle prevents the robot from seeing
-# the environment directly below its feet  
+# the environment directly below its feet
 bubble_size = 1.2
 
-# Video source 
+# Video source
 [VideoSource]
 # Common options:
 #   - `type`: "stream", "oni", "pcd", "am_offline"
@@ -39,7 +39,7 @@ type = "stream"
 [FilteredVideoSource]
 # Pre-filters are applied before pointfilters take effect
 # * downsample: reduces the size of the pointcloud by merging neighboring voxels
-#pre_filter = "downsample"
+pre_filter = "downsample"
 
 # Post-filters are applied after the point filters
 # options: "prob", "pt1"; These options activate 'source' or 'raw-data' filters.
@@ -51,7 +51,7 @@ type = "stream"
 
   [FilteredVideoSource.downsample]
   # Size in meters for the "downsample" pre-filter
-  downsample_cube_size = 0.01
+  cube_size = 0.01
 
   # The following list of filters is optional
   # The order of the filters themselves IS NOT SIGNIFICANT.
@@ -77,13 +77,6 @@ type = "stream"
   type = "RobotOdoTransformer"
 
   [[FilteredVideoSource.filters]]
-  # This filter truncates all values to the specified amount of digits
-  # after the dot.
-  type = "TruncateFilter"
-  # Base unit is meters, so 2 truncates to millimeters
-  decimal_points = 2
-
-  [[FilteredVideoSource.filters]]
   # The ground filter erases all points near z=0 in the world coordinate system.
   # This is used to remove the ground, which is already assumed by the motion planner
   type = "GroundFilter"
@@ -92,7 +85,7 @@ type = "stream"
 
   [[FilteredVideoSource.filters]]
   # The crop filter erases all points out of an xy rectangle with the given boundaries respect to world's origin.
-  # This is used to ignore everything outside of the experimental area 
+  # This is used to ignore everything outside of the experimental area
   type = "CropFilter"
   # Unit in meters
   xmax = 4.0
@@ -111,7 +104,7 @@ type = "Recorder"
 
   [ObserverOptions.Recorder]
   # Output directory. The final output will end up in a subfolder named
-  # "rec_{datetime}" 
+  # "rec_{datetime}"
   output_folder= "recordings"
   # Defines which data to record
   #cloud = true
@@ -131,7 +124,7 @@ type = "ARVisualizer"
 # - type: the type of the visualizer
 # - name: its name
 # - width
-# and 
+# and
 # - height: the window dimensions
 
   # Basic visualizer: shows obstacles (euclidean) and surfaces
@@ -233,7 +226,7 @@ method = "GMM"
 # Aggregators is an array
 # this will list all aggregators and options belonging to them
 
-# This aggregator sends data to listeners (Path planning, Lab Visualizer, ...) 
+# This aggregator sends data to listeners (Path planning, Lab Visualizer, ...)
 [[aggregators]]
 type = "RobotAggregator"
 # Number of frames to wait before sending new data
@@ -250,7 +243,7 @@ port = 61448
 #delay = 10
 
 ###########################################################################
-# Miscellaneous settings 
+# Miscellaneous settings
 
 # These settings define basic parameters for detecting the ground plane
 # They are mandatory if any kind of surface or obstacle detection is enabled
@@ -260,7 +253,7 @@ port = 61448
   maxIterations = 200
   # How close a point must be to the model [in meters] in order to be considered an inlier
   distanceThreshold = 0.03
-  #How small the left (extracted) pointcloud should be for termination of the plane segmentation 
+  #How small the left (extracted) pointcloud should be for termination of the plane segmentation
   minFilterPercentage = 0.08
 
   [BasicSurfaceDetection.Classification]
@@ -309,6 +302,6 @@ port = 61448
 # They are mandatory if any kind of bstacle detection is enabled
 [BasicObstacleDetection]
   [BasicObstacleDetection.InlierFinder]
-  # minimum distance a point must have to its projection onto a 
+  # minimum distance a point must have to its projection onto a
   # plane in order to be considered an inlier on this plane
   minDistToPlane = 0.04

@@ -5,12 +5,12 @@
 # All IPs and ports given in here are the defaults for a lab setup.
 
 # Mandatory options are given, optional options are commented out
-# and listed with the default values 
+# and listed with the default values
 
 # This defines the pose service to use.
 # Requirements: None
 [PoseService]
-ip = "192.168.0.7"
+ip = "192.168.0.8"
 port = 53249        # default value is hexadecimal 0xd001
 
 # This defines the specifics for the robot
@@ -19,10 +19,10 @@ port = 53249        # default value is hexadecimal 0xd001
 # The size of the "bubble" in which no modifications or deletions of objects
 # are sent to the robot. **In meters**
 # This is required because the camera angle prevents the robot from seeing
-# the environment directly below its feet  
+# the environment directly below its feet
 bubble_size = 1.2
 
-# Video source 
+# Video source
 [VideoSource]
 # Common options:
 #   - `type`: "stream", "oni", "pcd", "am_offline"
@@ -37,13 +37,21 @@ enable_rgb = true  # Capture RGB images
 # This sets up the filtered source, which will be passed to all
 # steps requiring a video
 [FilteredVideoSource]
-# options: "simple", "prob", "pt1"; These options activate 'source' or 'raw-data' filters.
-# * simple - the point cloud is taken directly from the latest frame
-# For the next two options, a voxel grid (or environment map) in world coordinates is created,
+# Pre-filters are applied before pointfilters take effect
+# * downsample: reduces the size of the pointcloud by merging neighboring voxels
+pre_filter = "downsample"
+
+# Post-filters are applied after the point filters
+# options: "prob", "pt1"; These options activate 'source' or 'raw-data' filters.
+# For the two options, a voxel grid (or environment map) in world coordinates is created,
 # consisting of a big 3D matrix, which is used as a filtered point cloud source
 # * prob - each voxel has a probabilistic filter, i.e. is active if it was occupied most times in the last frames
 # * pt1 - each voxel has a pt1 filter, i.e. is active if (f*actualframe+(1-f)*previousframe > 0.5)
-type = "simple"
+#post_filter = "prob"
+
+  [FilteredVideoSource.downsample]
+  # Size in meters for the "downsample" pre-filter
+  cube_size = 0.01
 
   # The following list of filters is optional
   # The order of the filters themselves IS NOT SIGNIFICANT.
@@ -60,13 +68,6 @@ type = "simple"
   # sytem to the global one referenced in Lola's right foot sole
   # Requirements: PoseService
   type = "RobotOdoTransformer"
-
-  [[FilteredVideoSource.filters]]
-  # This filter truncates all values to the specified amount of digits
-  # after the dot.
-  type = "TruncateFilter"
-  # Base unit is meters, so 2 truncates to millimeters
-  decimal_points = 2
 
   [[FilteredVideoSource.filters]]
   # The crop filter erases all points out of an xy rectangle with the given boundaries respect to world's origin.
