@@ -1,5 +1,5 @@
-# This is the master config. It is most likely not runnable but lists all
-# available options
+# This is a sample of a config file for the vision subsystem (when running
+# it with the `--cfg` flag).
 # The config file is in the [toml](https://github.com/toml-lang/toml) format
 
 # All IPs and ports given in here are the defaults for a lab setup.
@@ -20,7 +20,7 @@ port = 53249        # default value is hexadecimal 0xd001
 # are sent to the robot. **In meters**
 # This is required because the camera angle prevents the robot from seeing
 # the environment directly below its feet
-bubble_size = 1.2
+bubble_size = 1.7
 
 # Video source
 [VideoSource]
@@ -31,7 +31,7 @@ bubble_size = 1.2
 type = "stream"
 #file_path = "path/to/file"
 #dir_path = "path/to/folder"
-#enable_rgb = false  # Capture RGB images
+enable_rgb = true  # Capture RGB images
 #enable_pose = false  # Replay pose data (only am_offline, [PoseService] must be disabled)
 
 # This sets up the filtered source, which will be passed to all
@@ -64,24 +64,10 @@ pre_filter = "downsample"
   b = -0.0100851
 
   [[FilteredVideoSource.filters]]
-  # The background filter erases all points far away from the camera (below z=threshold in the camera coordinate system).
-  # This is used to remove points that are noisy anyway and simplify further processing
-  type = "BackgroundFilter"
-  # Unit in meters
-  threshold = 2.8
-
-  [[FilteredVideoSource.filters]]
   # The RobotOdoTransformer transforms coordinates from the local coordinate
   # sytem to the global one referenced in Lola's right foot sole
   # Requirements: PoseService
   type = "RobotOdoTransformer"
-
-  [[FilteredVideoSource.filters]]
-  # The ground filter erases all points near z=0 in the world coordinate system.
-  # This is used to remove the ground, which is already assumed by the motion planner
-  type = "GroundFilter"
-  # Unit in meters
-  threshold = 0.03
 
   [[FilteredVideoSource.filters]]
   # The crop filter erases all points out of an xy rectangle with the given boundaries respect to world's origin.
@@ -107,18 +93,13 @@ type = "Recorder"
   # "rec_{datetime}"
   output_folder= "recordings"
   # Defines which data to record
-  #cloud = true
-  #rgb = false
-  #pose = false
-
-# This helps calibrating the camera
-# It requires a corresponding visualizer, as well as an obstacle detector
-[[observers]]
-type = "CameraCalibrator"
+  cloud = true
+  rgb = true
+  pose = true
 
 # This defines all available visualizers, there can be more than one
-[[observers]]
-type = "ARVisualizer"
+#[[observers]]
+#type = "ARVisualizer"
 
 # Every instance has 4 mandatory options:
 # - type: the type of the visualizer
@@ -128,45 +109,14 @@ type = "ARVisualizer"
 # - height: the window dimensions
 
   # Basic visualizer: shows obstacles (euclidean) and surfaces
-  [[observers.visualizer]]
-  type = "ObsSurfVisualizer"
-  name = "Obs_Surf_Detector"
-  width = 1024
-  height = 768
-  show_obstacles = true
-  show_surfaces = false
+ # [[observers.visualizer]]
+ # type = "ObsSurfVisualizer"
+ # name = "Obs_Surf_Detector"
+ # width = 1024
+ # height = 768
+ # show_obstacles = true
+ # show_surfaces = false
 
-  # This visualizer belongs to the CameraCalibrator. It shows the calibartion parameters
-  [[observers.visualizer]]
-  type = "CameraCalibrator"
-  name = "Camera Calibration"
-  width = 1024
-  height = 768
-  show_obstacles = true
-
-  # This visualizer shows a debug GUI for the GMM obstacle detction
-  [[observers.visualizer]]
-  type = "GMMTrackingVisualizer"
-  name = "GMM Obstacle Tracker Data"
-  debug_gui = true
-  width = 1024
-  height = 768
-
-    [observers.visualizer.debug_gui_params]
-    # Just an example: set "some" of the values here. The rest will be set to
-    # default by `DebugGUIParams`s ctor.
-    draw_gaussians = true
-    draw_velocities = true
-    draw_ssv = true
-    draw_trajectories = false
-    draw_debug_values = true
-    draw_voxels = false
-    downsample_res = 0.03 # downsampling leaf size in meters
-    enable_tracker = true
-    enable_tight_fit = true # use pc-based fitting instead of gaussian-based fitting
-    trajectory_length = 128
-    voxel_grid_resolution = 0.1 # voxel grid used for clustering, leaf size in meters
-    #color_mode = "NONE"
 
 # This enables the obstacle detector
 [[observers]]
@@ -207,20 +157,6 @@ method = "EuclideanClustering"
     #  distance_threshold = 150
 
 
-# This enables the GMM obstacle detector
-# Note: USe only one ObstacleDetector
-[[observers]]
-type = "ObstacleDetector"
-method = "GMM"
-
-  [ObstacleDetetction.GMM.ObstacleDetectorParams]
-  enable_tight_fit = true # use pc-based fitting instead of gaussian-based fitting
-  #TODO: compare with observers.visualizer.debug_gui_params!!
-  filter_ssv_position = true
-  voxel_grid_resolution = 0.1 # voxel grid used for clustering, leaf size in meters
-  kalman_system_noise_position = 0.01 # standard expected noise, in meters
-  kalman_system_noise_velocity = 0.15 # standard expected noise, in meters/second
-  kalman_measurement_noise = 0.10
 
 ###########################################################################
 # Aggregators is an array
@@ -232,11 +168,11 @@ type = "RobotAggregator"
 # Number of frames to wait before sending new data
 update_frequency = 3
 # Data to send
-data = [ "obstacles", "surfaces", "images", "pointclouds"]
+# data = [ "obstacles", "surfaces", "images", "pointclouds"]
+data = [ "obstacles"]
 # Human readable target name, just for terminal/log output
 target="Vision"
 # Target IP
-# ip = "192.168.0.3"  # Control computer IP
 ip = "192.168.0.7"  # QNX computer IP
 # Target Port, default is hexadecimal 0xF008
 port = 61448
