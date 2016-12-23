@@ -21,7 +21,7 @@
 # `am_offline` type requires an additional parameters: dir_path
 type = "am_offline"
 #file_path = "path/to/file"
-dir_path = "recordings/recordingexample"
+dir_path = "recordings/walkingobstbad"
 enable_rgb = true  # Capture RGB images
 enable_pose = true  # Replay pose data (only am_offline, [PoseService] must be disabled)
 
@@ -60,15 +60,15 @@ pre_filter = "downsample"
   # Requirements: PoseService
   type = "RobotOdoTransformer"
 
-  # [[FilteredVideoSource.filters]]
-  # # The crop filter erases all points out of an xy rectangle with the given boundaries respect to world's origin.
-  # # This is used to ignore everything outside of the experimental area
-  # type = "CropFilter"
-  # # Unit in meters
-  # xmax = 4.0
-  # xmin = -1.5
-  # ymax = 1.5
-  # ymin = -1.5
+  [[FilteredVideoSource.filters]]
+  # The crop filter erases all points out of an xy rectangle with the given boundaries respect to world's origin.
+  # This is used to ignore everything outside of the experimental area
+  type = "CropFilter"
+  # Unit in meters
+  xmax = 4.0
+  xmin = -1.5
+  ymax = 1.5
+  ymin = -1.5
 
 ###########################################################################
 # Observers is an array

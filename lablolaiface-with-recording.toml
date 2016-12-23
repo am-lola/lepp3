@@ -166,7 +166,7 @@ method = "EuclideanClustering"
 [[aggregators]]
 type = "RobotAggregator"
 # Number of frames to wait before sending new data
-update_frequency = 3
+update_frequency = 30
 # Data to send
 # data = [ "obstacles", "surfaces", "images", "pointclouds"]
 data = [ "obstacles"]
@@ -177,7 +177,7 @@ ip = "192.168.0.7"  # QNX computer IP
 # Target Port, default is hexadecimal 0xF008
 port = 61448
 # Delay to wait after sending a message
-#delay = 10
+delay = 10
 
 ###########################################################################
 # Miscellaneous settings

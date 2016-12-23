@@ -71,7 +71,7 @@ pre_filter = "downsample"
 
   [[FilteredVideoSource.filters]]
   # The crop filter erases all points out of an xy rectangle with the given boundaries respect to world's origin.
-  # This is used to ignore everything outside of the experimental area 
+  # This is used to ignore everything outside of the experimental area
   type = "CropFilter"
   # Unit in meters
   xmax = 4.0
@@ -92,7 +92,7 @@ type = "ARVisualizer"
 # - type: the type of the visualizer
 # - name: its name
 # - width
-# and 
+# and
 # - height: the window dimensions
 
   # Basic visualizer: shows obstacles (euclidean) and surfaces
@@ -104,6 +104,9 @@ type = "ARVisualizer"
   show_obstacles = true
   show_surfaces = false
 
+  # This enables the obstacle detector
+  [[observers]]
+  type = "SurfaceDetector"
 
 # This enables the obstacle detector
 [[observers]]
@@ -149,24 +152,46 @@ method = "EuclideanClustering"
 # Aggregators is an array
 # this will list all aggregators and options belonging to them
 
-# This aggregator sends data to listeners (Path planning, Lab Visualizer, ...) 
+# This aggregator sends data to listeners (Path planning, Lab Visualizer, ...)
 [[aggregators]]
 type = "RobotAggregator"
 # Number of frames to wait before sending new data
-update_frequency = 3
+update_frequency = 30
+# Data to send
+# data = [ "obstacles", "surfaces", "images", "pointclouds"]
+data = [ "obstacles", "surfaces" ]
+# Human readable target name, just for terminal/log output
+target="Vision"
+# Target IP
+ip = "192.168.0.7"  # QNX computer IP
+# Target Port, default is hexadecimal 0xF008
+port = 61448
+# Delay to wait after sending a message
+delay = 10
+
+
+# Aggregators is an array
+# this will list all aggregators and options belonging to them
+
+# This aggregator sends data to listeners (Path planning, Lab Visualizer, ...)
+[[aggregators]]
+type = "RobotAggregator"
+# Number of frames to wait before sending new data
+update_frequency = 30
 # Data to send
 data = [ "obstacles", "surfaces", "images", "pointclouds"]
 # Human readable target name, just for terminal/log output
 target="Vision"
 # Target IP
-ip = "192.168.0.3"  # QNX computer IP
+ip = "192.168.0.3"  # Control computer IP
 # Target Port, default is hexadecimal 0xF008
 port = 61448
 # Delay to wait after sending a message
-#delay = 10
+delay = 10
+
 
 ###########################################################################
-# Miscellaneous settings 
+# Miscellaneous settings
 
 # These settings define basic parameters for detecting the ground plane
 # They are mandatory if any kind of surface or obstacle detection is enabled
@@ -176,7 +201,7 @@ port = 61448
   maxIterations = 200
   # How close a point must be to the model [in meters] in order to be considered an inlier
   distanceThreshold = 0.03
-  #How small the left (extracted) pointcloud should be for termination of the plane segmentation 
+  #How small the left (extracted) pointcloud should be for termination of the plane segmentation
   minFilterPercentage = 0.08
 
   [BasicSurfaceDetection.Classification]
@@ -225,6 +250,6 @@ port = 61448
 # They are mandatory if any kind of bstacle detection is enabled
 [BasicObstacleDetection]
   [BasicObstacleDetection.InlierFinder]
-  # minimum distance a point must have to its projection onto a 
+  # minimum distance a point must have to its projection onto a
   # plane in order to be considered an inlier on this plane
   minDistToPlane = 0.04
