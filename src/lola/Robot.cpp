@@ -34,12 +34,12 @@ bool Robot::isInRobotBoundary(SurfaceModel const& model) const {
   bool isInside = pcl::isPointIn2DPolygon(robot_center, *(model.get_hull()));
 
   // check if robot is close to the edge of the surface
-  double min_dist_to_poly = 10000000;
+  double sq_min_dist_to_poly = 10000000;
   if(!isInside)
   {
     for(int i = 1; i <= model.get_hull()->points.size(); i++)
     {
-      double dist_to_poly = 10000000; // distance to this edge
+      double sq_dist_to_poly = 10000000; // distance to this edge
       PointT point1 = model.get_hull()->points[i];
       PointT point2 = model.get_hull()->points[i-1];
 
@@ -53,24 +53,24 @@ bool Robot::isInRobotBoundary(SurfaceModel const& model) const {
 
       if (r < 0) // robot lies outside of the segment, closer to p1
       {
-        dist_to_poly = p1_to_robot.norm();
+        sq_dist_to_poly = p1_to_robot.squaredNorm();
       }
       else if (r > 1) // robot lies outside of the segment, closer to p2
       {
-        dist_to_poly = p2_to_robot.norm();
+        sq_dist_to_poly = p2_to_robot.squaredNorm();
       }
       else // robot lies inside the segment
       {
-        dist_to_poly = sqrt(p1_to_robot.squaredNorm()
-                            - r * p1_to_p2.squaredNorm());
+        sq_dist_to_poly = p1_to_robot.squaredNorm()
+                            - r * p1_to_p2.squaredNorm();
       }
 
-      min_dist_to_poly = std::min(dist_to_poly, min_dist_to_poly);
+      sq_min_dist_to_poly = std::min(sq_dist_to_poly, sq_min_dist_to_poly);
     }
   }
 
   // The surface is considered to be in the robot's boundary if closer
   // than a particular threshold or the robot's position is within the
   // bounds of the surface's convex hull.
-  return isInside || (min_dist_to_poly < inner_zone_square_radius_);
+  return isInside || (sq_min_dist_to_poly < inner_zone_square_radius_);
 }
