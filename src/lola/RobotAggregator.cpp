@@ -186,12 +186,12 @@ void RobotAggregator::mod_obstacle_cb_(ObjectModel& model, long frame_num) {
 }
 
 void RobotAggregator::mod_surface_cb_(SurfaceModel& model, long frame_num) {
-  // Disable any modifications to models that are too close to the
-  // robot.
-  //@ASK  ARNE
-  // if (robot_.isInRobotBoundary(model)) {
-  //   return;
-  // }
+// Disable any modifications to models that are too close to the
+// robot.
+
+ if (robot_.isInRobotBoundary(model)) {
+   return;
+ }
   sendModify(model, frame_num);
 }
 
