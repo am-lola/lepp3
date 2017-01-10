@@ -137,7 +137,7 @@ protected:
     std::cout << "entered initRawSource" << std::endl;
     const std::string type = getTomlValue<std::string>(toml_tree_, "VideoSource.type");
 
-    bool enable_rgb = getOptionalTomlValue(toml_tree_, "VideoSource.enable_rgb", false);
+    enable_rgb = getOptionalTomlValue(toml_tree_, "VideoSource.enable_rgb", false);
 
     if (type == "stream") {
       this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(new LiveStreamSource<PointT>(enable_rgb));
@@ -757,6 +757,13 @@ private:
       return boost::shared_ptr<ObstacleTrackerVisualizer>(
           new ObstacleTrackerVisualizer(d_gui_params, name, width, height));
 
+    } else if (type == "ImageVisualizer") {
+      if (!enable_rgb) {
+        throw std::runtime_error("Visualizer 'ImageVisualizer' requires an rgb source!!");
+      }
+      return boost::shared_ptr<ImageVisualizer> (
+          new ImageVisualizer());
+
     } else {
       std::ostringstream ss;
       ss << "Unknown visualizer type `" << type << "`";
@@ -879,6 +886,7 @@ private:
   bool surface_detector_active_;
   bool obstacle_detector_active_;
   bool ground_removal_;
+  bool enable_rgb;
 };
 
 #endif

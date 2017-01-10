@@ -24,6 +24,7 @@
 #include "lepp3/visualization/ObsSurfVisualizer.hpp"
 #include "lepp3/visualization/LegacyVisualizer.hpp"
 #include "lepp3/visualization/CalibratorVisualizer.hpp"
+#include "lepp3/visualization/ImageVisualizer.hpp"
 
 #include "lepp3/filter/point/SensorCalibrationFilter.hpp"
 #include "lepp3/filter/point/CropFilter.hpp"

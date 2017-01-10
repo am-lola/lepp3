@@ -1,30 +1,42 @@
 #ifndef LEPP3_VISUALIZATION_IMAGE_VISUALIZER_H__
 #define LEPP3_VISUALIZATION_IMAGE_VISUALIZER_H__
 
+#include <sstream>
+#include "lepp3/FrameData.hpp"
+#include "lepp3/Typedefs.hpp"
+#include "lepp3/visualization/BaseVisualizer.hpp"
+
+#include <iostream>
+
 namespace lepp {
 
-template<class PointT>
-class ImageVisualizer {
-public:
-  ImageVisualizer() {
-    cv::namedWindow("RGB CAM", cv::WINDOW_AUTOSIZE);
-  }
-  void notifyNewFrame(
-      int idx,
-      const typename pcl::PointCloud<PointT>::ConstPtr& pointCloud) {};
-  void notifyNewFrame(
-      int idx,
-      const typename boost::shared_ptr<openni_wrapper::Image>& image) {};
-  void notifyNewFrame(int idx, const cv::Mat& image);
-};
+  class ImageVisualizer : public BaseVisualizer {
 
-template<class PointT>
-void ImageVisualizer<PointT>::notifyNewFrame(int idx, const cv::Mat& image) {
-  std::cout << "showing RGB..." << std::endl;
-  imshow("RGB CAM", image);
-  cv::waitKey(30);
-}
+  public:
+    ImageVisualizer()
+        {
+          a =0;
+    }
 
-} // namespace lepp
+    /**
+ * Destructor
+ */
+    ~ImageVisualizer() { }
 
-#endif
+    /**
+ * FrameDataObserver interface implementation: processes the current point cloud.
+ */
+    void updateFrame(FrameDataPtr frameData);
+
+private:
+  int a;
+
+  };
+
+  void ImageVisualizer::updateFrame(FrameDataPtr frameData) {
+    return;
+  };
+
+}// namespace lepp
+
+#endif // LEPP3_VISUALIZATION_CALIBRATOR_VISUALIZER_H__
