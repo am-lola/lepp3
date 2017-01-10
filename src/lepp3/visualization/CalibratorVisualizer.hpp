@@ -167,10 +167,12 @@ void CalibratorVisualizer<PointT>::drawObstacles(std::vector<ObjectModelPtr> obs
 template<class PointT>
 void CalibratorVisualizer<PointT>::updateMeanVar(float const& mean_z, float const& var_z) {
   std::stringstream m;
-  m << "Mean_Z: " << mean_z;
+  m.precision(3);
+  m << std::scientific << "Mean_Z: " << mean_z;
 
   std::stringstream v;
-  v << "Var_Z : " << var_z;
+  v.precision(3);
+  v << std::scientific << "Var_Z : " << var_z;
 
   std::stringstream o;
   o.precision(3);
