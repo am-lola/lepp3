@@ -59,6 +59,10 @@ public:
    */
    virtual void updateFrame(FrameDataPtr frameData);
   /**
+* `RGBDataObserver` interface implementation.
+*/
+  void updateFrame(RGBDataPtr rgbData);
+  /**
    * CalibrationAggregator interface implementation.
    */
   virtual void updateCalibrationParams(
@@ -266,6 +270,10 @@ void CalibratorVisualizer<PointT>::updateFrame(FrameDataPtr frameData) {
   // Remove old obstacles and surfaces that are no longer visualized
   removeOldObst(visHandles);
 }
+  template<class PointT>
+  void CalibratorVisualizer<PointT>::updateFrame(RGBDataPtr rgbData) {
+    return;
+  };
 
 template<class PointT>
 void CalibratorVisualizer<PointT>::updateCalibrationParams(

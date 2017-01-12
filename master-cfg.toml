@@ -127,6 +127,13 @@ type = "ARVisualizer"
 # and
 # - height: the window dimensions
 
+  # Image Visualizer: shows the camera's rgb data
+  [[observers.visualizer]]
+  type = "ImageVisualizer"
+  name = "RGBImage"
+  width = 1024
+  height = 768
+
   # Basic visualizer: shows obstacles (euclidean) and surfaces
   [[observers.visualizer]]
   type = "ObsSurfVisualizer"

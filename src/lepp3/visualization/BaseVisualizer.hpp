@@ -4,13 +4,14 @@
 #include <ARVisualizer.hpp>
 
 #include "lepp3/FrameData.hpp"
+#include "lepp3/RGBData.hpp"
 
 namespace lepp {
 
 /**
  * A base class for visualizers. Wraps an instance of ar::ARVisualizer
  */
-class BaseVisualizer : public FrameDataObserver {
+class BaseVisualizer : public FrameDataObserver, public lepp::RGBDataObserver {
 
 public:
   /**

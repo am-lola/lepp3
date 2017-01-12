@@ -761,8 +761,11 @@ private:
       if (!enable_rgb) {
         throw std::runtime_error("Visualizer 'ImageVisualizer' requires an rgb source!!");
       }
-      return boost::shared_ptr<ImageVisualizer> (
-          new ImageVisualizer());
+      boost::shared_ptr<ImageVisualizer> img_vis(
+          new ImageVisualizer(name, width, height));
+      this->detector_->FrameDataSubject::attachObserver(img_vis);
+      boost::static_pointer_cast<RGBDataSubject>(this->raw_source_)->attachObserver(img_vis);
+      return img_vis;
 
     } else {
       std::ostringstream ss;

@@ -260,6 +260,10 @@ public:
   */
   virtual void updateFrame(FrameDataPtr frameData);
   // ar::ARVisualizer* getVisualizer() const { return arvis; };
+  /**
+* `RGBDataObserver` interface implementation.
+*/
+  void updateFrame(RGBDataPtr rgbData);
 
 private:
   /**
@@ -415,6 +419,9 @@ void ObsSurfVisualizer::updateFrame(FrameDataPtr frameData)
   arvis_->SetVisibility(gridHandle, (bool)gridWindow->GetCheckBoxState(gridCheckBox));
 }
 
+void ObsSurfVisualizer::updateFrame(RGBDataPtr rgbData) {
+  return;
+};
 
 } // namespace lepp
 
