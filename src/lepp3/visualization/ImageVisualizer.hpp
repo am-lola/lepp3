@@ -14,14 +14,21 @@ namespace lepp {
 
   public:
     ImageVisualizer()
-        {
-          a =0;
+    {
+      camera_matrix[0][0] = 5.2921508098293293e+02;    camera_matrix[0][1] = 0.0;                       camera_matrix[0][2] = 3.2894272028759258e+02;
+      camera_matrix[1][0] = 0.0;                       camera_matrix[1][1] = 5.2556393630057437e+02;    camera_matrix[1][2] = 2.6748068171871557e+02;
+      camera_matrix[2][0] = 0.0;                       camera_matrix[2][1] = 0.0;                       camera_matrix[2][2] = 1.0;
+      viz.Start("Lola Listener");
+      viz.SetCameraIntrinsics(camera_matrix);
     }
 
     /**
  * Destructor
  */
-    ~ImageVisualizer() { }
+    ~ImageVisualizer()
+    {
+      viz.Stop();
+    }
 
     /**
  * FrameDataObserver interface implementation: processes the current point cloud.
@@ -29,12 +36,17 @@ namespace lepp {
     void updateFrame(FrameDataPtr frameData);
 
 private:
-  int a;
+
+    ar::ARVisualizer viz;
+    double camera_matrix[3][3];
+
+
 
   };
 
   void ImageVisualizer::updateFrame(FrameDataPtr frameData) {
     return;
+//    viz.NotifyNewVideoFrame(width, height, pixels);
   };
 
 }// namespace lepp
