@@ -70,3 +70,8 @@ bool Robot::isInRobotBoundary(SurfaceModel const& model) const {
   // bounds of the surface's convex hull.
   return sq_min_dist_to_poly < inner_zone_square_radius_;
 }
+
+lepp::Coordinate Robot::robot_position() const {
+  lepp::LolaKinematicsParams params = pose_service_.getParams();
+  return lepp::PoseService::getRobotPosition(params);
+}

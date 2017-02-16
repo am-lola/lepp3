@@ -25,37 +25,36 @@ void PoseUdpService::read_handler(
   memcpy(new_pose.get(), recv_buffer_.data(), sizeof(HR_Pose_Red));
   // This performs an atomic update of the pointer, making it a lock-free,
   // thread-safe operation
-  pose_ = new_pose;
+  received_pose_ = new_pose;
   LINFO << "Pose Service: Updated current pose";
   // notify any TFObserver of the new pose
 
-  LolaKinematicsParams params = getParams();
-  notifyObservers(++pose_counter_, params);
-  queue_recv();
   // Print parameters received
   LTRACE << "Received pose"
-         << "  Phi_Z_ODO = " << pose_->phi_z_odo
-         << "  Stamp = " << pose_->stamp
-         << "  T_Stance_ODO.X = " << pose_->t_stance_odo[0]
-         << "  T_Stance_ODO.Y = " << pose_->t_stance_odo[1]
-         << "  T_Stance_ODO.Z = " << pose_->t_stance_odo[2]
-         << "  Version Nr. = " << pose_->version
-         << "  TIC counter = " << pose_->tick_counter
-         << "  Stance = " << static_cast<int>(pose_->stance)
+         << "  Phi_Z_ODO = " << new_pose->phi_z_odo
+         << "  Stamp = " << new_pose->stamp
+         << "  T_Stance_ODO.X = " << new_pose->t_stance_odo[0]
+         << "  T_Stance_ODO.Y = " << new_pose->t_stance_odo[1]
+         << "  T_Stance_ODO.Z = " << new_pose->t_stance_odo[2]
+         << "  Version Nr. = " << new_pose->version
+         << "  TIC counter = " << new_pose->tick_counter
+         << "  Stance = " << static_cast<int>(new_pose->stance)
          << "  Size of HR_Pose = " << sizeof(HR_Pose_Red)
          << "  Size of Message = " << bytes_transferred
-         << "  Translation.X= " << pose_->t_wr_cl[0]
-         << "  Translation.Y= " << pose_->t_wr_cl[1]
-         << "  Translation.Z= " << pose_->t_wr_cl[2]
-         << "  Rotation[0 0]= " << pose_->R_wr_cl[0]
-         << "  Rotation[0 1]= " << pose_->R_wr_cl[1]
-         << "  Rotation[0 2]= " << pose_->R_wr_cl[2]
-         << "  Rotation[1 0]= " << pose_->R_wr_cl[3]
-         << "  Rotation[1 1]= " << pose_->R_wr_cl[4]
-         << "  Rotation[1 2]= " << pose_->R_wr_cl[5]
-         << "  Rotation[2 0]= " << pose_->R_wr_cl[6]
-         << "  Rotation[2 1]= " << pose_->R_wr_cl[7]
-         << "  Rotation[2 2]= " << pose_->R_wr_cl[8];
+         << "  Translation.X= " << new_pose->t_wr_cl[0]
+         << "  Translation.Y= " << new_pose->t_wr_cl[1]
+         << "  Translation.Z= " << new_pose->t_wr_cl[2]
+         << "  Rotation[0 0]= " << new_pose->R_wr_cl[0]
+         << "  Rotation[0 1]= " << new_pose->R_wr_cl[1]
+         << "  Rotation[0 2]= " << new_pose->R_wr_cl[2]
+         << "  Rotation[1 0]= " << new_pose->R_wr_cl[3]
+         << "  Rotation[1 1]= " << new_pose->R_wr_cl[4]
+         << "  Rotation[1 2]= " << new_pose->R_wr_cl[5]
+         << "  Rotation[2 0]= " << new_pose->R_wr_cl[6]
+         << "  Rotation[2 1]= " << new_pose->R_wr_cl[7]
+         << "  Rotation[2 2]= " << new_pose->R_wr_cl[8];
+
+  queue_recv();
 }
 
 void PoseUdpService::service_thread() {
@@ -84,4 +83,8 @@ void PoseUdpService::start() {
   // Start the thread that will run the associated I/O service.
   std::thread t(boost::bind(&PoseUdpService::service_thread, this));
   t.detach();
+}
+
+void PoseUdpService::triggerNextFrame() {
+  pose_.swap(received_pose_);
 }

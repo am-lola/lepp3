@@ -17,7 +17,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "lola/PoseObserver.hpp"
 #include "lepp3/FrameData.hpp"
 #include "lepp3/RGBData.hpp"
 
@@ -61,7 +60,7 @@ namespace {
   * the `setMode` method.
   */
 template<class PointT>
-class VideoRecorder : public TFObserver, public FrameDataObserver, public RGBDataObserver {
+class VideoRecorder : public FrameDataObserver, public RGBDataObserver {
 public:
   VideoRecorder(std::string const& outputPath);
   /**
@@ -75,10 +74,6 @@ public:
   virtual void updateFrame(RGBDataPtr rgbData);
 
   /**
-   * Implementation of the PoseObserver interface.
-   */
-  virtual void NotifyNewPose(int idx, LolaKinematicsParams const& params);
-  /**
    * Set different recording options.
    * Determines whether to record the point cloud, rgb image and pose.
    */
@@ -91,7 +86,7 @@ private:
   /**
    * Write the current pose parameters in file.
    */
-  void saveParams(LolaKinematicsParams const& params);
+  void saveParams(lepp::LolaKinematicsParams const& params);
   /**
    * Save the current image on disk.
    */
@@ -115,7 +110,7 @@ private:
   /**
    *
    */
-  bool cloud_lk_, image_lk_;
+  bool cloud_lk_;
 };
 
 template<class PointT>
@@ -128,8 +123,7 @@ VideoRecorder<PointT>::VideoRecorder(std::string const& outputPath)
     cloud_idx_(-1),
     image_idx_(-1),
     params_idx_(-1),
-    cloud_lk_(false),
-    image_lk_(false) {
+    cloud_lk_(false) {
 
   namespace bfs = boost::filesystem;
   if(bfs::exists(path_)) {
@@ -173,15 +167,30 @@ void VideoRecorder<PointT>::updateFrame(FrameDataPtr frameData)
   // 1. we are actually told to save it,
   // 2. there is no previous cloud waiting for the completion of the recording
   //    chain.
+  if (cloud_lk_) {
+    return;
+  }
+
   if (record_cloud_) {
-    if (!cloud_lk_) {
-      cloud_idx_++;
-      savePointCloud(frameData->cloud);
-      // Set the cloud lock only if here is not the end of recording chain (if
-      // either rgb or pose is also going to be recorded)
-      if (record_pose_ || record_rgb_)
-        cloud_lk_ = true;
-    }
+    ++cloud_idx_;
+    savePointCloud(frameData->cloud);
+    // Set the cloud lock only if here is not the end of recording chain (if
+    // either rgb or pose is also going to be recorded)
+
+    if (record_rgb_)
+      cloud_lk_ = true;
+  }
+
+
+  if (record_pose_)
+  {
+    ++params_idx_;
+
+    LolaKinematicsParams params(*frameData->lolaKinematics);
+    params.frame_num = params_idx_;
+    saveParams(params);
+    if (record_rgb_)
+      cloud_lk_ = true;
   }
 }
 
@@ -189,7 +198,7 @@ template<class PointT>
 void VideoRecorder<PointT>::updateFrame(RGBDataPtr rgbData) {
   // Exception: Make the cloud lock ineffective, if we are not recording any
   // point clouds.
-  if (!record_cloud_)
+  if (!record_cloud_ && !record_pose_)
     cloud_lk_ = true;
 
   // Save the image if
@@ -198,46 +207,13 @@ void VideoRecorder<PointT>::updateFrame(RGBDataPtr rgbData) {
   // 3. there is no previous image waiting for the completion of the recording
   //    chain.
   if (record_rgb_) {
-    if(cloud_lk_ && !image_lk_) {
-      image_idx_++;
+    if(cloud_lk_) {
+      ++image_idx_;
       saveImage(rgbData->image);
-      // set the image lock only if we are recording pose...
-      if (record_pose_)
-        image_lk_ = true;
-      // ... otherwise, here is the end of recording chain. release all
+
+      // here is the end of recording chain. release all
       // remaining locks.
-      else
-        cloud_lk_ = false;
-    }
-  }
-}
-
-template<class PointT>
-void VideoRecorder<PointT>::NotifyNewPose(
-    int idx,
-    LolaKinematicsParams const& params) {
-
-  // Rare case: [DEBUG] Recorder only saves pose params. Make the cloud and
-  // image locks ineffective.
-  if (!record_cloud_ && !record_rgb_) {
-    cloud_lk_ = true;
-    image_lk_ = true;
-  }
-
-  // Save the parameters if
-  // 1. we are actually told to save them,
-  // 2. there is already a [supposedly] saved point cloud.
-  // 3. there is already a [supposedly] saved image.
-  if (record_pose_) {
-    if (cloud_lk_ && image_lk_) {
-      params_idx_++;
-      // Modify the frame number to the internal counter
-      LolaKinematicsParams param_copy(params);
-      param_copy.frame_num = params_idx_;
-      saveParams(param_copy);
-      // Release the locks for next frames.
       cloud_lk_ = false;
-      image_lk_ = false;
     }
   }
 }

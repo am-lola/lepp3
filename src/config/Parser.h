@@ -72,7 +72,7 @@ public:
 
   /// Robot-related accessors
   boost::shared_ptr<Robot> robot() { return robot_; }
-  boost::shared_ptr<PoseService> pose_service() { return pose_service_; }
+  std::shared_ptr<PoseService> pose_service() { return pose_service_; }
   boost::shared_ptr<RobotService> robot_service() { return robot_service_; }
 
   /// The obstacle detector/tracker accessor
@@ -177,7 +177,7 @@ protected:
   boost::shared_ptr<VideoSource<PointT> > raw_source_;
   boost::shared_ptr<FilteredVideoSource<PointT> > filtered_source_;
 
-  boost::shared_ptr<PoseService> pose_service_;
+  std::shared_ptr<PoseService> pose_service_;
   boost::shared_ptr<RobotService> robot_service_;
   boost::shared_ptr<Robot> robot_;
 

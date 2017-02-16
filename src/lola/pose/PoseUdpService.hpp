@@ -1,8 +1,9 @@
 #ifndef LOLA_POSE_UDP_SERVICE_H__
 #define LOLA_POSE_UDP_SERVICE_H__
 
-#include "lola/PoseService.h"
+#include "lepp3/pose/PoseService.hpp"
 #include <cstdint>
+#include <iface_vis.h>
 #include <memory>
 #include <string>
 #include <boost/asio.hpp>
@@ -14,7 +15,7 @@
  * components to get the current pose information, without worrying about running
  * the networking communication infrastructure or threading.
  */
-class PoseUdpService : public PoseService {
+class PoseUdpService : public lepp::PoseService {
 public:
   /**
    * Create a new `PoseService` that will listen on the given local (UDP) socket
@@ -24,8 +25,7 @@ public:
   PoseUdpService(std::string const &host, uint16_t port)
       : host_(host),
         port_(port),
-        socket_(io_service_),
-        pose_counter_(0) {}
+        socket_(io_service_) {}
 
   virtual ~PoseUdpService();
 
@@ -41,7 +41,7 @@ public:
    * Obtains the current pose information. Using this method is completely
    * thread safe.
    */
-  HR_Pose_Red getCurrentPose() const override {
+  std::shared_ptr<HR_Pose_Red> getCurrentPose() const override {
     // This does an atomic copy of the pointer (the refcount is atomically updated)
     // There can be no race condition since if the service needs to update the
     // pointer, it will do so atomically and the reader also obtains a copy of the
@@ -54,12 +54,17 @@ public:
     // pointer dance).
 
     if (p) {
-      return *p;
+      return p;
     } else {
-      HR_Pose_Red pose = {0};
-      return pose;
+      HR_Pose_Red pose {0};
+      return std::make_shared<HR_Pose_Red>(pose);
     }
   }
+
+  /**
+   * Dispatches the next frame
+   */
+  void triggerNextFrame() override;
 
 private:
   /**
@@ -111,15 +116,16 @@ private:
   boost::array<char, sizeof(HR_Pose_Red)> recv_buffer_;
 
   /**
-   * A pointer to the last known pose information.
-   * Updated by the service on every newly received packet.
+   * The last post received by the ncetwork socket
+   */
+  std::shared_ptr<HR_Pose_Red> received_pose_;
+
+  /**
+   * The current pose data. This is always syncronous
+   * to the captured point cloud.
    */
   std::shared_ptr<HR_Pose_Red> pose_;
 
-  /**
-   * Current pose count
-   */
-  int pose_counter_;
 };
 
 #endif

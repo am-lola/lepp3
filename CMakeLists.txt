@@ -35,7 +35,7 @@ if(LEPP_BUILD_EXAMPLES)
 endif()
 
 if(LEPP_BUILD_LOLA)
-    file(GLOB detector_src src/lepp3/detector/*.cc src/lola/*.cpp src/lola/pose/*.cpp)
+    file(GLOB detector_src src/lepp3/detector/*.cc src/lola/*.cpp src/lola/pose/*.cpp src/lepp3/pose/*.cpp)
 
     if(LEPP_INCLUDE_HEADERS)
         file(GLOB_RECURSE header_files src/*.hpp src/*.h)

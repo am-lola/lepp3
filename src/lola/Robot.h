@@ -1,7 +1,7 @@
 #ifndef LOLA_ROBOT_H__
 #define LOLA_ROBOT_H__
 
-#include "lola/PoseService.h"
+#include "lepp3/pose/PoseService.hpp"
 #include "lepp3/models/ObjectModel.h"
 #include <pcl/segmentation/impl/extract_polygonal_prism_data.hpp>
 
@@ -23,7 +23,7 @@ public:
    *
    * The (squared) radius of the inner zone is set to a default value.
    */
-  Robot(PoseService& pose_service)
+  Robot(lepp::PoseService& pose_service)
       : pose_service_(pose_service),
         inner_zone_square_radius_(1.2) {}
   /**
@@ -32,7 +32,7 @@ public:
    *
    * The radius of the inner zone is set to `inner_zone_radius_`.
    */
-  Robot(PoseService& pose_service, double inner_zone_radius)
+  Robot(lepp::PoseService& pose_service, double inner_zone_radius)
       : pose_service_(pose_service),
         inner_zone_square_radius_(inner_zone_radius*inner_zone_radius) {}
 
@@ -46,11 +46,11 @@ public:
   /** 
    * Returns the robot's position in the world coordinate system (i.e. ODO).
    */
-  lepp::Coordinate robot_position() const { return pose_service_.getRobotPosition(); }
+  lepp::Coordinate robot_position() const;
 
   double inner_zone_square_radius() const { return inner_zone_square_radius_; }
 private:
-  PoseService& pose_service_;
+  lepp::PoseService& pose_service_;
   /**
    * The (square of the) radius of the area around the robot that is considered
    * its "inner" zone.

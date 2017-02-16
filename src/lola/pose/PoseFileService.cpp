@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <iface_vis.h>
 
 PoseFileService::PoseFileService(std::string const& filename)
     : pose_idx_(0) {
@@ -32,18 +33,15 @@ PoseFileService::PoseFileService(std::string const& filename)
        >> pose.tick_counter
        >> pose.stamp;
 
-    pose_data_.emplace_back(pose);
+    pose_data_.emplace_back(std::make_shared<HR_Pose_Red>(pose));
   }
 }
 
-HR_Pose_Red PoseFileService::getCurrentPose() const {
+std::shared_ptr<HR_Pose_Red> PoseFileService::getCurrentPose() const {
   size_t idx = pose_idx_ % pose_data_.size();
   return pose_data_[idx];
 }
 
 void PoseFileService::triggerNextFrame() {
   ++pose_idx_;
-
-  LolaKinematicsParams params = getParams();
-  notifyObservers(pose_idx_, params);
 }

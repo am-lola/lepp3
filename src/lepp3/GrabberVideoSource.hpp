@@ -25,22 +25,31 @@ public:
    * Instantiate a video source which wraps the given Grabber instance.
    * The VideoSource instance takes ownership of the given Grabber instance.
    */
-  GeneralGrabberVideoSource(boost::shared_ptr<pcl::Grabber> interface)
-      : interface_(interface),
+  GeneralGrabberVideoSource(boost::shared_ptr<pcl::Grabber> interface,
+                            std::shared_ptr<lepp::PoseService> pose_service)
+      : VideoSource<PointT>(pose_service),
+        interface_(interface),
         rgb_viewer_enabled_(false),
         frameCount(0),
         receive_cloud_(true),
         receive_image_(false) {}
-  GeneralGrabberVideoSource(boost::shared_ptr<pcl::Grabber> interface, bool rgb_enabled)
-      : interface_(interface),
+
+  GeneralGrabberVideoSource(boost::shared_ptr<pcl::Grabber> interface,
+                            bool rgb_enabled,
+                            std::shared_ptr<lepp::PoseService> pose_service)
+      : VideoSource<PointT>(pose_service),
+        interface_(interface),
         rgb_viewer_enabled_(rgb_enabled),
         receive_cloud_(true),
         receive_image_(rgb_enabled),
         frameCount(0) {}
 
   virtual ~GeneralGrabberVideoSource();
+
   virtual void open();
+
   bool rgb_viewer_enabled_;
+
   /**
    * Implementation of VideoSource interface
    */
@@ -58,7 +67,8 @@ protected:
    * adaptation of the interface.
    */
   void cloud_cb_(const PointCloudConstPtr& cloud);
-  void image_cb_ (const boost::shared_ptr<pcl::io::Image>& rgb);
+
+  void image_cb_(const boost::shared_ptr<pcl::io::Image>& rgb);
 
   long frameCount;
   /**
@@ -76,17 +86,15 @@ GeneralGrabberVideoSource<PointT>::~GeneralGrabberVideoSource() {
 
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::cloud_cb_(
-    const PointCloudConstPtr& cloud)
-{
+    const PointCloudConstPtr& cloud) {
   FrameDataPtr frameData(new FrameData(++frameCount));
   frameData->cloud = cloud;
   this->setNextFrame(frameData);
 }
 
 template<class PointT>
-void GeneralGrabberVideoSource<PointT>::image_cb_ (
-    const typename boost::shared_ptr<pcl::io::Image>& rgb)
-{
+void GeneralGrabberVideoSource<PointT>::image_cb_(
+    const typename boost::shared_ptr<pcl::io::Image>& rgb) {
   cv::Mat frameRGB = cv::Mat(rgb->getHeight(), rgb->getWidth(), CV_8UC3);
   rgb->fillRGB(frameRGB.cols, frameRGB.rows, frameRGB.data, frameRGB.step);
 
@@ -102,16 +110,14 @@ void GeneralGrabberVideoSource<PointT>::setOptions(
       receive_cloud_ = key_value.second;
     } else if (key_value.first == "subscribe_image") {
       receive_image_ = key_value.second;
-    }
-    else throw "Invalid grabber options.";
+    } else throw "Invalid grabber options.";
   }
 }
 
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::open() {
   // Register the callback and start grabbing frames...
-  if (receive_cloud_)
-  {
+  if (receive_cloud_) {
     typedef void (callback_t)(const PointCloudConstPtr&);
     boost::function<callback_t> f = boost::bind(
         &GeneralGrabberVideoSource::cloud_cb_,
@@ -120,8 +126,8 @@ void GeneralGrabberVideoSource<PointT>::open() {
   }
 
   if (receive_image_) {
-    boost::function<void (const boost::shared_ptr<pcl::io::Image>&)> g =
-         boost::bind (&GeneralGrabberVideoSource::image_cb_, this, _1);
+    boost::function<void(const boost::shared_ptr<pcl::io::Image>&)> g =
+        boost::bind(&GeneralGrabberVideoSource::image_cb_, this, _1);
     interface_->registerCallback(g);
   }
 
@@ -137,11 +143,10 @@ void GeneralGrabberVideoSource<PointT>::open() {
 template<class PointT>
 class LiveStreamSource : public GeneralGrabberVideoSource<PointT> {
 public:
-  LiveStreamSource(bool enable_rgb = false)
-      : GeneralGrabberVideoSource<PointT>(boost::shared_ptr<pcl::Grabber>(
-            new pcl::io::OpenNI2Grabber()),
-            enable_rgb
-          ) {
+  LiveStreamSource(std::shared_ptr<PoseService> pose_service, bool enable_rgb = false)
+      : GeneralGrabberVideoSource<PointT>(boost::shared_ptr<pcl::Grabber>(new pcl::io::OpenNI2Grabber()),
+                                          enable_rgb, pose_service
+  ) {
     // Empty... All work performed in the initializer list.
   }
 };

@@ -1,99 +1,16 @@
 #include "lola/PoseService.h"
-#include <cmath>
 #include "lola/pose/PoseFileService.hpp"
 #include "lola/pose/PoseUdpService.hpp"
 
-namespace {
-/**
- * Puts a rotation matrix (around the z-axis) for the given angle in the given
- * matrix `matrix`.
- * It is assumed that the given matrix points to a matrix of dimensions 3x3.
- */
-void rotationmatrix(double angle, double matrix[][3]) {
-  double s = std::sin(angle);
-  double c = std::cos(angle);
-
-  matrix[0][0] = c; matrix[0][1] = -s; matrix[0][2] = 0;
-  matrix[1][0] = s; matrix[1][1] = c; matrix[1][2] = 0;
-  matrix[2][0] = 0; matrix[2][1] = 0; matrix[2][2] = 1;
-}
-
-/**
- * Transposes the given matrix `matrix` and puts the transpose result into the
- * given `transpose` matrix.
- *
- * The matrices are assumed to be 3x3.
- */
-void transpose(double matrix[][3], double transpose[][3]) {
-  for (int i = 0; i < 3; ++i) {
-    for (int j = 0; j < 3; ++j) {
-      transpose[j][i] = matrix[i][j];
-    }
-  }
-}
-}
-
-boost::shared_ptr<PoseService> PoseService::FromUdp(std::string const& host, int port) {
+std::shared_ptr<lepp::PoseService> PoseServiceFromUdp(std::string const& host, int port) {
   uint16_t p = static_cast<uint16_t>(port);
   assert(p == port);
 
-  boost::shared_ptr<PoseService> ps(new PoseUdpService(host, p));
+  std::shared_ptr<lepp::PoseService> ps(new PoseUdpService(host, p));
   return ps;
 }
 
-boost::shared_ptr<PoseService> PoseService::FromFile(std::string const& filename) {
-  boost::shared_ptr<PoseService> ps(new PoseFileService(filename));
+std::shared_ptr<lepp::PoseService> PoseServiceFromFile(std::string const& filename) {
+  std::shared_ptr<lepp::PoseService> ps(new PoseFileService(filename));
   return ps;
-}
-
-lepp::Coordinate PoseService::getRobotPosition() const {
-  LolaKinematicsParams params = getParams();
-
-  double rotation_matrix[3][3];
-  rotationmatrix(params.phi_z_odo, rotation_matrix);
-
-  // In pseudo-code (if matrix operations were supported):
-  //    ret = transpose(rotation_matrix) * (t_stance_odo)
-  double transposed_matrix[3][3];
-  transpose(rotation_matrix, transposed_matrix);
-  std::vector<double> ret(3);
-  for (int i = 0; i < 3; ++i) {
-    ret[i] = 0;
-    for (int j = 0; j < 3; ++j) {
-      ret[i] +=
-          transposed_matrix[i][j] * (params.t_stance_odo[j]);
-    }
-  }
-
-  return lepp::Coordinate(ret[0], ret[1], ret[2]);
-}
-
-LolaKinematicsParams PoseService::getParams() const {
-  HR_Pose_Red pose = getCurrentPose();
-  // Now convert the current raw pose to parameters that are of relevance to the
-  // transformation.
-  LolaKinematicsParams params;
-  for (int i = 0; i < 3; ++i) {
-    params.t_wr_cl[i] = pose.t_wr_cl[i];
-    params.t_stance_odo[i] = pose.t_stance_odo[i];
-    for (int j = 0; j < 3; ++j) {
-      params.R_wr_cl[i][j] = pose.R_wr_cl[3 * i + j];
-    }
-  }
-  params.phi_z_odo = pose.phi_z_odo;
-  params.stance = pose.stance;
-  params.stamp = pose.stamp;
-
-  return params;
-}
-
-void PoseService::attachObserver(boost::shared_ptr<TFObserver> observer) {
-  observers_.push_back(observer);
-}
-
-void PoseService::notifyObservers(int idx, LolaKinematicsParams& params) {
-  size_t const sz = observers_.size();
-  for (size_t i = 0; i < sz; ++i) {
-    observers_[i]->NotifyNewPose(idx, params);
-  }
 }
