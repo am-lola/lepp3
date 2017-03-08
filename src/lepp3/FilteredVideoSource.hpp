@@ -59,7 +59,8 @@ public:
    * source, but shares it.
    */
   FilteredVideoSource(boost::shared_ptr<VideoSource<PointT>> source)
-      : source_(source) {}
+      : VideoSource<PointT>(std::shared_ptr<lepp::PoseService>()),
+        source_(source) {}
   /**
    * Implementation of the VideoSource interface.
    */
@@ -78,7 +79,7 @@ public:
    * Add a filter that will be applied to individual points before the entire
    * cloud itself is filtered.
    */
-  void addFilter(boost::shared_ptr<PointFilter<PointT> > filter) {
+  void addFilter(boost::shared_ptr<lepp::PointFilter<PointT> > filter) {
     point_filters_.push_back(filter);
   }
 
@@ -106,7 +107,7 @@ private:
    * the vector) before passing it off to the concrete cloud filter
    * implementation.
    */
-  std::vector<boost::shared_ptr<PointFilter<PointT> > > point_filters_;
+  std::vector<boost::shared_ptr<lepp::PointFilter<PointT> > > point_filters_;
 
   /**
    * Filters which are applied to the whole cloud

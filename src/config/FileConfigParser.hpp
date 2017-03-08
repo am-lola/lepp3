@@ -20,6 +20,8 @@
 #include "lepp3/util/FileManager.hpp"
 #include "lepp3/util/OfflineVideoSource.hpp"
 
+#include "lola/PoseService.h"
+
 /**
  * A `Parser` implementation that reads the configuration from a config file
  * (given as a parameter at construct time).
@@ -140,7 +142,7 @@ protected:
     enable_rgb = getOptionalTomlValue(toml_tree_, "VideoSource.enable_rgb", false);
 
     if (type == "stream") {
-      this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(new LiveStreamSource<PointT>(enable_rgb));
+      this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(new LiveStreamSource<PointT>(this->pose_service(), enable_rgb));
 
     } else if (type == "pcd") {
       const std::string file_path = getTomlValue<std::string>(toml_tree_, "VideoSource.file_path");
@@ -148,7 +150,7 @@ protected:
             file_path,
             20.f,
             true));
-      this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(new GeneralGrabberVideoSource<PointT>(interface));
+      this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(new GeneralGrabberVideoSource<PointT>(interface, this->pose_service()));
 
     } else if (type == "oni") {
       const std::string file_path = getTomlValue<std::string>(toml_tree_, "VideoSource.file_path");
@@ -157,7 +159,7 @@ protected:
             file_path,
             pcl::io::OpenNI2Grabber::OpenNI_Default_Mode,
             pcl::io::OpenNI2Grabber::OpenNI_Default_Mode));
-      this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(new GeneralGrabberVideoSource<PointT>(interface));
+      this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(new GeneralGrabberVideoSource<PointT>(interface, this->pose_service()));
 
     } else if (type == "am_offline") {
       std::string dir_path = getTomlValue<std::string>(toml_tree_, "VideoSource.dir_path");
@@ -185,13 +187,13 @@ protected:
         img_interface.reset(new cv::VideoCapture(ss.str()));
       }
 
-      boost::shared_ptr<PoseService> pose;
+      std::shared_ptr<PoseService> pose;
       if (enable_pose) {
         if (this->pose_service())
         {
           throw std::runtime_error("Only one pose provider is supported (Service or offline file)");
         }
-        pose = PoseService::FromFile(dir_path + "params.txt");
+        pose = PoseServiceFromFile(dir_path + "params.txt");
         this->pose_service_ = pose;
       }
       this->raw_source_ = boost::shared_ptr<OfflineVideoSource<PointT>>(
@@ -268,7 +270,7 @@ protected:
   void initPoseService() {
     std::string ip = getTomlValue<std::string>(toml_tree_, "PoseService.ip");
     int port = getTomlValue<int>(toml_tree_, "PoseService.port");
-    this->pose_service_ = PoseService::FromUdp(ip, port);
+    this->pose_service_ = PoseServiceFromUdp(ip, port);
   }
 
   void addObservers() {
@@ -548,7 +550,6 @@ protected:
       if (!this->pose_service()) {
         throw std::runtime_error("[PoseService] is required if it should be recorded...!");
       }
-      this->pose_service()->attachObserver(this->recorder());
     }
   }
 

@@ -1,6 +1,7 @@
 #ifndef BASE_VIDEO_SOURCE_H_
 #define BASE_VIDEO_SOURCE_H_
 
+#include <memory>
 #include <vector>
 
 #include <pcl/io/pcd_io.h>
@@ -11,6 +12,7 @@
 #include "lepp3/FrameData.hpp"
 #include "lepp3/RGBData.hpp"
 #include "lepp3/Typedefs.hpp"
+#include "lepp3/pose/PoseService.hpp"
 
 namespace lepp {
 
@@ -29,7 +31,9 @@ namespace lepp {
 template<class PointT>
 class VideoSource : public FrameDataSubject, public RGBDataSubject {
 public:
-  VideoSource() {}
+  VideoSource(std::shared_ptr<lepp::PoseService> pose_service)
+    : pose_service_(pose_service) {}
+
   virtual ~VideoSource();
 
   /**
@@ -53,6 +57,9 @@ protected:
   virtual void setNextFrame(FrameDataPtr frameData);
 
   virtual void setNextFrame(RGBDataPtr rgbData);
+
+private:
+  std::shared_ptr<lepp::PoseService> pose_service_;
 };
 
 template<class PointT>
@@ -61,8 +68,13 @@ VideoSource<PointT>::~VideoSource() {
 }
 
 template<class PointT>
-void VideoSource<PointT>::setNextFrame(FrameDataPtr frameData) 
+void VideoSource<PointT>::setNextFrame(FrameDataPtr frameData)
 {
+  // fetch pose (if available)
+  if (pose_service_) {
+    pose_service_->triggerNextFrame();
+    frameData->lolaKinematics = std::make_shared<lepp::LolaKinematicsParams>(pose_service_->getParams());
+  }
   FrameDataSubject::notifyObservers(frameData);
 }
 
