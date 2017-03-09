@@ -239,6 +239,8 @@ public:
     gridHandle = arvis_->Add(gridData);
     gridWindow = arvis_->AddUIWindow("Grid");
     gridCheckBox = gridWindow->AddCheckBox("Draw", true);
+    pccolorWindow = arvis_->AddUIWindow("Point Cloud");
+    editPCColor = pccolorWindow->AddColorEdit4("Color", pccolorvalue);
     }
 
   /**
@@ -337,6 +339,9 @@ private:
   ar::LinePath gridData;
   ar::IUIWindow* gridWindow;
   ar::ui_element_handle gridCheckBox;
+  ar::IUIWindow* pccolorWindow;
+  ar::ui_element_handle editPCColor;
+  float pccolorvalue[4] { 1.0f, 1.0f, 1.0f, 1.0f };
 };
 
 
@@ -415,6 +420,8 @@ void ObsSurfVisualizer::updateFrame(FrameDataPtr frameData)
   // visualize the point cloud
   pointCloudData.pointData = reinterpret_cast<const void*>(&(frameData->cloud->points[0]));
   pointCloudData.numPoints = frameData->cloud->size();
+  pccolorWindow->GetColorValues4(editPCColor, pccolorvalue);
+  pointCloudData.color = ar::Color(pccolorvalue[0], pccolorvalue[1], pccolorvalue[2], pccolorvalue[3]);
   arvis_->Update(pointCloudHandle, pointCloudData);
   arvis_->SetVisibility(gridHandle, (bool)gridWindow->GetCheckBoxState(gridCheckBox));
 }
