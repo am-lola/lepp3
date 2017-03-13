@@ -194,10 +194,6 @@ private:
   std::vector<mesh_handle_t> &visHandles;
 };
 
-const int SurfaceDrawer::r[6] = {255,   0,   0, 255, 255,   0};
-const int SurfaceDrawer::b[6] = {  0, 255,   0, 255,   0, 255};
-const int SurfaceDrawer::g[6] = {  0,   0, 255,   0, 255, 255};
-
 
 /**
  * Wrapper class for ARVisualizer that shows the result of obstacle and surface
@@ -351,7 +347,7 @@ private:
 };
 
 
-void ObsSurfVisualizer::drawSurfaces(std::vector<SurfaceModelPtr> surfaces, std::vector<mesh_handle_t> &visHandles)
+inline void ObsSurfVisualizer::drawSurfaces(std::vector<SurfaceModelPtr> surfaces, std::vector<mesh_handle_t> &visHandles)
 {
   // create surface drawer object
   SurfaceDrawer sd(arvis_, visHandles);
@@ -362,7 +358,7 @@ void ObsSurfVisualizer::drawSurfaces(std::vector<SurfaceModelPtr> surfaces, std:
 }
 
 
-void ObsSurfVisualizer::drawObstacles(std::vector<ObjectModelPtr> obstacles, std::vector<mesh_handle_t> &visHandles)
+inline void ObsSurfVisualizer::drawObstacles(std::vector<ObjectModelPtr> obstacles, std::vector<mesh_handle_t> &visHandles)
 {
   // create model drawer object
   ModelDrawer md(arvis_, visHandles);
@@ -373,7 +369,7 @@ void ObsSurfVisualizer::drawObstacles(std::vector<ObjectModelPtr> obstacles, std
 }
 
 
-void ObsSurfVisualizer::outputFrameNum(FrameDataPtr frameData)
+inline void ObsSurfVisualizer::outputFrameNum(FrameDataPtr frameData)
 {
   /*std::cout << "Frame " << frameData->frameNum << "    "
     << "Ransac " << frameData->planeCoeffsIteration << "    "
@@ -392,7 +388,7 @@ void ObsSurfVisualizer::outputFrameNum(FrameDataPtr frameData)
 }
 
 
-void ObsSurfVisualizer::removeOldSurfObst(std::vector<mesh_handle_t> &visHandles)
+inline void ObsSurfVisualizer::removeOldSurfObst(std::vector<mesh_handle_t> &visHandles)
 {
   // compare the newly visualized handles with the old ones. Remove all handles that appear
   // in the old handle list but not in the new one.
@@ -407,7 +403,7 @@ void ObsSurfVisualizer::removeOldSurfObst(std::vector<mesh_handle_t> &visHandles
 }
 
 
-void ObsSurfVisualizer::updateFrame(FrameDataPtr frameData)
+inline void ObsSurfVisualizer::updateFrame(FrameDataPtr frameData)
 {
   // visualize all obstacles and surfaces and store their handles
   std::vector<mesh_handle_t> visHandles;
@@ -463,7 +459,7 @@ void ObsSurfVisualizer::updateFrame(FrameDataPtr frameData)
   arvis_->SetVisibility(gridHandle, (bool)gridWindow->GetCheckBoxState(gridCheckBox));
 }
 
-void ObsSurfVisualizer::updateFrame(RGBDataPtr rgbData) {
+inline void ObsSurfVisualizer::updateFrame(RGBDataPtr rgbData) {
   return;
 };
 

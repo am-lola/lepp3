@@ -4,6 +4,7 @@
 #include "lepp3/Typedefs.hpp"
 #include "lepp3/FrameData.hpp"
 
+#include <pcl/filters/extract_indices.h>
 #include <pcl/sample_consensus/sac_model_plane.h>
 #include <pcl/ModelCoefficients.h>
 

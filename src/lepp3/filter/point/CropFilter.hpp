@@ -3,7 +3,7 @@
 
 #include "lepp3/filter/point/PointFilter.hpp"
 
-
+namespace lepp {
 /**
  * Crops points that are outside a defined lab area
  */
@@ -13,7 +13,9 @@ public:
   /**
    *
    */
-  CropFilter(double x_max, double x_min, double y_max, double y_min) : xmax(x_max), xmin(x_min), ymax(y_max), ymin(y_min) {}
+  CropFilter(double x_max, double x_min, double y_max, double y_min) : xmax(x_max), xmin(x_min), ymax(y_max),
+                                                                       ymin(y_min) {}
+
   /**
    * Implementation of the `PointFilter` interface.
    */
@@ -27,13 +29,17 @@ public:
   void prepareNext() {}
 
   virtual int order() const override { return 1; }
+
   virtual const char* name() const override { return "CropFilter"; }
-  virtual std::vector<std::string> dependencies() const override { return { "RobotOdoTransformer" }; }
+
+  virtual std::vector<std::string> dependencies() const override { return {"RobotOdoTransformer"}; }
+
 private:
   double const xmax;
   double const xmin;
   double const ymax;
   double const ymin;
 };
+}
 
 #endif

@@ -11,9 +11,9 @@
 #include "Parser.h"
 #include "lepp3/SurfaceDetector.hpp"
 #include "lepp3/SurfaceTracker.hpp"
-#include "lepp3/GMMObstacleTracker.hpp"
-#include "lepp3/GMMObstacleTrackerState.hpp"
-
+#include "lepp3/obstacles/segmenter/Segmenter.hpp"
+#include "lepp3/obstacles/segmenter/euclidean/EuclideanSegmenter.hpp"
+#include "lepp3/obstacles/segmenter/gmm/GmmSegmenter.hpp"
 #include "deps/toml.h"
 
 #include "lepp3/ObstacleEvaluator.hpp"
@@ -104,22 +104,22 @@ protected:
   }
 
   void addAggregators() {
-      toml::Value const* available = toml_tree_.find("aggregators");
-      if (!available)
-        return;
+    toml::Value const* available = toml_tree_.find("aggregators");
+    if (!available)
+      return;
 
-      toml::Array const& agg_array = available->as<toml::Array>();
-      std::cout << "# aggregators : ";
-      std::cout << agg_array.size() << std::endl;
+    toml::Array const& agg_array = available->as<toml::Array>();
+    std::cout << "# aggregators : ";
+    std::cout << agg_array.size() << std::endl;
 
-      // Check requirements
-      if (!agg_array.empty() && !this->detector()) {
-        throw std::runtime_error("[aggregators] requires some kind of detector (obstacle or surface detection)");
-      }
+    // Check requirements
+    if (!agg_array.empty() && !this->detector()) {
+      throw std::runtime_error("[aggregators] requires some kind of detector (obstacle or surface detection)");
+    }
 
-      for (toml::Value const& v : agg_array) {
-        this->detector()->attachObserver(getAggregator(v));
-      }
+    for (toml::Value const& v : agg_array) {
+      this->detector()->attachObserver(getAggregator(v));
+    }
   }
 
   // constructs a RobotService from the parameters specified by t
@@ -142,24 +142,27 @@ protected:
     enable_rgb = getOptionalTomlValue(toml_tree_, "VideoSource.enable_rgb", false);
 
     if (type == "stream") {
-      this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(new LiveStreamSource<PointT>(this->pose_service(), enable_rgb));
+      this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(
+          new LiveStreamSource<PointT>(this->pose_service(), enable_rgb));
 
     } else if (type == "pcd") {
       const std::string file_path = getTomlValue<std::string>(toml_tree_, "VideoSource.file_path");
       boost::shared_ptr<pcl::Grabber> interface(new pcl::PCDGrabber<PointT>(
-            file_path,
-            20.f,
-            true));
-      this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(new GeneralGrabberVideoSource<PointT>(interface, this->pose_service()));
+          file_path,
+          20.f,
+          true));
+      this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(
+          new GeneralGrabberVideoSource<PointT>(interface, this->pose_service()));
 
     } else if (type == "oni") {
       const std::string file_path = getTomlValue<std::string>(toml_tree_, "VideoSource.file_path");
       std::cout << "oni file path: " << file_path << std::endl;
       boost::shared_ptr<pcl::Grabber> interface(new pcl::io::OpenNI2Grabber(
-            file_path,
-            pcl::io::OpenNI2Grabber::OpenNI_Default_Mode,
-            pcl::io::OpenNI2Grabber::OpenNI_Default_Mode));
-      this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(new GeneralGrabberVideoSource<PointT>(interface, this->pose_service()));
+          file_path,
+          pcl::io::OpenNI2Grabber::OpenNI_Default_Mode,
+          pcl::io::OpenNI2Grabber::OpenNI_Default_Mode));
+      this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(
+          new GeneralGrabberVideoSource<PointT>(interface, this->pose_service()));
 
     } else if (type == "am_offline") {
       std::string dir_path = getTomlValue<std::string>(toml_tree_, "VideoSource.dir_path");
@@ -189,8 +192,7 @@ protected:
 
       std::shared_ptr<PoseService> pose;
       if (enable_pose) {
-        if (this->pose_service())
-        {
+        if (this->pose_service()) {
           throw std::runtime_error("Only one pose provider is supported (Service or offline file)");
         }
         pose = PoseServiceFromFile(dir_path + "params.txt");
@@ -209,8 +211,7 @@ protected:
    * acquired `VideoSource` object instance.
    */
   virtual void initFilteredVideoSource() override {
-    if (!this->raw_source_)
-    {
+    if (!this->raw_source_) {
       throw "FilteredVideoSource: no raw video source available!";
     }
     this->filtered_source_.reset(new FilteredVideoSource<PointT>(this->raw_source_));
@@ -244,7 +245,7 @@ protected:
     }
     std::sort(std::begin(filters),
               std::end(filters),
-              [](const boost::shared_ptr<PointFilter<PointT>>& lhs, const boost::shared_ptr<PointFilter<PointT>>&rhs) {
+              [](const boost::shared_ptr<PointFilter<PointT>>& lhs, const boost::shared_ptr<PointFilter<PointT>>& rhs) {
                 return lhs->order() < rhs->order();
               });
 
@@ -304,7 +305,7 @@ protected:
           if (!ground_removal_)
             initSurfaceFinder();
 
-          initObstacleDetector(getTomlValue<std::string>(v, "method", "observers."));
+          initObstacleDetector();
 
         } else if (type == "SurfaceDetector") {
           surface_detector_active_ = true;
@@ -349,36 +350,35 @@ protected:
     }
   }
 
-  virtual boost::shared_ptr<SplitStrategy<PointT> > buildSplitStrategy() override {
+  virtual boost::shared_ptr<SplitStrategy> buildSplitStrategy() override {
     std::cout << "entered buildSplitStrategy" << std::endl;
-    boost::shared_ptr<CompositeSplitStrategy<PointT> > split_strat(new CompositeSplitStrategy<PointT>);
+    boost::shared_ptr<CompositeSplitStrategy> split_strat(new CompositeSplitStrategy);
 
-    toml::Value const* v = toml_tree_.find("ObstacleDetetction.Euclidean.SplitStrategy");
+    toml::Value const* v = toml_tree_.find("ObstacleDetetction.SplitStrategy");
     if (!v) {
-      throw std::runtime_error("Missing config section: [ObstacleDetetction.Euclidean.SplitStrategy]");
+      throw std::runtime_error("Missing config section: [ObstacleDetetction.SplitStrategy]");
     }
 
     // First find the axis on which the splits should be made
-    char const* base_key = "ObstacleDetetction.Euclidean.SplitStrategy.";
+    char const* base_key = "ObstacleDetetction.SplitStrategy.";
     std::string const axis_id = getTomlValue<std::string>(*v, "split_axis", base_key);
 
     if (axis_id == "largest") {
-      split_strat->set_split_axis(SplitStrategy<PointT>::Largest);
+      split_strat->set_split_axis(SplitStrategy::Largest);
     } else if (axis_id == "middle") {
-      split_strat->set_split_axis(SplitStrategy<PointT>::Middle);
+      split_strat->set_split_axis(SplitStrategy::Middle);
     } else if (axis_id == "smallest") {
-      split_strat->set_split_axis(SplitStrategy<PointT>::Smallest);
+      split_strat->set_split_axis(SplitStrategy::Smallest);
     } else {
       throw "Invalid axis identifier";
     }
 
     toml::Value const* conditions = v->find("conditions");
-    if (!conditions)
-    {
+    if (!conditions) {
       std::cout << "No split conditions" << std::endl;
 
     } else {
-      toml::Array const& cond_array = conditions->as<toml::Array >();
+      toml::Array const& cond_array = conditions->as<toml::Array>();
       std::cout << "# conditions: " << cond_array.size() << std::endl;
 
       char const* base_key_condition = "[[ObstacleDetetction.Euclidean.SplitStrategy.conditions]].";
@@ -389,25 +389,21 @@ protected:
 
         if (type == "SizeLimit") {
           double size = getTomlValue<double>(v, "size", base_key_condition);
-          split_strat->addSplitCondition(boost::shared_ptr<SplitCondition<PointT> >(
-              new SizeLimitSplitCondition<PointT>(size)));
+          split_strat->addSplitCondition(std::make_shared<SizeLimitSplitCondition>(size));
 
         } else if (type == "DepthLimit") {
           int depth = getTomlValue<int>(v, "depth", base_key_condition);
-          split_strat->addSplitCondition(boost::shared_ptr<SplitCondition<PointT> >(
-              new DepthLimitSplitCondition<PointT>(depth)));
+          split_strat->addSplitCondition(std::make_shared<DepthLimitSplitCondition>(depth));
 
         } else if (type == "DistanceThreshold") {
           int distance = getTomlValue<int>(v, "distance_threshold", base_key_condition);
-          split_strat->addSplitCondition(boost::shared_ptr<SplitCondition<PointT> >(
-              new DistanceThresholdSplitCondition<PointT>(distance, *this->robot())));
+          split_strat->addSplitCondition(std::make_shared<DistanceThresholdSplitCondition>(distance, *this->robot()));
 
         } else if (type == "ShapeCondition") {
           double sphere1 = getTomlValue<double>(v, "sphere1", base_key_condition);
           double sphere2 = getTomlValue<double>(v, "sphere2", base_key_condition);
           double cylinder = getTomlValue<double>(v, "cylinder", base_key_condition);
-          split_strat->addSplitCondition(boost::shared_ptr<SplitCondition<PointT> >(
-              new ShapeSplitCondition<PointT>(sphere1, sphere2, cylinder)));
+          split_strat->addSplitCondition(std::make_shared<ShapeSplitCondition>(sphere1, sphere2, cylinder));
 
         } else {
           std::ostringstream ss;
@@ -423,75 +419,73 @@ protected:
   /**
    * Initializes the obstacle detector.
    */
-  virtual void initObstacleDetector(std::string const& method) {
-    // Setup plane inlier finder
-    // TODO: [Sahand] There's an ambiguity here. There's the `initSurfaceFinder`
-    //       which is initialized regardless of having a `SurfaceDetector` or
-    //       `ObstacleDetector`, and then there is the following 4 lines. Inspect
-    //       why they had this plane inlier finder right before the obstacle
-    //       detector. Does it mean the `PlaneInlierFinder` tries to remove all
-    //       those surfaces found by the `initSurfaceFinder` to end of with only
-    //       obstacles? Or is it a redundant step?
-    double min_distance_to_plane = getTomlValue<double>(toml_tree_, "BasicObstacleDetection.InlierFinder.minDistToPlane");
+  virtual void initObstacleDetector() {
+    double min_distance_to_plane = getTomlValue<double>(toml_tree_, "ObstacleDetection.PlaneRemover.minDistToPlane");
     inlier_finder_.reset(new PlaneInlierFinder<PointT>(min_distance_to_plane));
 
     assert(surface_detector_);
     surface_detector_->FrameDataSubject::attachObserver(inlier_finder_);
 
-    if (method == "EuclideanClustering") {
-      // Prepare the approximator that the detector is to use.
-      // First, the simple approximator...
-      boost::shared_ptr<ObjectApproximator<PointT>> simple_approx(this->getApproximator());
-
-      // ...then the split strategy
-      boost::shared_ptr<SplitStrategy<PointT>> splitter(this->buildSplitStrategy());
-
-      // ...finally, wrap those into a `SplitObjectApproximator` that is given
-      // to the detector.
-      boost::shared_ptr<ObjectApproximator<PointT> > approx(
-          new SplitObjectApproximator<PointT>(simple_approx, splitter));
-
-      // Prepare the base detector...
-      base_obstacle_detector_.reset(
-          new ObstacleDetector<PointT>(approx, surface_detector_active_));
-      this->surface_detector_->FrameDataSubject::attachObserver(base_obstacle_detector_);
-      // Smooth out the basic detector by applying a smooth detector to it
-      boost::shared_ptr<LowPassObstacleTracker> low_pass_obstacle_tracker(
-          new LowPassObstacleTracker);
-      base_obstacle_detector_->FrameDataSubject::attachObserver(low_pass_obstacle_tracker);
-      // Now the detector that is exposed via the context is a smoothed-out
-      // base detector.
-      this->detector_ = low_pass_obstacle_tracker;
-
-    } else if (method == "GMM") {
-      // parse [ObstacleTracking] parameters
-      GMM::ObstacleTrackerParams params = readGMMObstacleTrackerParams();
-
-      boost::shared_ptr<GMMObstacleTracker> obstacle_tracker(new GMMObstacleTracker(params));
-      this->detector_ = obstacle_tracker;
-    #ifndef ENABLE_RECORDER
-      inlier_finder_->FrameDataSubject::attachObserver(obstacle_tracker);
-    #endif
-
-      std::cout << "initialized obstacle tracker" << std::endl;
-    } else {
-      std::cerr << "Unknown obstacle detector method`" << method << "`" << std::endl;
-      throw "Unknown obstacle detector method";
+    toml::Value const* segmenter = toml_tree_.find("ObstacleDetection.Segmenter");
+    if (!segmenter) {
+      throw std::runtime_error("Obstacle detection needs a segmenter");
     }
+
+    std::string segment_method = getTomlValue<std::string>(*segmenter, "method", "ObstacleDetection.Segmenter");
+    if ("Euclidean" == segment_method) {
+      double min_filter_percentage = getOptionalTomlValue(*segmenter, "min_filter_percentage", 0.9);
+      base_obstacle_segmenter_.reset(new EuclideanSegmenter(min_filter_percentage));
+    } else if ("GMM" == segment_method) {
+      auto params = readGmmSegmenterParameters(*segmenter);
+      base_obstacle_segmenter_.reset(new GmmSegmenter(params));
+    } else {
+      std::ostringstream ss;
+      ss << "Unknown segmenter condition: " << segment_method;
+      throw std::runtime_error(ss.str());
+    }
+
+    inlier_finder_->FrameDataSubject::attachObserver(base_obstacle_segmenter_);
+
+    boost::shared_ptr<ObjectApproximator> simple_approx(this->getApproximator());
+
+    // ...then the split strategy
+    boost::shared_ptr<SplitStrategy> splitter(this->buildSplitStrategy());
+
+    // ...finally, wrap those into a `SplitObjectApproximator`
+    boost::shared_ptr<ObjectApproximator > approx(
+        new SplitObjectApproximator(simple_approx, splitter));
+
+    base_obstacle_segmenter_->FrameDataSubject::attachObserver(approx);
+
+
+    boost::shared_ptr<LowPassObstacleTracker> low_pass_obstacle_tracker(
+        new LowPassObstacleTracker);
+
+    approx->FrameDataSubject::attachObserver(low_pass_obstacle_tracker);
+
+    this->detector_ = low_pass_obstacle_tracker;
   }
 
   virtual void initSurfaceDetector() override {
     typename SurfaceClusterer<PointT>::Parameters cluster_params;
-    cluster_params.CLUSTER_TOLERANCE = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.Clustering.clusterTolerance");
+    cluster_params.CLUSTER_TOLERANCE = getTomlValue<double>(toml_tree_,
+                                                            "BasicSurfaceDetection.Clustering.clusterTolerance");
     cluster_params.MIN_CLUSTER_SIZE = getTomlValue<int>(toml_tree_, "BasicSurfaceDetection.Clustering.minClusterSize");
 
-    cluster_params.COARSE_VOXEL_SIZE_X = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.Downsampling.coarseVoxelSize_X");
-    cluster_params.COARSE_VOXEL_SIZE_Y = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.Downsampling.coarseVoxelSize_Y");
-    cluster_params.COARSE_VOXEL_SIZE_Z = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.Downsampling.coarseVoxelSize_Z");
-    cluster_params.FINE_VOXEL_SIZE_X = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.Downsampling.fineVoxelSize_X");
-    cluster_params.FINE_VOXEL_SIZE_Y = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.Downsampling.fineVoxelSize_Y");
-    cluster_params.FINE_VOXEL_SIZE_Z = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.Downsampling.fineVoxelSize_Z");
-    cluster_params.FINE_COARSE_LIMIT = getTomlValue<int>(toml_tree_, "BasicSurfaceDetection.Downsampling.coarseFineLimit");
+    cluster_params.COARSE_VOXEL_SIZE_X = getTomlValue<double>(toml_tree_,
+                                                              "BasicSurfaceDetection.Downsampling.coarseVoxelSize_X");
+    cluster_params.COARSE_VOXEL_SIZE_Y = getTomlValue<double>(toml_tree_,
+                                                              "BasicSurfaceDetection.Downsampling.coarseVoxelSize_Y");
+    cluster_params.COARSE_VOXEL_SIZE_Z = getTomlValue<double>(toml_tree_,
+                                                              "BasicSurfaceDetection.Downsampling.coarseVoxelSize_Z");
+    cluster_params.FINE_VOXEL_SIZE_X = getTomlValue<double>(toml_tree_,
+                                                            "BasicSurfaceDetection.Downsampling.fineVoxelSize_X");
+    cluster_params.FINE_VOXEL_SIZE_Y = getTomlValue<double>(toml_tree_,
+                                                            "BasicSurfaceDetection.Downsampling.fineVoxelSize_Y");
+    cluster_params.FINE_VOXEL_SIZE_Z = getTomlValue<double>(toml_tree_,
+                                                            "BasicSurfaceDetection.Downsampling.fineVoxelSize_Z");
+    cluster_params.FINE_COARSE_LIMIT = getTomlValue<int>(toml_tree_,
+                                                         "BasicSurfaceDetection.Downsampling.coarseFineLimit");
     surface_clusterer_.reset(new SurfaceClusterer<PointT>(cluster_params));
     surface_detector_->SurfaceDataSubject::attachObserver(surface_clusterer_);
 
@@ -510,7 +504,8 @@ protected:
 
     // initialize convex hull detector    
     int numHullPoints = getTomlValue<int>(toml_tree_, "BasicSurfaceDetection.ConvexHullApproximation.numHullPoints");
-    double mergeUpdatePercentage = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.ConvexHullApproximation.mergeUpdatePercentage");
+    double mergeUpdatePercentage = getTomlValue<double>(toml_tree_,
+                                                        "BasicSurfaceDetection.ConvexHullApproximation.mergeUpdatePercentage");
     convex_hull_detector_.reset(new ConvexHullDetector(numHullPoints, mergeUpdatePercentage));
     surface_tracker_->SurfaceDataSubject::attachObserver(convex_hull_detector_);
 
@@ -525,8 +520,8 @@ protected:
     this->recorder_.reset(new VideoRecorder<PointT>(outputPath));
 
     const bool rec_cloud = getOptionalTomlValue(toml_tree_, "ObserverOptions.Recorder.cloud", true);
-    const bool rec_rgb   = getOptionalTomlValue(toml_tree_, "ObserverOptions.Recorder.rgb",  false);
-    const bool rec_pose  = getOptionalTomlValue(toml_tree_, "ObserverOptions.Recorder.pose", false);
+    const bool rec_rgb = getOptionalTomlValue(toml_tree_, "ObserverOptions.Recorder.rgb", false);
+    const bool rec_pose = getOptionalTomlValue(toml_tree_, "ObserverOptions.Recorder.pose", false);
 
     std::cout << "\trec_cloud: " << rec_cloud
               << "\n\trec_rgb: " << rec_rgb
@@ -561,10 +556,8 @@ protected:
 
 private:
   /// Helper functions for constructing parts of the pipeline.
-  /**
-   * A helper function that reads all the parameters that are required by the
-   * `GMMObstacleTracker`.
-   */
+
+#if 0
   GMM::DebugGUIParams readGMMDebugGuiParams(toml::Value const& v) {
     const char* base_key = "observers.visualizer.debug_gui_params";
 
@@ -607,22 +600,26 @@ private:
 
     return params;
   }
+#endif
 
-  GMM::ObstacleTrackerParams readGMMObstacleTrackerParams() {
-    const char* base_key = "ObstacleDetetction.GMM.ObstacleDetectorParams";
-    toml::Value const* v = toml_tree_.find(base_key);
+  /**
+   * A helper function that reads all the parameters that are required by the
+   * `GMMObstacleTracker`.
+   */
+  GMM::SegmenterParameters readGmmSegmenterParameters(toml::Value const& v) {
+    GMM::SegmenterParameters params;
+    params.voxelGridResolution = getTomlValue<double>(v, "voxel_grid_resolution", "ObstacleDetection.Segmenter.");
 
-    if (!v) {
-      throw std::runtime_error("Missing config: " + std::string(base_key));
-    }
-
-    GMM::ObstacleTrackerParams params;
-    params.enableTightFit = getTomlValue<bool>(*v, "enable_tight_fit", base_key);
-    params.filterSSVPositions = getTomlValue<bool>(*v, "filter_ssv_position", base_key);
-    params.voxelGridResolution = getTomlValue<double>(*v, "voxel_grid_resolution", base_key);
-    params.kalman_SystemNoisePosition = getTomlValue<double>(*v, "kalman_system_noise_position", base_key);
-    params.kalman_SystemNoiseVelocity = getTomlValue<double>(*v, "kalman_system_noise_velocity", base_key);
-    params.kalman_MeasurementNoise = getTomlValue<double>(*v, "kalman_measurement_noise", base_key);
+    params.hardAssignmentStateResp = getOptionalTomlValue(v, "hard_assignment_state_resp", 0.9);
+    params.statePiRemovalThreshold = getOptionalTomlValue(v, "state_pi_removal_threshold", 0.01);
+    params.minVclusterPoints = getOptionalTomlValue(v, "min_vcluster_points", 10);
+    params.newStatePriorCovarSize = getOptionalTomlValue(v, "new_state_prior_covar_size", 0.01);
+    params.newStatePriorCovarMix = getOptionalTomlValue(v, "new_state_prior_covar_mix", 0.5);
+    params.numSplitLifeTimeFrames = getOptionalTomlValue(v, "num_split_life_time_frames", 20);
+    params.numSplitPoints = getOptionalTomlValue(v, "num_split_points", 15);
+    params.numSplitFrames = getOptionalTomlValue(v, "num_split_frames", 6);
+    params.splitMaxOtherStatesPercentage = getOptionalTomlValue(v, "split_max_other_states_percentage", 0.2);
+    params.obsCovarRegularization = getOptionalTomlValue(v, "obs_covar_regularization", 0.95);
 
     return params;
   }
@@ -743,21 +740,22 @@ private:
       return obs_surf_vis;
 
     } else if (type == "GMMTrackingVisualizer") {
-      // TODO read all the necessary parameters from the config file.
-      bool const debugGUI = getOptionalTomlValue(v, "debug_gui", false);
-      // Set default values for GUI Debug parameters.
-      GMM::DebugGUIParams d_gui_params;
-      // If there are debug parameters available in the config, get 'em
-      if (debugGUI) {
-        toml::Value const* debug_gui = v.find("debug_gui_params");
-        if (!debug_gui) {
-          throw std::runtime_error("To use the debug gui, you need to set its parameters [observers.visualizer.debug_gui_params]");
-        }
-        d_gui_params = readGMMDebugGuiParams(*debug_gui);
-      }
-      return boost::shared_ptr<ObstacleTrackerVisualizer>(
-          new ObstacleTrackerVisualizer(d_gui_params, name, width, height));
-
+      /*
+       // TODO read all the necessary parameters from the config file.
+       bool const debugGUI = getOptionalTomlValue(v, "debug_gui", false);
+       // Set default values for GUI Debug parameters.
+       GMM::DebugGUIParams d_gui_params;
+       // If there are debug parameters available in the config, get 'em
+       if (debugGUI) {
+         toml::Value const* debug_gui = v.find("debug_gui_params");
+         if (!debug_gui) {
+           throw std::runtime_error("To use the debug gui, you need to set its parameters [observers.visualizer.debug_gui_params]");
+         }
+         d_gui_params = readGMMDebugGuiParams(*debug_gui);
+       }
+       return boost::shared_ptr<ObstacleTrackerVisualizer>(
+           new ObstacleTrackerVisualizer(d_gui_params, name, width, height));
+   */
     } else if (type == "ImageVisualizer") {
       if (!enable_rgb) {
         throw std::runtime_error("Visualizer 'ImageVisualizer' requires an rgb source!!");
@@ -780,7 +778,7 @@ private:
    * as defined in the following lines of the config file.
    * If the lines are invalid, an exception is thrown.
    */
-  boost::shared_ptr<FrameDataObserver> getAggregator(toml::Value const& v) {    
+  boost::shared_ptr<FrameDataObserver> getAggregator(toml::Value const& v) {
     std::string const type = getTomlValue<std::string>(v, "type", "aggregators.");
 
     std::cout << "agg type: " << type << std::endl;
@@ -794,7 +792,10 @@ private:
       auto robotService = getRobotService(v);
 
       // attach to RGB data here since we always assume we're dealing with FrameDataObservers elsewhere...
-      boost::shared_ptr<RobotAggregator> robotAggregator = boost::make_shared<RobotAggregator>(robotService, update_frequency, datatypes, *this->robot());
+      boost::shared_ptr<RobotAggregator> robotAggregator = boost::make_shared<RobotAggregator>(robotService,
+                                                                                               update_frequency,
+                                                                                               datatypes,
+                                                                                               *this->robot());
       boost::static_pointer_cast<RGBDataSubject>(this->raw_source_)->attachObserver(robotAggregator);
       return robotAggregator;
 
@@ -828,7 +829,7 @@ private:
   static T getTomlValue(toml::Value const& v, std::string const& key, std::string const& key_hint = "") {
     toml::Value const* el = v.find(key);
     if (!el) {
-      throw std::runtime_error("Required key '"  + key_hint + key + "' is missing from the config");
+      throw std::runtime_error("Required key '" + key_hint + key + "' is missing from the config");
     }
 
     try {
@@ -880,7 +881,7 @@ private:
    * reference to it to make sure it doesn't get destroyed, although it is
    * never exposed to any outside clients.
    */
-  boost::shared_ptr<ObstacleDetector<PointT>> base_obstacle_detector_;
+  boost::shared_ptr<ObstacleSegmenter> base_obstacle_segmenter_;
   boost::shared_ptr<SurfaceDetector<PointT>> surface_detector_;
   boost::shared_ptr<SurfaceClusterer<PointT>> surface_clusterer_;
   boost::shared_ptr<SurfaceTracker<PointT>> surface_tracker_;

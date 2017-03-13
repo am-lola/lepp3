@@ -7,17 +7,17 @@
 #include <pcl/io/openni2_grabber.h>
 #include <pcl/io/pcd_grabber.h>
 
-#include "lepp3/ObstacleDetector.hpp"
 #include "lepp3/GrabberVideoSource.hpp"
 #include "lepp3/VideoSource.hpp"
 #include "lepp3/FilteredVideoSource.hpp"
 #include "lepp3/LowPassObstacleTracker.hpp"
-#include "lepp3/SplitApproximator.hpp"
-#include "lepp3/MomentOfInertiaApproximator.hpp"
+#include "lepp3/obstacles/object_approximator/split/SplitApproximator.hpp"
+#include "lepp3/obstacles/object_approximator/split/CompositeSplitStrategy.hpp"
+#include "lepp3/obstacles/object_approximator/split/SplitConditions.hpp"
+#include "lepp3/obstacles/object_approximator/MomentOfInertiaApproximator.hpp"
 #include "lepp3/FrameData.hpp"
 #include "lepp3/RGBData.hpp"
 #include "lepp3/PlaneInlierFinder.hpp"
-#include "lepp3/GMMObstacleTracker.hpp"
 
 #include "lepp3/visualization/BaseVisualizer.hpp"
 #include "lepp3/visualization/Visualizer.hpp"
@@ -141,17 +141,16 @@ protected:
 
   /// Returns a simple approximator instance: will be used to approximate parts
   /// of objects.
-  virtual boost::shared_ptr<ObjectApproximator<PointT> > getApproximator() {
-    return boost::shared_ptr<ObjectApproximator<PointT> >(
-        new MomentOfInertiaObjectApproximator<PointT>);
+  virtual boost::shared_ptr<ObjectApproximator> getApproximator() {
+    return boost::shared_ptr<ObjectApproximator>(
+        new MomentOfInertiaObjectApproximator);
   }
   /// Builds a `SplitStrategy` instance that the approximator will use for
   /// deciding which objects to split.
-  virtual boost::shared_ptr<SplitStrategy<PointT> > buildSplitStrategy() {
-    boost::shared_ptr<CompositeSplitStrategy<PointT> > strat(
-        new CompositeSplitStrategy<PointT>);
-    strat->addSplitCondition(boost::shared_ptr<SplitCondition<PointT> >(
-        new DepthLimitSplitCondition<PointT>(1)));
+  virtual boost::shared_ptr<SplitStrategy> buildSplitStrategy() {
+    boost::shared_ptr<CompositeSplitStrategy> strat(
+        new CompositeSplitStrategy);
+    strat->addSplitCondition(std::make_shared<DepthLimitSplitCondition>(1));
 
     return strat;
   }
@@ -164,7 +163,7 @@ protected:
   /// Initialize and 'SurfaceDetector' if necessary.
   virtual void initSurfaceDetector() = 0;
   /// Initialize and 'ObstacleDetector' if necessary.
-  virtual void initObstacleDetector(std::string const&) = 0;
+  virtual void initObstacleDetector() = 0;
   /// Initialize the `VideoRecorder` module. Must set the `recorder_` member.
   virtual void initRecorder() = 0;
 

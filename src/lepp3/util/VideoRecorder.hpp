@@ -36,6 +36,8 @@ namespace {
     return ss.str();
   }
 }
+
+namespace lepp {
 /**
   * A recorder module that receives a point cloud, an RGB image and a pose
   * (LolaKinematics) from the camera and the robot and saves them alongside
@@ -63,6 +65,7 @@ template<class PointT>
 class VideoRecorder : public FrameDataObserver, public RGBDataObserver {
 public:
   VideoRecorder(std::string const& outputPath);
+
   /**
    * Implementation of the FrameDataObserver interface.
   **/
@@ -78,19 +81,23 @@ public:
    * Determines whether to record the point cloud, rgb image and pose.
    */
   void setMode(bool cloud, bool rgb, bool pose);
+
 private:
   /**
    * Write the current point cloud on disk.
    */
   void savePointCloud(typename pcl::PointCloud<PointT>::ConstPtr cloud);
+
   /**
    * Write the current pose parameters in file.
    */
   void saveParams(lepp::LolaKinematicsParams const& params);
+
   /**
    * Save the current image on disk.
    */
   void saveImage(cv::Mat const& image);
+
   /**
    * Recording options
    */
@@ -115,30 +122,29 @@ private:
 
 template<class PointT>
 VideoRecorder<PointT>::VideoRecorder(std::string const& outputPath)
-  : path_( get_dir(outputPath) ),
-    params_file_name_("params.txt"),
-    record_cloud_(true),
-    record_rgb_(false),
-    record_pose_(false),
-    cloud_idx_(-1),
-    image_idx_(-1),
-    params_idx_(-1),
-    cloud_lk_(false) {
+    : path_(get_dir(outputPath)),
+      params_file_name_("params.txt"),
+      record_cloud_(true),
+      record_rgb_(false),
+      record_pose_(false),
+      cloud_idx_(-1),
+      image_idx_(-1),
+      params_idx_(-1),
+      cloud_lk_(false) {
 
   namespace bfs = boost::filesystem;
-  if(bfs::exists(path_)) {
-    if(bfs::is_directory(path_))
+  if (bfs::exists(path_)) {
+    if (bfs::is_directory(path_))
       std::cout << "directory " << path_ << "already exists. terminating...\n";
-      throw "No overwriting rule exists. Process terminated.";
-  }
-  else {
+    throw "No overwriting rule exists. Process terminated.";
+  } else {
     bfs::create_directory(path_);
     // change current path to the new directory
     bfs::current_path(path_);
 
     // write header to tf_file
     std::ofstream tf_fout(params_file_name_.c_str());
-    if(tf_fout.is_open()) {
+    if (tf_fout.is_open()) {
       tf_fout << "# t_wr_cl[0],\tt_wr_cl[1],\tt_wr_cl[2],\t"
               << "R_wr_cl[0][0],\tR_wr_cl[0][1],\tR_wr_cl[0][2],\t"
               << "R_wr_cl[1][0],\tR_wr_cl[1][1],\tR_wr_cl[1][2],\t"
@@ -156,13 +162,12 @@ void VideoRecorder<PointT>::setMode(bool cloud,
                                     bool rgb,
                                     bool pose) {
   record_cloud_ = cloud;
-  record_rgb_   = rgb;
-  record_pose_  = pose;
+  record_rgb_ = rgb;
+  record_pose_ = pose;
 }
 
 template<class PointT>
-void VideoRecorder<PointT>::updateFrame(FrameDataPtr frameData)
-{
+void VideoRecorder<PointT>::updateFrame(FrameDataPtr frameData) {
   // Save the point cloud if
   // 1. we are actually told to save it,
   // 2. there is no previous cloud waiting for the completion of the recording
@@ -182,8 +187,7 @@ void VideoRecorder<PointT>::updateFrame(FrameDataPtr frameData)
   }
 
 
-  if (record_pose_)
-  {
+  if (record_pose_) {
     ++params_idx_;
 
     LolaKinematicsParams params(*frameData->lolaKinematics);
@@ -207,7 +211,7 @@ void VideoRecorder<PointT>::updateFrame(RGBDataPtr rgbData) {
   // 3. there is no previous image waiting for the completion of the recording
   //    chain.
   if (record_rgb_) {
-    if(cloud_lk_) {
+    if (cloud_lk_) {
       ++image_idx_;
       saveImage(rgbData->image);
 
@@ -225,10 +229,10 @@ void VideoRecorder<PointT>::savePointCloud(typename pcl::PointCloud<PointT>::Con
 
   Timer t;
   t.start();
-  pcl::io::savePCDFileBinary (file_name.str(), *cloud);
+  pcl::io::savePCDFileBinary(file_name.str(), *cloud);
   t.stop();
   // ++counter_;
-  std::cout<<"SAVING CLOUD TOOK: " << t.duration() << " ms" << std::endl;
+  std::cout << "SAVING CLOUD TOOK: " << t.duration() << " ms" << std::endl;
 }
 
 template<class PointT>
@@ -241,7 +245,7 @@ void VideoRecorder<PointT>::saveImage(cv::Mat const& image) {
 
   cv::imwrite(file_name.str(), image);
   t.stop();
-  std::cout<<"SAVING IMAGE TOOK: " << t.duration() << " ms" << std::endl;
+  std::cout << "SAVING IMAGE TOOK: " << t.duration() << " ms" << std::endl;
 }
 
 template<class PointT>
@@ -273,5 +277,5 @@ void VideoRecorder<PointT>::saveParams(LolaKinematicsParams const& params) {
   t.stop();
   std::cout << "SAVING PARAMS TOOK: " << t.duration() << " ms" << std::endl;
 }
-
+}
 #endif // LEPP3_VIDEO_RECORDER_H_

@@ -2,7 +2,7 @@
 #define LOLA_SPLITTERS_H__
 
 #include "lepp3/Typedefs.hpp"
-#include "lepp3/SplitApproximator.hpp"
+#include "lepp3/obstacles/object_approximator/split/SplitCondition.hpp"
 #include "lepp3/models/Coordinate.h"
 #include "lola/Robot.h"
 
@@ -15,8 +15,7 @@ using namespace lepp;
  * A `SplitCondition` implementation that allows for splits to happen only if
  * the object is close enough to the robot.
  */
-template<class PointT>
-class DistanceThresholdSplitCondition : public SplitCondition<PointT> {
+class DistanceThresholdSplitCondition : public lepp::SplitCondition {
 public:
   /**
    * Creates a new `DistanceThresholdSplitCondition` that will only allow
@@ -46,8 +45,7 @@ private:
   Robot const& robot_;
 };
 
-template<class PointT>
-bool DistanceThresholdSplitCondition<PointT>::shouldSplit(
+bool DistanceThresholdSplitCondition::shouldSplit(
     int split_depth,
     const PointCloudConstPtr& point_cloud) {
   // The distance should be in [cm] so we need to scale up the original points

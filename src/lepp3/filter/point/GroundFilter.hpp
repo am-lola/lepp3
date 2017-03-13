@@ -3,6 +3,7 @@
 
 #include "lepp3/filter/point/PointFilter.hpp"
 
+namespace lepp {
 
 /**
  * Removes points that are around z=0, with a defined threshold
@@ -14,6 +15,7 @@ public:
    *
    */
   GroundFilter(double threshold) : threshold_(threshold) {}
+
   /**
    * Implementation of the `PointFilter` interface.
    */
@@ -27,10 +29,13 @@ public:
   void prepareNext() {}
 
   virtual int order() const override { return 2; }
+
   virtual const char* name() const override { return "GroundFilter"; }
-  virtual std::vector<std::string> dependencies() const override { return { "RobotOdoTransformer" }; }
+
+  virtual std::vector<std::string> dependencies() const override { return {"RobotOdoTransformer"}; }
+
 private:
   double const threshold_;
 };
-
+}
 #endif

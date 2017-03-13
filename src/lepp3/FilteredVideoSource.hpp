@@ -22,6 +22,8 @@
 
 #include "deps/easylogging++.h"
 
+namespace lepp {
+
 /**
  * ABC.
  * A VideoSource decorator.  It wraps a given VideoSource instance and emits
@@ -61,15 +63,18 @@ public:
   FilteredVideoSource(boost::shared_ptr<VideoSource<PointT>> source)
       : VideoSource<PointT>(std::shared_ptr<lepp::PoseService>()),
         source_(source) {}
+
   /**
    * Implementation of the VideoSource interface.
    */
   virtual void open() override;
+
   /**
    * Implementation of the VideoSource interface.
    */
   virtual void setOptions(
-    const std::map<std::string, bool>& options) override;
+      const std::map<std::string, bool>& options) override;
+
   /**
    * Implementation of the FrameDataObserver interface.
    */
@@ -118,7 +123,7 @@ private:
   /**
   * Remove NaN points from input cloud.
   */
-  void preprocessCloud(PointCloudPtr &cloud);
+  void preprocessCloud(PointCloudPtr& cloud);
 };
 
 template<class PointT>
@@ -133,7 +138,7 @@ void FilteredVideoSource<PointT>::open() {
 * Remove NaN points from input cloud.
 */
 template<class PointT>
-void FilteredVideoSource<PointT>::preprocessCloud(PointCloudPtr &cloud) {
+void FilteredVideoSource<PointT>::preprocessCloud(PointCloudPtr& cloud) {
   // Remove NaN points from the input cloud.
   // The pcl API forces us to pass in a reference to the vector, even if we have
   // no use of it later on ourselves.
@@ -151,8 +156,7 @@ void FilteredVideoSource<PointT>::setOptions(const std::map<std::string, bool>& 
 
 template<class PointT>
 void FilteredVideoSource<PointT>::updateFrame(
-    FrameDataPtr frameData)
-{
+    FrameDataPtr frameData) {
   Timer t;
   t.start();
 
@@ -184,8 +188,8 @@ void FilteredVideoSource<PointT>::updateFrame(
   // Apply point-wise filters to each received point and then pass it to the
   // concrete implementation to figure out how to filter the entire cloud.
   for (typename PointCloudT::const_iterator it = source_cloud->begin();
-        it != source_cloud->end();
-        ++it) {
+       it != source_cloud->end();
+       ++it) {
     PointT p = *it;
     // Filter out NaN points already, since we're already iterating through the
     // cloud.
@@ -230,8 +234,5 @@ void FilteredVideoSource<PointT>::updateFrame(
   //cout << filtered.size() << "   " << cloud_filtered->size() << endl;
 }
 
-/**
- * An implementation of a `FilteredVideoSource` that only applies the
- * point-wise filters, without performing any additional cloud-level filtering.
- */
+}
 #endif

@@ -185,7 +185,7 @@ private:
 
 
 // use PCl to detect the convex hull of the given point cloud
-void ConvexHullDetector::detectConvexHull(PointCloudConstPtr surface, PointCloudPtr &hull)
+inline void ConvexHullDetector::detectConvexHull(PointCloudConstPtr surface, PointCloudPtr &hull)
 {
 	hull = boost::shared_ptr<PointCloudT>(new PointCloudT());
 	pcl::ConvexHull<PointT> chull;
@@ -203,7 +203,7 @@ void ConvexHullDetector::detectConvexHull(PointCloudConstPtr surface, PointCloud
 * Continue this process until there are only 'numPoints' left.
 * If given hull has less than 'numPoints' points, return it without running the algorithm.
 */
-void ConvexHullDetector::reduceConvHullPoints(PointCloudPtr &hull, int numPoints)
+inline void ConvexHullDetector::reduceConvHullPoints(PointCloudPtr &hull, int numPoints)
 {
 	// return if number of points in the given hull is smaller than 'numPoints'
 	int numHullPoints = hull->size();
@@ -259,7 +259,7 @@ void ConvexHullDetector::reduceConvHullPoints(PointCloudPtr &hull, int numPoints
 }
 
 
-void ConvexHullDetector::projectOnPlane(
+inline void ConvexHullDetector::projectOnPlane(
 	PointCloudConstPtr cloud,
 	const pcl::ModelCoefficients &surfaceCoefficients,
 	PointCloudPtr &projCloud)
@@ -276,12 +276,12 @@ void ConvexHullDetector::projectOnPlane(
 }
 
 
-double ConvexHullDetector::getVecLengthSquared(const PointT &p)
+inline double ConvexHullDetector::getVecLengthSquared(const PointT &p)
 {
 	return p.x * p.x + p.y * p.y + p.z * p.z;
 }
 
-void ConvexHullDetector::projectPointOntoLineSegment(const PointT &seg1, const PointT &seg2, const PointT &p, PointT &projVec)
+inline void ConvexHullDetector::projectPointOntoLineSegment(const PointT &seg1, const PointT &seg2, const PointT &p, PointT &projVec)
 {
 	// vector pointing along the line segment
 	PointT segment(seg2.x - seg1.x, seg2.y - seg1.y, seg2.z - seg1.z);
@@ -298,7 +298,7 @@ void ConvexHullDetector::projectPointOntoLineSegment(const PointT &seg1, const P
 }
 
 
-void ConvexHullDetector::projectCloudOntoHull(PointCloudConstPtr cloud, PointCloudConstPtr hull, PointCloudPtr &projCloud, double updatePercentage)
+inline void ConvexHullDetector::projectCloudOntoHull(PointCloudConstPtr cloud, PointCloudConstPtr hull, PointCloudPtr &projCloud, double updatePercentage)
 {
 	for (int i = 0; i < cloud->size(); i++)
 	{
@@ -340,7 +340,7 @@ void ConvexHullDetector::projectCloudOntoHull(PointCloudConstPtr cloud, PointClo
 }
 
 
-void ConvexHullDetector::mergeConvexHulls(PointCloudConstPtr oldHull, PointCloudConstPtr newHull, PointCloudPtr &mergeHull)
+inline void ConvexHullDetector::mergeConvexHulls(PointCloudConstPtr oldHull, PointCloudConstPtr newHull, PointCloudPtr &mergeHull)
 {
 	// Project points of old hull onto new hull
 	PointCloudPtr projNewOntoOld(new PointCloudT());
@@ -361,7 +361,7 @@ void ConvexHullDetector::mergeConvexHulls(PointCloudConstPtr oldHull, PointCloud
 }
 
 
-void ConvexHullDetector::updateSurfaces(SurfaceDataPtr surfaceData)
+inline void ConvexHullDetector::updateSurfaces(SurfaceDataPtr surfaceData)
 {
 	for (int i = 0; i < surfaceData->surfaces.size(); i++)
 	{

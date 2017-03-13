@@ -35,13 +35,14 @@ if(LEPP_BUILD_EXAMPLES)
 endif()
 
 if(LEPP_BUILD_LOLA)
-    file(GLOB detector_src src/lepp3/detector/*.cc src/lola/*.cpp src/lola/pose/*.cpp src/lepp3/pose/*.cpp)
+    file(GLOB_RECURSE lepp_src src/lepp3/*.cpp)
+    file(GLOB detector_src src/lepp3/detector/*.cc src/lola/*.cpp src/lola/pose/*.cpp)
 
     if(LEPP_INCLUDE_HEADERS)
         file(GLOB_RECURSE header_files src/*.hpp src/*.h)
         set(detector_src ${detector_src} ${header_files})
     endif()
 
-    add_executable(lola ${detector_src})
+    add_executable(lola ${detector_src} ${lepp_src})
     target_link_libraries(lola ${PCL_LIBRARIES} ${OpenCV_LIBS} ${am2b-arvis_LIBRARY})
 endif()
