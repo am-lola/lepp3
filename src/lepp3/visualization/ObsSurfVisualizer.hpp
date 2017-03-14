@@ -240,6 +240,9 @@ public:
     gridWindow = arvis_->AddUIWindow("Grid");
     gridCheckBox = gridWindow->AddCheckBox("Draw", true);
     pccolorWindow = arvis_->AddUIWindow("Point Cloud");
+    const char* colorOptions[4] = {"Grey", "Black", "White", "Skyblue"};
+    setPCColor = pccolorWindow->AddComboBox("Preset", colorOptions, 4, 2);
+    PCColorCheckBox = pccolorWindow->AddCheckBox("Edit", false);
     editPCColor = pccolorWindow->AddColorEdit4("Color", pccolorvalue);
     }
 
@@ -341,7 +344,10 @@ private:
   ar::ui_element_handle gridCheckBox;
   ar::IUIWindow* pccolorWindow;
   ar::ui_element_handle editPCColor;
+  ar::ui_element_handle setPCColor;
+  ar::ui_element_handle PCColorCheckBox;
   float pccolorvalue[4] { 1.0f, 1.0f, 1.0f, 1.0f };
+  int presetpccolor = 2;
 };
 
 
@@ -420,7 +426,38 @@ void ObsSurfVisualizer::updateFrame(FrameDataPtr frameData)
   // visualize the point cloud
   pointCloudData.pointData = reinterpret_cast<const void*>(&(frameData->cloud->points[0]));
   pointCloudData.numPoints = frameData->cloud->size();
-  pccolorWindow->GetColorValues4(editPCColor, pccolorvalue);
+  if (pccolorWindow->GetCheckBoxState(PCColorCheckBox))
+  {
+    pccolorWindow->GetColorValues4(editPCColor, pccolorvalue);
+  } else  {
+    if (presetpccolor != pccolorWindow->GetSelectedComboBoxItem(setPCColor))
+    {
+      presetpccolor = pccolorWindow->GetSelectedComboBoxItem(setPCColor);
+      switch(presetpccolor)
+      {
+        case 0:
+          pccolorvalue[0] = 0.197;
+          pccolorvalue[1] = 0.197;
+          pccolorvalue[2] = 0.197;
+          break;
+        case 1:
+          pccolorvalue[0] = 0.0;
+          pccolorvalue[1] = 0.0;
+          pccolorvalue[2] = 0.0;
+          break;
+        case 2:
+          pccolorvalue[0] = 1.0;
+          pccolorvalue[1] = 1.0;
+          pccolorvalue[2] = 1.0;
+          break;
+        case 3:
+          pccolorvalue[0] = 0.529;
+          pccolorvalue[1] = 0.808;
+          pccolorvalue[2] = 0.980;
+          break;
+      }
+    }
+  }
   pointCloudData.color = ar::Color(pccolorvalue[0], pccolorvalue[1], pccolorvalue[2], pccolorvalue[3]);
   arvis_->Update(pointCloudHandle, pointCloudData);
   arvis_->SetVisibility(gridHandle, (bool)gridWindow->GetCheckBoxState(gridCheckBox));
