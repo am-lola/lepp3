@@ -354,13 +354,13 @@ protected:
     std::cout << "entered buildSplitStrategy" << std::endl;
     boost::shared_ptr<CompositeSplitStrategy> split_strat(new CompositeSplitStrategy);
 
-    toml::Value const* v = toml_tree_.find("ObstacleDetetction.SplitStrategy");
+    toml::Value const* v = toml_tree_.find("ObstacleDetection.SplitStrategy");
     if (!v) {
-      throw std::runtime_error("Missing config section: [ObstacleDetetction.SplitStrategy]");
+      throw std::runtime_error("Missing config section: [ObstacleDetection.SplitStrategy]");
     }
 
     // First find the axis on which the splits should be made
-    char const* base_key = "ObstacleDetetction.SplitStrategy.";
+    char const* base_key = "ObstacleDetection.SplitStrategy.";
     std::string const axis_id = getTomlValue<std::string>(*v, "split_axis", base_key);
 
     if (axis_id == "largest") {
@@ -381,7 +381,7 @@ protected:
       toml::Array const& cond_array = conditions->as<toml::Array>();
       std::cout << "# conditions: " << cond_array.size() << std::endl;
 
-      char const* base_key_condition = "[[ObstacleDetetction.Euclidean.SplitStrategy.conditions]].";
+      char const* base_key_condition = "[[ObstacleDetection.Euclidean.SplitStrategy.conditions]].";
 
       for (const toml::Value& v : cond_array) {
         std::string const type = getTomlValue<std::string>(v, "type", base_key_condition);
@@ -726,16 +726,14 @@ private:
       if (!this->detector_) {
         throw std::runtime_error("Visualizer 'ObsSurfVisualizer' requires a detector!!");
       }
-      // TODO: [Sahand] decide whether to define the following two variables.
-      //       We already have `surface_detector_active_` and `obstacle_detector_active_`
-      //       which are set according to the availability of their components.
-      //       (Reason to have it here as well): There might be the case where
-      //       we want to run all of the components, but only visualizing some
-      //       of them.
-      bool show_obstacles = getOptionalTomlValue(v, "show_obstacles", false);
-      bool show_surfaces = getOptionalTomlValue(v, "show_surfaces", false);
-      boost::shared_ptr<ObsSurfVisualizer> obs_surf_vis(
-          new ObsSurfVisualizer(name, show_obstacles, show_surfaces, width, height));
+      ObsSurfVisualizerParameters params;
+      params.name = name;
+      params.height = height;
+      params.width = width;
+      params.show_obstacles = getOptionalTomlValue(v, "show_obstacles", params.show_obstacles);
+      params.show_surfaces = getOptionalTomlValue(v, "show_surfaces", params.show_surfaces);
+
+      boost::shared_ptr<ObsSurfVisualizer> obs_surf_vis = boost::make_shared<ObsSurfVisualizer>(params);
       this->detector_->FrameDataSubject::attachObserver(obs_surf_vis);
       return obs_surf_vis;
 

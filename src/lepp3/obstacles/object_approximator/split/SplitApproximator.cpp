@@ -18,6 +18,11 @@ lepp::ObjectModelPtr lepp::SplitObjectApproximator::approximate(const PointCloud
     PointCloudConstPtr const current_cloud = queue[0].second;
     queue.pop_front();
 
+    if (current_cloud->size() < 3) {
+      continue;
+    }
+
+
     // Delegates to the wrapped approximator for each part's approximation.
     ObjectModelPtr model = approximator_->approximate(current_cloud);
     // TODO Decide whether the model fits well enough for the current cloud.

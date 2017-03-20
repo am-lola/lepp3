@@ -109,22 +109,11 @@ std::vector<lepp::PointCloudPtr> lepp::GmmSegmenter::extractObstacleClouds(Point
 
   m_step(cloud.get(), R, C, rks, cks, newStates, removedStates);
 
-  // sort in descending order for this to work (removeState does swap-with-end)
-  std::sort(removedStates.begin(), removedStates.end(), std::greater<size_t>());
-  for (int k : removedStates) {
-    removeState(k);
-  }
-
-  // add new states
-  for (GMM::State& state : newStates) {
-    addState(state);
-  }
-
+  // Prepare results
   std::vector<PointCloudPtr> ret;
   for (size_t i = 0; i < states_.size(); ++i) {
     ret.emplace_back(new PointCloudT);
   }
-
 
   for (size_t i = 0; i < N; i++) {
     for (size_t k = 0; k < states_.size(); ++k) {
@@ -141,6 +130,18 @@ std::vector<lepp::PointCloudPtr> lepp::GmmSegmenter::extractObstacleClouds(Point
           std::end(ret),
           [](const PointCloudPtr& p) { return p->size() == 0; }),
       std::end(ret));
+
+  // Add new  / remove old states
+  // sort in descending order for this to work (removeState does swap-with-end)
+  std::sort(removedStates.begin(), removedStates.end(), std::greater<size_t>());
+  for (int k : removedStates) {
+    removeState(k);
+  }
+
+  // add new states
+  for (GMM::State& state : newStates) {
+    addState(state);
+  }
 
   return ret;
 }
