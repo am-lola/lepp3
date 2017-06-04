@@ -8,7 +8,7 @@
 #include "lepp3/Utils.hpp"
 #include "lepp3/FrameData.hpp"
 #include "lepp3/GMMObstacleTrackerState.hpp"
-#include "lepp3/util/VoxelGrid.h"
+#include "lepp3/util/VoxelGrid3D.h"
 #include "lepp3/visualization/ObstacleTrackerVisualizer.hpp"
 #include "lepp3/GMMObstacleTrackerAggregator.hpp"
 
@@ -124,7 +124,7 @@ private:
    */
   void notifyTrackerData(
         ar::PointCloudData const& cloud_data,
-        VoxelGrid& vg,
+        lepp::util::VoxelGrid3D& vg,
         GMM::RuntimeStat& stats);
   /**
    * Overloaded function. Notifies any `aggregators_` that wishes to receive
@@ -150,7 +150,7 @@ private:
   void clearStates();
 
   Vector<GMM::State> _states;
-  VoxelGrid _voxelGrid;
+  lepp::util::VoxelGrid3D _voxelGrid;
   // cached vclusters for points
   Vector<int> _vclusterPointTable;
   Vector<int> _stateMainVCluster;
@@ -721,7 +721,7 @@ void GMMObstacleTracker::updateFrame(FrameDataPtr frameData)
   perfTimer.start();
 
   // first build the voxel grid
-  _voxelGrid.build(pc);
+  _voxelGrid.build(*pc);
 
   // then do one step of the main algorithm
   emstep(pc, frameData->frameNum);
@@ -786,7 +786,7 @@ void GMMObstacleTracker::updateFrame(FrameDataPtr frameData)
 
 void GMMObstacleTracker::notifyTrackerData(
       ar::PointCloudData const& cloud_data,
-      VoxelGrid& vg,
+      lepp::util::VoxelGrid3D& vg,
       GMM::RuntimeStat& runtime_stats) {
 
   size_t sz = aggregators_.size();

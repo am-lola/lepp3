@@ -2,6 +2,7 @@
 #define LEPP3_GMM_OBSTACLE_TRACKER_AGGREGATOR_H__
 
 #include "lepp3/GMMObstacleTrackerState.hpp"
+#include "lepp3/util/VoxelGrid3D.h"
 
 namespace lepp
 {
@@ -14,7 +15,7 @@ class GMMObstacleTrackerAggregator {
 public:
   virtual void updateObstacleTrackingData(
     ar::PointCloudData const& cloud_data,
-    VoxelGrid const& vg,
+    lepp::util::VoxelGrid3D const& vg,
     GMM::RuntimeStat runtime_stats) = 0;
 
   /**
