@@ -7,6 +7,7 @@
 #include "lepp3/Typedefs.hpp"
 #include "lepp3/SurfaceData.hpp"
 #include "lepp3/util/Projection.h"
+#include "lepp3/util/VoxelGrid.h"
 
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/filters/extract_indices.h>
@@ -232,11 +233,7 @@ void SurfaceClusterer<PointT>::clusterNew(
   for (size_t i = 0; i < plane_2d.size(); ++i)
   {
     size_t cluster = voxelGrid.clusterForPoint(plane_2d[i]);
-
-    if (cluster >= lepp::util::VoxelGrid<2>::CLUSTERED_CELL_START)
-    {
-      clusters[cluster].points.emplace_back(plane->points[i]);
-    }
+    clusters[cluster].points.emplace_back(plane->points[i]);
   }
 
   // cluster the current plane into seperate surfaces
