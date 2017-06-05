@@ -299,16 +299,6 @@ port = 61448
   # Given in degrees.
   deviationAngle = 4.0
 
-  [BasicSurfaceDetection.Downsampling]
-  #Voxel grid for reducing the number of points before passing them to the clustering step.
-  coarseVoxelSize_X = 0.01
-  coarseVoxelSize_Y = 0.01
-  coarseVoxelSize_Z = 0.01
-  fineVoxelSize_X = 0.007
-  fineVoxelSize_Y = 0.007
-  fineVoxelSize_Z = 0.007
-  coarseFineLimit = 11000
-
   [BasicSurfaceDetection.Clustering]
   #Euclidean clustering to cluster (separate) detected surfaces
   clusterTolerance = 0.05 # distance between clusters, in meters

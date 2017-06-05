@@ -472,20 +472,6 @@ protected:
                                                             "BasicSurfaceDetection.Clustering.clusterTolerance");
     cluster_params.MIN_CLUSTER_SIZE = getTomlValue<int>(toml_tree_, "BasicSurfaceDetection.Clustering.minClusterSize");
 
-    cluster_params.COARSE_VOXEL_SIZE_X = getTomlValue<double>(toml_tree_,
-                                                              "BasicSurfaceDetection.Downsampling.coarseVoxelSize_X");
-    cluster_params.COARSE_VOXEL_SIZE_Y = getTomlValue<double>(toml_tree_,
-                                                              "BasicSurfaceDetection.Downsampling.coarseVoxelSize_Y");
-    cluster_params.COARSE_VOXEL_SIZE_Z = getTomlValue<double>(toml_tree_,
-                                                              "BasicSurfaceDetection.Downsampling.coarseVoxelSize_Z");
-    cluster_params.FINE_VOXEL_SIZE_X = getTomlValue<double>(toml_tree_,
-                                                            "BasicSurfaceDetection.Downsampling.fineVoxelSize_X");
-    cluster_params.FINE_VOXEL_SIZE_Y = getTomlValue<double>(toml_tree_,
-                                                            "BasicSurfaceDetection.Downsampling.fineVoxelSize_Y");
-    cluster_params.FINE_VOXEL_SIZE_Z = getTomlValue<double>(toml_tree_,
-                                                            "BasicSurfaceDetection.Downsampling.fineVoxelSize_Z");
-    cluster_params.FINE_COARSE_LIMIT = getTomlValue<int>(toml_tree_,
-                                                         "BasicSurfaceDetection.Downsampling.coarseFineLimit");
     surface_clusterer_.reset(new SurfaceClusterer<PointT>(cluster_params));
     surface_detector_->SurfaceDataSubject::attachObserver(surface_clusterer_);
 
