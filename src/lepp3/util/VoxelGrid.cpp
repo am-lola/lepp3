@@ -1,152 +1,189 @@
 #include "VoxelGrid.h"
 
-constexpr int lepp::VoxelGrid::_numCellNeighbors;
-constexpr int lepp::VoxelGrid::EMPTY_CELL;
-constexpr int lepp::VoxelGrid::UNVISITED_CELL;
-constexpr int lepp::VoxelGrid::CLUSTERED_CELL_START;
+#include <stack>
 
-lepp::VoxelGrid::VoxelGrid(float resolution) {
-  if (resolution > 0.0f)
-    _resolution = resolution;
-  _maxBounds = Eigen::Vector4f::Zero();
-  _minBounds = Eigen::Vector4f::Zero();
+// explicit instantiation
+template
+class lepp::util::VoxelGrid<2>;
 
-  // fill in the 18 neighboring cell offsets (we omit the 8 "corners" as an optimization)
-  _cellOffsets <<
-                -1, -1, 0, 0,
-                -1, 0, -1, 0,
-                -1, 0, 0, 0,
-                -1, 0, 1, 0,
-                -1, 1, 0, 0,
-                0, -1, -1, 0,
-                0, -1, 0, 0,
-                0, -1, 1, 0,
-                0, 0, -1, 0,
-                0, 0, 1, 0,
-                0, 1, -1, 0,
-                0, 1, 0, 0,
-                0, 1, 1, 0,
-                1, -1, 0, 0,
-                1, 0, -1, 0,
-                1, 0, 0, 0,
-                1, 0, 1, 0,
-                1, 1, 0, 0;
+template
+class lepp::util::VoxelGrid<3>;
+
+namespace {
+const float DEFAULT_RESOLUTION = 0.1f;
 }
 
-void lepp::VoxelGrid::build(const PointCloudT* pc) {
+template<size_t DIMENSIONS>
+lepp::util::VoxelGrid<DIMENSIONS>::VoxelGrid(float resolution)
+    : _resolution((resolution > 0.0f) ? resolution : DEFAULT_RESOLUTION) {
+  _maxBounds = vector_float::Zero();
+  _minBounds = vector_float::Zero();
+
+  constexpr int START = -1;
+  constexpr int END = 1;
+  std::array<int, DIMENSIONS> offsets;
+  offsets.fill(START);
+
+  size_t count = 0;
+  size_t ptr = 0;
+  auto idx = [&]() { return DIMENSIONS - 1 - ptr; };
+  auto is_valid = [](const std::array<int, DIMENSIONS>& offsets) {
+    size_t zeros = 0;
+    for (auto& v : offsets) {
+      if (0 == v) {
+        ++zeros;
+      }
+    }
+    return zeros != 0   // diagonal
+           && zeros != DIMENSIONS; // ourselves
+  };
+  auto fill_offsets = [this, &is_valid, &count](const std::array<int, DIMENSIONS>& offsets) {
+    if (!is_valid(offsets)) {
+      return;
+    }
+
+    for (size_t i = 0; i < DIMENSIONS; ++i) {
+      _cellOffsets(count, i) = offsets[i];
+    }
+    _cellOffsets(count, DIMENSIONS) = 0;
+    ++count;
+  };
+
+  fill_offsets(offsets);
+  while (ptr < DIMENSIONS) {
+    if (offsets[idx()] < END) {
+      ++offsets[idx()];
+      while (ptr > 0) {
+        --ptr;
+        offsets[idx()] = START;
+      }
+      fill_offsets(offsets);
+    } else {
+      ++ptr;
+    }
+  }
+}
+
+template<size_t DIMENSIONS>
+void lepp::util::VoxelGrid<DIMENSIONS>::build(const std::vector<vector_float>& data) {
   using namespace Eigen;
 
-  Vector4f minBounds, maxBounds;
-  pcl::getMinMax3D(*pc, minBounds, maxBounds);
+  _minBounds = data[0];
+  _maxBounds = data[0];
+
+  for (auto& d : data) {
+    for (size_t i = 0; i < DIMENSIONS; ++i) {
+      _minBounds(i) = std::min(_minBounds(i), d(i));
+      _maxBounds(i) = std::max(_maxBounds(i), d(i));
+    }
+  }
+
   const float safetyMargin = 0.001f;
   // add extra space - see below why
-  // TODO: check this
-  maxBounds.array() += 2 * _resolution + safetyMargin; // add a small numerical safety margin
-  minBounds.array() -= 2 * _resolution + safetyMargin;
+  _minBounds.array() -= 2 * _resolution + safetyMargin;
+  _maxBounds.array() += 2 * _resolution + safetyMargin;
 
-  _maxBounds = maxBounds;
-  _minBounds = minBounds;
-  const Eigen::Vector3i gridSize = calcGridSize();
-  _numCellsX = gridSize.x();
-  _numCellsY = gridSize.y();
-  _numCellsZ = gridSize.z();
+  const auto gridSize = calcGridSize();
+
+  for (size_t i = 0; i < DIMENSIONS; ++i) {
+    _numCells[i] = gridSize(i);
+  }
   allocateGrid();
 
   // cached neighbor offsets into the _grid array
   Eigen::Array<int, _numCellNeighbors, 1> gridOffsets;
-  for (int i = 0; i < _numCellNeighbors; i++)
+  for (size_t i = 0; i < _numCellNeighbors; ++i) {
     gridOffsets[i] = cellToGridIndex(_cellOffsets.row(i));
+  }
 
   // clear the grid
   std::fill(_grid.begin(), _grid.end(), EMPTY_CELL);
 
-  const auto map = pc->getMatrixXfMap();
-  const size_t N = pc->size(); // number of points
-
-  // use the points to fill the grid cells
-  for (size_t i = 0; i < N; i++) {
-    const Vector4f x = map.col(i);
-
-    const Vector4f tmp = (x - _minBounds) / _resolution; // temporary here generates fewer instructions
-    Vector4i cellIndex = tmp.cast<int>();
+  for (auto& d : data) {
+    const vector_float tmp = (d - _minBounds) / _resolution;
+    vector_int cellIndex = tmp.template cast<int>();
 
     _grid[cellToGridIndex(cellIndex)] = UNVISITED_CELL;
   }
 
-  int curCluster = CLUSTERED_CELL_START;
+  size_t curCluster = CLUSTERED_CELL_START;
 
   // do a simple DFS with restarts to cluster the connected grid cells
-  std::stack<int> stack;
+  std::stack<size_t> stack;
+  std::array<size_t, DIMENSIONS> cell_idx;
+  cell_idx.fill(1);
+  cell_idx[0] = 0; // to also visit the first value
 
-  // exclude the boundary of the grid so we can just add the offset without checking
-  // we accounted for this earlier by extending the grid
-  for (int x = 1; x < _numCellsX - 1; x++)
-    for (int y = 1; y < _numCellsY - 1; y++)
-      for (int z = 1; z < _numCellsZ - 1; z++) {
-        const int gridIndex = cellToGridIndex(x, y, z);
-        if (_grid[gridIndex] == 1) {
-          stack.push(gridIndex);
+  size_t ptr = 0;
+  while (ptr < DIMENSIONS) {
+    if (cell_idx[ptr] == _numCells[ptr] - 1) {
+      ++ptr;
+      continue;
+    }
+    ++cell_idx[ptr];
+    while (ptr > 0) {
+      --ptr;
+      cell_idx[ptr] = 1;
+    }
 
-          while (!stack.empty()) {
-            const int gridIdx = stack.top();
-            stack.pop();
+    const size_t gridIndex = cellToGridIndex(cell_idx);
+    if (_grid[gridIndex] == 1) {
+      stack.push(gridIndex);
 
-            _grid[gridIdx] = curCluster;
+      while (!stack.empty()) {
+        const int gridIdx = stack.top();
+        stack.pop();
 
-            // visit all neighbors
-            for (int n = 0; n < _numCellNeighbors; n++) {
-              const int neighborGridIndex = gridIdx + gridOffsets[n];
-              if (_grid[neighborGridIndex] == 1) {
-                stack.push(neighborGridIndex);
-              }
-            }
+        _grid[gridIdx] = curCluster;
+
+        // visit all neighbors
+        for (size_t n = 0; n < _numCellNeighbors; n++) {
+          const size_t neighborGridIndex = gridIdx + gridOffsets[n];
+          if (_grid[neighborGridIndex] == 1) {
+            stack.push(neighborGridIndex);
           }
-
-          curCluster++;
         }
       }
+
+      ++curCluster;
+    }
+  }
 
   _numClusters = curCluster - CLUSTERED_CELL_START;
 }
 
-void lepp::VoxelGrid::prepareArVoxel(Vector<ar::Voxel>& voxels) const {
-  for (int x = 0; x < _numCellsX; x++)
-    for (int y = 0; y < _numCellsY; y++)
-      for (int z = 0; z < _numCellsZ; z++) {
-        const auto gridVal = _grid[cellToGridIndex(x, y, z)];
-        if (gridVal > 0) {
-          const float cellPos[3] = {
-              _minBounds.x() + x * _resolution + 0.5f * _resolution,
-              _minBounds.y() + y * _resolution + 0.5f * _resolution,
-              _minBounds.z() + z * _resolution + 0.5f * _resolution,
-          };
-          const ar::Color color = rangeToColor<ar::Color>(0, _numClusters - 1, gridVal - CLUSTERED_CELL_START);
-          voxels.push_back(
-              ar::Voxel {{cellPos[0], cellPos[1], cellPos[2]}, {color.r, color.g, color.b, 1.0f}, _resolution});
-        }
-      }
-}
-
-Eigen::Vector3i lepp::VoxelGrid::calcGridSize() const {
-  Eigen::Vector4f numCells = (_maxBounds - _minBounds) / _resolution;
+template<size_t DIMENSIONS>
+auto lepp::util::VoxelGrid<DIMENSIONS>::calcGridSize() const
+-> Eigen::Matrix<size_t, DIMENSIONS, 1> {
+  vector_float numCells = (_maxBounds - _minBounds) / _resolution;
   numCells.unaryExpr(std::ptr_fun<float, float>(std::ceil));
 
-  const Eigen::Vector4i nc = numCells.cast<int>();
-  return nc.head<3>();
-}
-
-void lepp::VoxelGrid::allocateGrid() {
-  const size_t numCells = _numCellsX * _numCellsY * _numCellsZ;
-  // only realloc if we need more storage
-  if (numCells > _grid.size()) {
-    std::cout << "resizing voxel grid to " << numCells << " cells\n";
-    _grid.resize(numCells);
+  vector_int nc = numCells.template cast<int>();
+  for (size_t i = 0; i < DIMENSIONS; ++i) {
+    if (nc[i] < 0) {
+      nc[i] = 0;
+    }
   }
+
+  return nc.template head<DIMENSIONS>().
+      template cast<size_t>();
 }
 
-int lepp::VoxelGrid::clusterForPoint(const Eigen::Vector4f& point) const {
-  const Eigen::Vector4f tmp = (point - _minBounds) / _resolution; // temporary here generates fewer instructions
-  Eigen::Vector4i cellIndex = tmp.cast<int>();
+template<size_t DIMENSIONS>
+void lepp::util::VoxelGrid<DIMENSIONS>::allocateGrid() {
+  size_t num_cells = 1;
+
+  for (size_t i = 0; i < DIMENSIONS; ++i) {
+    num_cells *= _numCells[i];
+  }
+
+  _grid.resize(num_cells);
+}
+
+template<size_t DIMENSIONS>
+size_t lepp::util::VoxelGrid<DIMENSIONS>::clusterForPoint(const vector_float& point) const {
+  vector_float tmp = (point - _minBounds) / _resolution;
+  vector_int cellIndex = tmp.template cast<int>();
 
   return _grid[cellToGridIndex(cellIndex)] - CLUSTERED_CELL_START;
 }

@@ -5,7 +5,7 @@
 #include "lepp3/Typedefs.hpp"
 #include "lepp3/GMMObstacleTrackerAggregator.hpp"
 #include "lepp3/GMMObstacleTrackerState.hpp"
-#include "lepp3/util/VoxelGrid.h"
+#include "lepp3/util/VoxelGrid3D.h"
 
 
 extern bool g_exitProgram;
@@ -84,7 +84,7 @@ public:
    */
   virtual void updateObstacleTrackingData(
         ar::PointCloudData const& cloud_data,
-        VoxelGrid const& vg,
+        lepp::util::VoxelGrid3D const& vg,
         GMM::RuntimeStat runtime_stats);
   /**
    * GMMObstacleTrackerAggregator interface implementation. Process any additional
@@ -272,7 +272,7 @@ void ObstacleTrackerVisualizer::updateFrame(RGBDataPtr rgbData) {
 
 void ObstacleTrackerVisualizer::updateObstacleTrackingData(
       ar::PointCloudData const& cloud_data,
-      VoxelGrid const& vg,
+      lepp::util::VoxelGrid3D const& vg,
       GMM::RuntimeStat runtime_stats) {
 
   // Visualize the result cloud

@@ -34,7 +34,7 @@ std::vector<lepp::PointCloudPtr> lepp::GmmSegmenter::extractObstacleClouds(Point
     initialized_ = true;
   }
 
-  voxel_grid_.build(cloud.get());
+  voxel_grid_.build(*cloud.get());
 
   const auto map = cloud->getMatrixXfMap();
   const size_t N = cloud->size(); // number of points

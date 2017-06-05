@@ -1,83 +1,92 @@
-#ifndef LEPP3_VOXELGRID_H
-#define LEPP3_VOXELGRID_H
+#ifndef LEPP3_UTIL_VOXELGRID_H
+#define LEPP3_UTIL_VOXELGRID_H
 
-#include "lepp3/Typedefs.hpp"
-#include "lepp3/Utils.hpp"
-#include "lepp3/visualization/ObsSurfVisualizer.hpp"
-#include <stack>
+#include <array>
+#include <vector>
 
-namespace lepp
-{
+#include <Eigen/Dense>
 
-// This is used by the obstacle tracker as a coarse but fast clustering of the point cloud.
-// We build a uniform 3D grid in which cells are occupied if they contain a point.
-// The clusters are then computed; clusters are simply connected (neighboring) grid cells.
+namespace lepp {
+namespace util {
+constexpr size_t pow(size_t base, size_t exp) {
+  return (0 == exp) ? 1 : base * pow(base, exp - 1);
+}
 
-class VoxelGrid
-{
+template<size_t DIMENSIONS>
+class VoxelGrid {
 public:
+  enum : size_t {
+    EMPTY_CELL = 0,
+    UNVISITED_CELL = 1,
+    CLUSTERED_CELL_START = 2,
+  };
+
+  template<typename T>
+  using vector_type = Eigen::Matrix<T, DIMENSIONS + 1, 1>;
+  using vector_float = vector_type<float>;
+  using vector_int = vector_type<int>;
+  constexpr static size_t _numCellNeighbors = pow(3, DIMENSIONS) - pow(2, DIMENSIONS) - 1;
 
   VoxelGrid(float resolution);
 
-  // build the grid using a given point cloud and fill the cells that contain points
-  void build(const PointCloudT* pc);
-
-  /**
-   * Converts the custom-built voxel grid to the voxel format accepted by the
-   * ar::ARVisualizer
-   * @param voxels vector of ar::ARVisualizer voxel instance to be filled with
-   * information corresponding to VoxelGrid.
-   */
-  void prepareArVoxel(Vector<ar::Voxel>& voxels) const;
+  // build the grid using the given data and fill the cells that contain points
+  void build(const std::vector<vector_float>& data);
 
   // returns the cluster index for a given point (must be inside the grid)
-  int clusterForPoint(const Eigen::Vector4f& point) const;
-  int numClusters() const { return _numClusters; }
+  size_t clusterForPoint(const vector_float& point) const;
+
+  size_t numClusters() const { return _numClusters; }
+
+protected:
+  vector_float maxBounds() const { return _maxBounds; }
+
+  vector_float minBounds() const { return _minBounds; }
+
+  const std::array<size_t, DIMENSIONS>& numCells() const { return _numCells; }
+
+  const std::vector<size_t>& grid() const { return _grid; }
+
+  // map from a cell to an index into the _grid array
+  template<typename Cell>
+  size_t cellToGridIndex(const Cell& cellIndex) const {
+    size_t result = 0;
+    for (size_t i = DIMENSIONS; i > 0; --i) {
+      result *= _numCells[i - 1];
+      result += cellIndex[i - 1];
+    }
+    return result;
+  }
+
+  template<typename ... Args>
+  size_t cellToGridIndexElements(Args&&...args) const {
+    return cellToGridIndex(std::vector<size_t>{std::forward<Args>(args)...});
+  }
+
 
 private:
-
   // calculate the number of grid cells in each dimension using min/max bounds and the resolution
-  Eigen::Vector3i calcGridSize() const;
+  Eigen::Matrix<size_t, DIMENSIONS, 1> calcGridSize() const;
+
   // ensure enough space is allocted for the grid
   void allocateGrid();
 
-  // map from a cell to an index into the _grid array
-  inline size_t cellToGridIndex(const Eigen::Vector4i& cellIndex) const
-  {
-    return cellIndex.x() + cellIndex.y() * _numCellsX + cellIndex.z() * _numCellsX * _numCellsY;
-  }
+public:
+  const float _resolution;
 
-  // map from a cell to an index into the _grid array
-  inline size_t cellToGridIndex(int x, int y, int z) const
-  {
-    return x + y * _numCellsX + z * _numCellsX * _numCellsY;
-  }
+private:
+  vector_float _maxBounds;
+  vector_float _minBounds;
 
-  // map from a _grid index to a cell (unused)
-  //inline Eigen::Vector4i gridToCellIndex(size_t idx) const
-  //{
-  // return Eigen::Vector4i(idx % _numCellsX, (idx % (_numCellsX * _numCellsY)) / _numCellsX, idx / (_numCellsX * _numCellsY), 0);
-  //}
+  std::array<size_t, DIMENSIONS> _numCells;
 
-  Eigen::Vector4f _maxBounds;
-  Eigen::Vector4f _minBounds;
-  int _numCellsX;
-  int _numCellsY;
-  int _numCellsZ;
+  Eigen::Matrix<int, _numCellNeighbors, DIMENSIONS + 1> _cellOffsets;
 
-  constexpr static int _numCellNeighbors = 18; // actual neighbor count: 26, but omit corners
-  Eigen::Matrix<int, _numCellNeighbors, 4> _cellOffsets;
-
-  float _resolution = 0.1f;
-
-  constexpr static int EMPTY_CELL = 0;
-  constexpr static int UNVISITED_CELL = 1;
-  constexpr static int CLUSTERED_CELL_START = 2;
   // 0: empty cell, 1: occupied but unvisited cell, 2...: cluster nr for cell + 2
-  Vector<int> _grid;
+  std::vector<size_t> _grid;
 
-  int _numClusters = 0;
+  size_t _numClusters = 0;
 };
 }
+}
 
-#endif //LEPP3_VOXELGRID_H
+#endif
