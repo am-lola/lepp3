@@ -235,16 +235,16 @@ type = "ObstacleDetector"
   # splitting eventually stops for each object (possibly the easiest way is to
   # always include the DepthLimit condition with a fairly high depth limit).
   # If no split conditions are provided, the objects will never be split.
-    [[ObstacleDetetction.SplitStrategy.conditions]]
+    [[ObstacleDetection.SplitStrategy.conditions]]
     type = "DepthLimit" # How many 'splitting steps' are performed. Max number of SSV's per obstacle = 2 ^ DepthLimit
     depth = 1
     
-    [[ObstacleDetetction.SplitStrategy.conditions]]
+    [[ObstacleDetection.SplitStrategy.conditions]]
     type = "SizeLimit" # After this volume is reached, a sub point cloud is not splitted any more
     # size is a volume in [cm^3]
     size = 3000.
     
-    [[ObstacleDetetction.SplitStrategy.conditions]]
+    [[ObstacleDetection.SplitStrategy.conditions]]
     type = "ShapeCondition"
     # The threshold values to consider something "very much" a sphere
     sphere1 = 0.8
