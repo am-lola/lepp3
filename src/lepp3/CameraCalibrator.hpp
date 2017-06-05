@@ -4,7 +4,6 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/extract_indices.h>
 
-#include "lepp3/BaseSegmenter.hpp"
 #include "lepp3/FrameData.hpp"
 #include "lepp3/CalibrationAggregator.hpp"
 

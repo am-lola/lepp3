@@ -182,12 +182,49 @@ type = "SurfaceDetector"
 # This enables the obstacle detector
 [[observers]]
 type = "ObstacleDetector"
-# Available methods accepted by ObstacleDetector:
-#   - "EuclideanClustering"
-#   - "GMM" (see below)
-method = "EuclideanClustering"
 
-  [ObstacleDetetction.Euclidean.SplitStrategy]
+  # Removes points belonging to surfaces from the cloud
+  [ObstacleDetection.PlaneRemover]
+  # minimum distance a point must have to its projection onto a
+  # plane in order to be considered an inlier on this plane
+  minDistToPlane = 0.04
+
+  # Segmentation Method
+  [ObstacleDetection.Segmenter]
+  # Available methods:
+  #   - "Euclidean
+  #   - "GMM" (see below)
+  method = "Euclidean"
+  # The percentage of the original cloud that should be kept for the clusterization
+  #min_filter_percentage = 0.9
+
+  [ObstacleDetection.Segmenter]
+  method = "GMM"
+  # voxel grid used for clustering, leaf size in meters
+  voxel_grid_resolution = 0.1  
+
+  # this much state-responsibility is needed for a point to be "hard" assigned to a state
+  #hard_assignment_state_resp = 0.9
+  # states with GMM mixing coefficients (pi) lower than this will be removed
+  #state_pi_removal_threshold = 0.01
+  # minimum number of points in a vcluster needed for a new state to be added
+  #min_vcluster_points = 10
+  # prior identity covariance scale for new states
+  #new_state_prior_covar_size = 0.01
+  # mixing of prior identity covariance for new states
+  #new_state_prior_covar_mix = 0.5
+  # number of frames a state has be be alive for splitting to be enabled
+  #num_split_life_time_frames = 20
+  # number of points a state has to have in its second largest vcluster for it to be split
+  #num_split_points = 15
+  # number of consecutive frames a state has to have points in two different vclusters until it is split
+  #num_split_frames = 6
+  # only split when the other vcluster has less than this percentage of points assigned to other states
+  #split_max_other_states_percentage = 0.2
+  # how much of the observation covariance is taken from the previous frame
+  #obs_covar_regularization = 0.95
+
+  [ObstacleDetection.SplitStrategy]
   # Defines the split axis.
   # The point cloud is splitted with a plane through the centroid and perpendicular to the chosen axis.
   # Values: largest|middle|smallest
@@ -198,40 +235,27 @@ method = "EuclideanClustering"
   # splitting eventually stops for each object (possibly the easiest way is to
   # always include the DepthLimit condition with a fairly high depth limit).
   # If no split conditions are provided, the objects will never be split.
-    [[ObstacleDetetction.Euclidean.SplitStrategy.conditions]]
-      type = "DepthLimit" # How many 'splitting steps' are performed. Max number of SSV's per obstacle = 2 ^ DepthLimit
-      depth = 1
-    [[ObstacleDetetction.Euclidean.SplitStrategy.conditions]]
-      type = "SizeLimit" # After this volume is reached, a sub point cloud is not splitted any more
-      # size is a volume in [cm^3]
-      size = 3000.
-    [[ObstacleDetetction.Euclidean.SplitStrategy.conditions]]
-      type = "ShapeCondition"
-      # The threshold values to consider something "very much" a sphere
-      sphere1 = 0.8
-      sphere2 = 0.1
-      # The threshold value to consider something "very much" a cylinder
-      cylinder = 0.25
-    #[[SplitStrategy.conditions]]
-    #  type = "DistanceThreshold"
-    #  # Distance is in [cm]
-    #  distance_threshold = 150
-
-
-# This enables the GMM obstacle detector
-# Note: USe only one ObstacleDetector
-[[observers]]
-type = "ObstacleDetector"
-method = "GMM"
-
-  [ObstacleDetetction.GMM.ObstacleDetectorParams]
-  enable_tight_fit = true # use pc-based fitting instead of gaussian-based fitting
-  #TODO: compare with observers.visualizer.debug_gui_params!!
-  filter_ssv_position = true
-  voxel_grid_resolution = 0.1 # voxel grid used for clustering, leaf size in meters
-  kalman_system_noise_position = 0.01 # standard expected noise, in meters
-  kalman_system_noise_velocity = 0.15 # standard expected noise, in meters/second
-  kalman_measurement_noise = 0.10
+    [[ObstacleDetection.SplitStrategy.conditions]]
+    type = "DepthLimit" # How many 'splitting steps' are performed. Max number of SSV's per obstacle = 2 ^ DepthLimit
+    depth = 1
+    
+    [[ObstacleDetection.SplitStrategy.conditions]]
+    type = "SizeLimit" # After this volume is reached, a sub point cloud is not splitted any more
+    # size is a volume in [cm^3]
+    size = 3000.
+    
+    [[ObstacleDetection.SplitStrategy.conditions]]
+    type = "ShapeCondition"
+    # The threshold values to consider something "very much" a sphere
+    sphere1 = 0.8
+    sphere2 = 0.1
+    # The threshold value to consider something "very much" a cylinder
+    cylinder = 0.25
+    
+    [[SplitStrategy.conditions]]
+    type = "DistanceThreshold"
+    # Distance is in [cm]
+    distance_threshold = 150
 
 ###########################################################################
 # Aggregators is an array
@@ -275,16 +299,6 @@ port = 61448
   # Given in degrees.
   deviationAngle = 4.0
 
-  [BasicSurfaceDetection.Downsampling]
-  #Voxel grid for reducing the number of points before passing them to the clustering step.
-  coarseVoxelSize_X = 0.01
-  coarseVoxelSize_Y = 0.01
-  coarseVoxelSize_Z = 0.01
-  fineVoxelSize_X = 0.007
-  fineVoxelSize_Y = 0.007
-  fineVoxelSize_Z = 0.007
-  coarseFineLimit = 11000
-
   [BasicSurfaceDetection.Clustering]
   #Euclidean clustering to cluster (separate) detected surfaces
   clusterTolerance = 0.05 # distance between clusters, in meters
@@ -309,11 +323,3 @@ port = 61448
   # the old convex hull. All points of the old convex hull are moved 1-mergeUpdatePercentage percent
   # along the vector pointing to the closest boundary point of the new convex hull.
   mergeUpdatePercentage = 0.2
-
-# These settings define basic parameters for detecting obstacles
-# They are mandatory if any kind of bstacle detection is enabled
-[BasicObstacleDetection]
-  [BasicObstacleDetection.InlierFinder]
-  # minimum distance a point must have to its projection onto a
-  # plane in order to be considered an inlier on this plane
-  minDistToPlane = 0.04

@@ -3,6 +3,7 @@
 
 #include "lepp3/filter/point/PointFilter.hpp"
 
+namespace lepp {
 
 /**
  * Removes points that are far away from the camera, with a defined threshold
@@ -14,6 +15,7 @@ public:
    *
    */
   BackgroundFilter(double threshold) : threshold_(threshold) {}
+
   /**
    * Implementation of the `PointFilter` interface.
    */
@@ -27,10 +29,11 @@ public:
   void prepareNext() {}
 
   virtual int order() const override { return -4; }
+
   virtual const char* name() const override { return "BackgroundFilter"; }
 
 private:
   double const threshold_;
 };
-
+}
 #endif
