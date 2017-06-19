@@ -2,13 +2,6 @@
 
 #include <stack>
 
-// explicit instantiation
-template
-class lepp::util::VoxelGrid<2>;
-
-template
-class lepp::util::VoxelGrid<3>;
-
 namespace {
 const float DEFAULT_RESOLUTION = 0.1f;
 }
@@ -187,3 +180,10 @@ size_t lepp::util::VoxelGrid<DIMENSIONS>::clusterForPoint(const vector_float& po
 
   return _grid[cellToGridIndex(cellIndex)] - CLUSTERED_CELL_START;
 }
+
+// explicit instantiation
+template
+class lepp::util::VoxelGrid<2>;
+
+template
+class lepp::util::VoxelGrid<3>;
