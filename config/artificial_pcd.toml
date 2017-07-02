@@ -15,7 +15,7 @@
 # `oni` and `pcd` types require an additional parameter: file_path
 # `am_offline` type requires an additional parameters: dir_path
 type = "pcd"
-file_path = "../../am2b/etc/model/pcd_creation/pcd_single/scene.pcd"
+file_path = "../../../am2b/etc/model/pcd_creation/pcd_single/scene.pcd"
 #dir_path = "path/to/folder"
 enable_rgb = false  # Capture RGB images
 enable_pose = false  # Replay pose data (only am_offline, [PoseService] must be disabled)
@@ -67,37 +67,46 @@ type = "ARVisualizer"
   width = 1024
   height = 768
   show_obstacles = true
-  show_surfaces = false
+  show_surfaces = true
 
 
 
 # This enables the obstacle detector
 [[observers]]
 type = "ObstacleDetector"
-# Available methods accepted by ObstacleDetector:
-#   - "EuclideanClustering"
-#   - "GMM" (see below)
-method = "EuclideanClustering"
 
-  [ObstacleDetetction.Euclidean.SplitStrategy]
+  # Removes points belonging to surfaces from the cloud
+  [ObstacleDetection.PlaneRemover]
+  # minimum distance a point must have to its projection onto a
+  # plane in order to be considered an inlier on this plane
+  minDistToPlane = 0.04
+
+  # Segmentation Method
+  [ObstacleDetection.Segmenter]
+  # Available methods:
+  #   - "Euclidean
+  #   - "GMM" (see below)
+  method = "Euclidean"
+
+  [ObstacleDetection.SplitStrategy]
   # Defines the split axis.
   # The point cloud is splitted with a plane through the centroid and perpendicular to the chosen axis.
   # Values: largest|middle|smallest
-  split_axis = "middle"
+split_axis = "largest"
   # A number of split conditions that need to be satisfied in order for an object
   # split to occur.
   # Care should be taken to define the conditions in a way that guarantees that
   # splitting eventually stops for each object (possibly the easiest way is to
   # always include the DepthLimit condition with a fairly high depth limit).
   # If no split conditions are provided, the objects will never be split.
-    [[ObstacleDetetction.Euclidean.SplitStrategy.conditions]]
+    [[ObstacleDetection.SplitStrategy.conditions]]
       type = "DepthLimit" # How many 'splitting steps' are performed. Max number of SSV's per obstacle = 2 ^ DepthLimit
       depth = 1
-    [[ObstacleDetetction.Euclidean.SplitStrategy.conditions]]
+    [[ObstacleDetection.SplitStrategy.conditions]]
       type = "SizeLimit" # After this volume is reached, a sub point cloud is not splitted any more
       # size is a volume in [cm^3]
       size = 3000.
-    [[ObstacleDetetction.Euclidean.SplitStrategy.conditions]]
+    [[ObstacleDetection.SplitStrategy.conditions]]
       type = "ShapeCondition"
       # The threshold values to consider something "very much" a sphere
       sphere1 = 0.8
@@ -109,7 +118,13 @@ method = "EuclideanClustering"
     #  # Distance is in [cm]
     #  distance_threshold = 150
 
-
+[[aggregators]]
+type = "ObstacleEvaluator"
+ref_volume = 0
+#
+#
+#
+#
 
 ###########################################################################
 # Miscellaneous settings 

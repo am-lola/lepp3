@@ -17,6 +17,7 @@
 #include "deps/toml.h"
 
 #include "lepp3/ObstacleEvaluator.hpp"
+#include "lepp3/SurfaceEvaluator.hpp"
 #include "lepp3/util/FileManager.hpp"
 #include "lepp3/util/OfflineVideoSource.hpp"
 
@@ -787,6 +788,9 @@ private:
       int const ref_volume = v.find("ref_volume")->as<int>();
       return boost::shared_ptr<ObstacleEvaluator>(
           new ObstacleEvaluator(ref_volume));
+
+    } else if (type == "SurfaceEvaluator") {
+      return boost::shared_ptr<SurfaceEvaluator>(new SurfaceEvaluator());
 
     } else {
       std::ostringstream ss;

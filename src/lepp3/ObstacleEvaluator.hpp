@@ -1,13 +1,10 @@
 #ifndef LEPP3_OBSTACLE_EVALUATOR_H_
 #define LEPP3_OBSTACLE_EVALUATOR_H_
-
 #include <boost/filesystem.hpp>
 #include <iostream>
 #include <sstream>
-
 #include "lepp3/FrameData.hpp"
 #include "lepp3/util/util.h"
-
 /**
  * A class that computes the volume of a given model.
  * It is a `ModelVisitor` implementation and it assumes one model as input,
@@ -21,7 +18,6 @@ class VolumeEstimator : public ModelVisitor {
 public:
   VolumeEstimator()
       : num_splits_(0) {
-
     min_p_.x = std::numeric_limits<int>::max();
     min_p_.y = std::numeric_limits<int>::max();
     min_p_.z = std::numeric_limits<int>::max();
@@ -42,7 +38,6 @@ public:
    * subdivide the region into small grids.
    */
   int estimateVolume();
-
 private:
   /**
    * Checks if the current point on the 3D grid (a.k.a the bounding box around
@@ -67,41 +62,36 @@ private:
    */
   int num_splits_;
 };
-
 void VolumeEstimator::visitSphere(lepp::SphereModel& sphere) {
   ++num_splits_;
   // Store the current Sphere model.
   spheres_.push_back(sphere);
-
   Coordinate const center = sphere.center_point();
-
   double const max_x = center.x + sphere.radius();
   double const max_y = center.y + sphere.radius();
   double const max_z = center.z + sphere.radius();
-
   double const min_x = center.x - sphere.radius();
   double const min_y = center.y - sphere.radius();
   double const min_z = center.z - sphere.radius();
-
   max_p_.x = std::max(max_p_.x, max_x);
   max_p_.y = std::max(max_p_.y, max_y);
   max_p_.z = std::max(max_p_.z, max_z);
-
   min_p_.x = std::min(min_p_.x, min_x);
   min_p_.y = std::min(min_p_.y, min_y);
   min_p_.z = std::min(min_p_.z, min_z);
+  double volume = 4/3*M_PI*sphere.radius()*sphere.radius()*sphere.radius();
+  //std::cout << volume << std::endl;
 }
-
 void VolumeEstimator::visitCapsule(lepp::CapsuleModel& capsule) {
   ++num_splits_;
   // Store the current Capsule model.
   capsules_.push_back(capsule);
-
   Coordinate first = capsule.first();
   Coordinate second = capsule.second();
-
+  double a = std::sqrt((first.x - second.x)*(first.x - second.x) + (first.y - second.y)*(first.y - second.y) + (first.z - second.z)*(first.z - second.z));
+  double volume = M_PI*capsule.radius()*capsule.radius()*(4/3*capsule.radius() + a);
+  //std::cout << volume << std::endl;
   Coordinate min, max;
-  // Find minimum values between capsule.first, second and min_p_
   min.x = std::min(first.x, second.x);
   min.y = std::min(first.y, second.y);
   min.z = std::min(first.z, second.z);
@@ -115,7 +105,6 @@ void VolumeEstimator::visitCapsule(lepp::CapsuleModel& capsule) {
   max.x += capsule.radius();
   max.y += capsule.radius();
   max.z += capsule.radius();
-
   // Find the global min/max
   min_p_.x = std::min(min_p_.x, min.x);
   min_p_.y = std::min(min_p_.y, min.y);
@@ -124,10 +113,8 @@ void VolumeEstimator::visitCapsule(lepp::CapsuleModel& capsule) {
   max_p_.y = std::max(max_p_.y, max.y);
   max_p_.z = std::max(max_p_.z, max.z);
 }
-
 bool VolumeEstimator::isVoxelOccupied(
-        double const& x, double const& y, double const& z) {
-
+    double const& x, double const& y, double const& z) {
   // Go through all spheres of the current model and check if the point is
   // inside one of them.
   {
@@ -136,7 +123,7 @@ bool VolumeEstimator::isVoxelOccupied(
       double const r = spheres_[i].radius();
       Coordinate const& center = spheres_[i].center_point();
       double const distance =
-              (center.x - x) * (center.x - x) + (center.y - y) * (center.y - y) + (center.z - z) * (center.z - z);
+          (center.x - x) * (center.x - x) + (center.y - y) * (center.y - y) + (center.z - z) * (center.z - z);
       if (distance <= r * r)
         return true;
     }
@@ -155,21 +142,18 @@ bool VolumeEstimator::isVoxelOccupied(
       Eigen::Vector4f line_dir(l.x, l.y, l.z, 0.);
       // line_pt: a point on the line
       Eigen::Vector4f line_pt(
-              capsules_[i].second().x,
-              capsules_[i].second().y,
-              capsules_[i].second().z,
-              0.);
+          capsules_[i].second().x,
+          capsules_[i].second().y,
+          capsules_[i].second().z,
+          0.);
       Eigen::Vector4f pt(x, y, z, 0);
-
       double const distance = pcl::sqrPointToLineDistance(pt, line_pt, line_dir);
       if (distance < r*r)
         return true;
     }
   }
-
   return false;
 }
-
 int VolumeEstimator::estimateVolume() {
   // NOTE: All the values are in METERS
   // Create a 3D grid and check the distance of each point on grid to the object
@@ -187,7 +171,6 @@ int VolumeEstimator::estimateVolume() {
   }
   return volume;
 }
-
 /**
  *
  */
@@ -195,30 +178,24 @@ class ObstacleEvaluator : public FrameDataObserver {
 public:
   ObstacleEvaluator();
   ObstacleEvaluator(int vol);
-
   /**
    * ObstacleAggregator interface implementation: processes the current models.
    */
   void updateFrame(FrameDataPtr frameData);
 private:
   void init();
-  bool evaluate(ObjectModelPtr const& model);
+  bool evaluate(ObjectModelPtr const& model, double x, double y, double z);
   std::string file_path_;
   int ref_volume_;
 };
-
 ObstacleEvaluator::ObstacleEvaluator()
     : ref_volume_(0) {
-
   init();
 }
-
 ObstacleEvaluator::ObstacleEvaluator(int vol)
     : ref_volume_(vol) {
-
   init();
 }
-
 void ObstacleEvaluator::init() {
   namespace bfs = boost::filesystem;
   std::stringstream ss;
@@ -238,21 +215,22 @@ void ObstacleEvaluator::init() {
   // Create the file header
   std::ofstream tf_fout;
   tf_fout.open(file_path_.c_str(), std::ofstream::app);
-  tf_fout << "model id,"
-          << "splits,"
-          << "est. volume,"
-          << "reference volume,"
-          << "ratio" << std::endl;
+  tf_fout << "model_id,"
+          << "volume,"
+          << "sim_veloc_x,"
+          << "sim_veloc_y,"
+          << "sim_veloc_z,"
+          << std::endl;
   tf_fout.close();
 }
-
-bool ObstacleEvaluator::evaluate(ObjectModelPtr const& model) {
+bool ObstacleEvaluator::evaluate(ObjectModelPtr const& model, double x, double y, double z) {
   // TODO incorporate try-catch scheme
   VolumeEstimator estimator;
   // Find the minimum and maximum point of the approximated model
   model->accept(estimator);
   // Compute the volume of the current model
   int vol = estimator.estimateVolume();
+  //std::cout << "Volume Tester " << vol << std::endl;
   // Evaluate the approximation based on the reference information
   float ratio = -1;
   if (ref_volume_ != 0)
@@ -260,24 +238,26 @@ bool ObstacleEvaluator::evaluate(ObjectModelPtr const& model) {
   // Save the current approximation information
   std::stringstream ss;
   ss << model->id() << ","
-    << estimator.getSplitCount() << ","
-    << vol << ","
-    << ref_volume_ << ","
-    << ratio << std::endl;
+     << vol << ","
+     << x << ","
+     << y << ","
+     << z
+     << std::endl;
   std::ofstream tf_fout;
   // open the file and add the current model evaluation to the end of it
   tf_fout.open(file_path_.c_str(), std::ofstream::app);
   tf_fout << ss.str();
   tf_fout.close();
-
   return true;
 }
-
 void ObstacleEvaluator::updateFrame(FrameDataPtr frameData) {
   size_t sz = frameData->obstacles.size();
   for (size_t i=0; i<sz; ++i) {
-    evaluate(frameData->obstacles[i]);
+    //evaluate(frameData->obstacles[i]);
+    double x = frameData->obstacles[i]->velocity().x;
+    double y = frameData->obstacles[i]->velocity().y;
+    double z = frameData->obstacles[i]->velocity().z;
+    evaluate(frameData->obstacles[i], x, y, z);
   }
 }
-
 #endif // LEPP3_OBSTACLE_EVALUATOR_H_
