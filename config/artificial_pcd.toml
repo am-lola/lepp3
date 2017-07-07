@@ -92,7 +92,7 @@ type = "ObstacleDetector"
   # Defines the split axis.
   # The point cloud is splitted with a plane through the centroid and perpendicular to the chosen axis.
   # Values: largest|middle|smallest
-split_axis = "largest"
+  split_axis = "largest"
   # A number of split conditions that need to be satisfied in order for an object
   # split to occur.
   # Care should be taken to define the conditions in a way that guarantees that
@@ -101,7 +101,7 @@ split_axis = "largest"
   # If no split conditions are provided, the objects will never be split.
     [[ObstacleDetection.SplitStrategy.conditions]]
       type = "DepthLimit" # How many 'splitting steps' are performed. Max number of SSV's per obstacle = 2 ^ DepthLimit
-      depth = 1
+     depth = 2
     [[ObstacleDetection.SplitStrategy.conditions]]
       type = "SizeLimit" # After this volume is reached, a sub point cloud is not splitted any more
       # size is a volume in [cm^3]

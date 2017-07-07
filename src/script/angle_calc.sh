@@ -35,11 +35,11 @@ do
     echo $R_z
     scale_z=$(echo $R_z\/100 | bc -l | awk '{printf "%f", $0}')
     echo $scale_z
-    cd ~/lepp3/
-    sed -i "106s/.*/[[observers]]/" artificial_pcd.toml
-    sed -i "107s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
-    sed -i "108s/.*/    [[aggregators]]/" artificial_pcd.toml
-    sed -i "109s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "124s/.*/[[observers]]/" artificial_pcd.toml
+    sed -i "125s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
+    sed -i "126s/.*/    [[aggregators]]/" artificial_pcd.toml
+    sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     cd ~/am2b/etc/model/pcd_creation/
     sed -i "3s/.*/-0.5 0 1/" pov.txt
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
@@ -48,14 +48,14 @@ do
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
     #cd ../../../../../lepp3/build
-    cd ~/lepp3/build/
-    timeout 5s ./lola --cfg ../artificial_pcd.toml
+    cd ~/Music/lepp3/build/
+    timeout 5s ./lola --cfg ../config/artificial_pcd.toml
     pi=3.14159265359
     original_slope=$(echo 64\*$scale_z\/500\/$scale_y | bc -l | awk '{printf "%f", $0}')
     original_angle=$(echo $original_slope\*180\/$pi | bc -l | awk '{printf "%f", $0}')
     echo "Original slope of ramp: $original_slope"
     echo "Original angle of ramp: $original_angle"
-    cd ~/lepp3/surfaceEvaluation/
+    cd ~/Music/lepp3/surfaceEvaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r id area total_area angle < <(tail -1 surfeval.csv)

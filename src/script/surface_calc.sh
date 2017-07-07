@@ -37,20 +37,20 @@ do
     echo $scale_y
     scale_z=0.1
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
-    cd ~/lepp3/
-    sed -i "106s/.*/[[observers]]/" artificial_pcd.toml
-    sed -i "107s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
-    sed -i "108s/.*/    [[aggregators]]/" artificial_pcd.toml
-    sed -i "109s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "124s/.*/[[observers]]/" artificial_pcd.toml
+    sed -i "125s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
+    sed -i "126s/.*/    [[aggregators]]/" artificial_pcd.toml
+    sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 3/" pov.txt
+    sed -i "3s/.*/-0.5 0 1/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
     #cd ../../../../../lepp3/build
-    cd ~/lepp3/build/
-    timeout 40s ./lola --cfg ../artificial_pcd.toml
+    cd ~/Music/lepp3/build/
+    timeout 40s ./lola --cfg ../config/artificial_pcd.toml
     original_surface=40.130005
     echo "Original surface of $object: $original_surface"
     final_surface=$(echo $original_surface\*$scale_x\*$scale_y | bc -l | awk '{printf "%f", $0}')
@@ -58,7 +58,7 @@ do
     echo "Scale factor y: $scale_y"
     echo "Scale factor z: $scale_z"
     echo "Surface after application of scale factors: $final_surface"
-    cd ~/lepp3/surfaceEvaluation/
+    cd ~/Music/lepp3/surfaceEvaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r id area total_area angle < <(tail -1 surfeval.csv)
@@ -106,21 +106,21 @@ do
     scale_y=$(echo $R_y\/100 | bc -l | awk '{printf "%f", $0}')
     echo $scale_y
     scale_z=0.1
-    cd ~/lepp3/
-    sed -i "106s/.*/[[observers]]/" artificial_pcd.toml
-    sed -i "107s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
-    sed -i "108s/.*/    [[aggregators]]/" artificial_pcd.toml
-    sed -i "109s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "124s/.*/[[observers]]/" artificial_pcd.toml
+    sed -i "125s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
+    sed -i "126s/.*/    [[aggregators]]/" artificial_pcd.toml
+    sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 3/" pov.txt
+    sed -i "3s/.*/-0.5 0 1/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
     #cd ../../../../../lepp3/build
-    cd ~/lepp3/build/
-    timeout 20s ./lola --cfg ../artificial_pcd.toml
+    cd ~/Music/lepp3/build/
+    timeout 20s ./lola --cfg ../config/artificial_pcd.toml
     original_surface=2.25
     echo "Original surface of $object: $original_surface"
     final_surface=$(echo $original_surface\*$scale_x\*$scale_y | bc -l | awk '{printf "%f", $0}')
@@ -128,7 +128,7 @@ do
     echo "Scale factor y: $scale_y"
     echo "Scale factor z: $scale_z"
     echo "Surface after application of scale factors: $final_surface"
-    cd ~/lepp3/surfaceEvaluation/
+    cd ~/Music/lepp3/surfaceEvaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r id area total_area angle < <(tail -1 surfeval.csv)
@@ -176,21 +176,21 @@ do
     scale_y=$(echo $R_y\/100 | bc -l | awk '{printf "%f", $0}')
     echo $scale_y
     scale_z=0.1
-    cd ~/lepp3/
-    sed -i "106s/.*/[[observers]]/" artificial_pcd.toml
-    sed -i "107s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
-    sed -i "108s/.*/    [[aggregators]]/" artificial_pcd.toml
-    sed -i "109s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "124s/.*/[[observers]]/" artificial_pcd.toml
+    sed -i "125s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
+    sed -i "126s/.*/    [[aggregators]]/" artificial_pcd.toml
+    sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 3/" pov.txt
+    sed -i "3s/.*/-0.5 0 1/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
     #cd ../../../../../lepp3/build
-    cd ~/lepp3/build/
-    timeout 15s ./lola --cfg ../artificial_pcd.toml
+    cd ~/Music/lepp3/build/
+    timeout 15s ./lola --cfg ../config/artificial_pcd.toml
     original_surface=1.01
     echo "Original surface of $object: $original_surface"
     final_surface=$(echo $original_surface\*$scale_x\*$scale_y | bc -l | awk '{printf "%f", $0}')
@@ -198,7 +198,7 @@ do
     echo "Scale factor y: $scale_y"
     echo "Scale factor z: $scale_z"
     echo "Surface after application of scale factors: $final_surface"
-    cd ~/lepp3/surfaceEvaluation/
+    cd ~/Music/lepp3/surfaceEvaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r id area total_area angle < <(tail -1 surfeval.csv)
@@ -246,21 +246,21 @@ do
     scale_y=$(echo $R_y\/100 | bc -l | awk '{printf "%f", $0}')
     echo $scale_y
     scale_z=0.1
-    cd ~/lepp3/
-    sed -i "106s/.*/[[observers]]/" artificial_pcd.toml
-    sed -i "107s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
-    sed -i "108s/.*/    [[aggregators]]/" artificial_pcd.toml
-    sed -i "109s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "124s/.*/[[observers]]/" artificial_pcd.toml
+    sed -i "125s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
+    sed -i "126s/.*/    [[aggregators]]/" artificial_pcd.toml
+    sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 3/" pov.txt
+    sed -i "3s/.*/-0.5 0 1/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
     #cd ../../../../../lepp3/build
-    cd ~/lepp3/build/
-    timeout 6s ./lola --cfg ../artificial_pcd.toml
+    cd ~/Music/lepp3/build/
+    timeout 6s ./lola --cfg ../config/artificial_pcd.toml
     original_surface=0.09
     echo "Original surface of $object: $original_surface"
     final_surface=$(echo $original_surface\*$scale_x\*$scale_y | bc -l | awk '{printf "%f", $0}')
@@ -268,7 +268,7 @@ do
     echo "Scale factor y: $scale_y"
     echo "Scale factor z: $scale_z"
     echo "Surface after application of scale factors: $final_surface"
-    cd ~/lepp3/surfaceEvaluation/
+    cd ~/Music/lepp3/surfaceEvaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r id area total_area angle < <(tail -1 surfeval.csv)
@@ -316,21 +316,21 @@ do
     scale_y=$(echo $R_y\/100 | bc -l | awk '{printf "%f", $0}')
     echo $scale_y
     scale_z=0.1
-    cd ~/lepp3/
-    sed -i "106s/.*/[[observers]]/" artificial_pcd.toml
-    sed -i "107s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
-    sed -i "108s/.*/    [[aggregators]]/" artificial_pcd.toml
-    sed -i "109s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "124s/.*/[[observers]]/" artificial_pcd.toml
+    sed -i "125s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
+    sed -i "126s/.*/    [[aggregators]]/" artificial_pcd.toml
+    sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 3/" pov.txt
+    sed -i "3s/.*/-0.5 0 1/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
     #cd ../../../../../lepp3/build
-    cd ~/lepp3/build/
-    timeout 20s ./lola --cfg ../artificial_pcd.toml
+    cd ~/Music/lepp3/build/
+    timeout 20s ./lola --cfg ../config/artificial_pcd.toml
     original_surface=1.018750
     echo "Original surface of $object: $original_surface"
     final_surface=$(echo $original_surface\*$scale_x\*$scale_y | bc -l | awk '{printf "%f", $0}')
@@ -338,7 +338,7 @@ do
     echo "Scale factor y: $scale_y"
     echo "Scale factor z: $scale_z"
     echo "Surface after application of scale factors: $final_surface"
-    cd ~/lepp3/surfaceEvaluation/
+    cd ~/Music/lepp3/surfaceEvaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r id area total_area angle < <(tail -1 surfeval.csv)
@@ -386,21 +386,21 @@ do
     scale_y=$(echo $R_y\/100 | bc -l | awk '{printf "%f", $0}')
     echo $scale_y
     scale_z=0.1
-    cd ~/lepp3/
-    sed -i "106s/.*/[[observers]]/" artificial_pcd.toml
-    sed -i "107s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
-    sed -i "108s/.*/    [[aggregators]]/" artificial_pcd.toml
-    sed -i "109s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "124s/.*/[[observers]]/" artificial_pcd.toml
+    sed -i "125s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
+    sed -i "126s/.*/    [[aggregators]]/" artificial_pcd.toml
+    sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 3/" pov.txt
+    sed -i "3s/.*/-0.5 0 1/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
     #cd ../../../../../lepp3/build
-    cd ~/lepp3/build/
-    timeout 20s ./lola --cfg ../artificial_pcd.toml
+    cd ~/Music/lepp3/build/
+    timeout 20s ./lola --cfg ../config/artificial_pcd.toml
     original_surface=1.024428
     echo "Original surface of $object: $original_surface"
     final_surface=$(echo $original_surface\*$scale_x\*$scale_y | bc -l | awk '{printf "%f", $0}')
@@ -408,7 +408,7 @@ do
     echo "Scale factor y: $scale_y"
     echo "Scale factor z: $scale_z"
     echo "Surface after application of scale factors: $final_surface"
-    cd ~/lepp3/surfaceEvaluation/
+    cd ~/Music/lepp3/surfaceEvaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r id area total_area angle < <(tail -1 surfeval.csv)
@@ -456,11 +456,11 @@ do
     scale_y=$(echo $R_y\/100 | bc -l | awk '{printf "%f", $0}')
     echo $scale_y
     scale_z=0.1
-    cd ~/lepp3/
-    sed -i "106s/.*/[[observers]]/" artificial_pcd.toml
-    sed -i "107s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
-    sed -i "108s/.*/    [[aggregators]]/" artificial_pcd.toml
-    sed -i "109s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "124s/.*/[[observers]]/" artificial_pcd.toml
+    sed -i "125s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
+    sed -i "126s/.*/    [[aggregators]]/" artificial_pcd.toml
+    sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
     sed -i "3s/.*/-0.5 0 1/" pov.txt
@@ -469,8 +469,8 @@ do
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
     #cd ../../../../../lepp3/build
-    cd ~/lepp3/build/
-    timeout 10s ./lola --cfg ../artificial_pcd.toml
+    cd ~/Music/lepp3/build/
+    timeout 10s ./lola --cfg ../config/artificial_pcd.toml
     original_surface=1.840635
     echo "Original surface of $object: $original_surface"
     final_surface=$(echo $original_surface\*$scale_x\*$scale_y | bc -l | awk '{printf "%f", $0}')
@@ -478,7 +478,7 @@ do
     echo "Scale factor y: $scale_y"
     echo "Scale factor z: $scale_z"
     echo "Surface after application of scale factors: $final_surface"
-    cd ~/lepp3/surfaceEvaluation/
+    cd ~/Music/lepp3/surfaceEvaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r id area total_area angle < <(tail -1 surfeval.csv)
@@ -526,11 +526,11 @@ do
     scale_y=$(echo $R_y\/100 | bc -l | awk '{printf "%f", $0}')
     echo $scale_y
     scale_z=0.1
-    cd ~/lepp3/
-    sed -i "106s/.*/[[observers]]/" artificial_pcd.toml
-    sed -i "107s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
-    sed -i "108s/.*/    [[aggregators]]/" artificial_pcd.toml
-    sed -i "109s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "124s/.*/[[observers]]/" artificial_pcd.toml
+    sed -i "125s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
+    sed -i "126s/.*/    [[aggregators]]/" artificial_pcd.toml
+    sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
     sed -i "3s/.*/-0.5 0 1/" pov.txt
@@ -539,8 +539,8 @@ do
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
     #cd ../../../../../lepp3/build
-    cd ~/lepp3/build/
-    timeout 10s ./lola --cfg ../artificial_pcd.toml
+    cd ~/Music/lepp3/build/
+    timeout 10s ./lola --cfg ../config/artificial_pcd.toml
     original_surface=1.856843
     echo "Original surface of $object: $original_surface"
     final_surface=$(echo $original_surface\*$scale_x\*$scale_y | bc -l | awk '{printf "%f", $0}')
@@ -548,7 +548,7 @@ do
     echo "Scale factor y: $scale_y"
     echo "Scale factor z: $scale_z"
     echo "Surface after application of scale factors: $final_surface"
-    cd ~/lepp3/surfaceEvaluation/
+    cd ~/Music/lepp3/surfaceEvaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r id area total_area angle < <(tail -1 surfeval.csv)
@@ -596,11 +596,11 @@ do
     scale_y=$(echo $R_y\/100 | bc -l | awk '{printf "%f", $0}')
     echo $scale_y
     scale_z=0.1
-    cd ~/lepp3/
-    sed -i "106s/.*/[[observers]]/" artificial_pcd.toml
-    sed -i "107s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
-    sed -i "108s/.*/    [[aggregators]]/" artificial_pcd.toml
-    sed -i "109s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "124s/.*/[[observers]]/" artificial_pcd.toml
+    sed -i "125s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
+    sed -i "126s/.*/    [[aggregators]]/" artificial_pcd.toml
+    sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
     sed -i "3s/.*/-0.5 0 3/" pov.txt
@@ -609,8 +609,8 @@ do
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
     #cd ../../../../../lepp3/build
-    cd ~/lepp3/build/
-    timeout 6s ./lola --cfg ../artificial_pcd.toml
+    cd ~/Music/lepp3/build/
+    timeout 6s ./lola --cfg ../config/artificial_pcd.toml
     original_surface=0.384772
     echo "Original surface of $object: $original_surface"
     final_surface=$(echo $original_surface\*$scale_x\*$scale_y | bc -l | awk '{printf "%f", $0}')
@@ -618,7 +618,7 @@ do
     echo "Scale factor y: $scale_y"
     echo "Scale factor z: $scale_z"
     echo "Surface after application of scale factors: $final_surface"
-    cd ~/lepp3/surfaceEvaluation/
+    cd ~/Music/lepp3/surfaceEvaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r id area total_area angle < <(tail -1 surfeval.csv)
@@ -666,11 +666,11 @@ do
     scale_y=$(echo $R_y\/100 | bc -l | awk '{printf "%f", $0}')
     echo $scale_y
     scale_z=0.1
-    cd ~/lepp3/
-    sed -i "106s/.*/[[observers]]/" artificial_pcd.toml
-    sed -i "107s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
-    sed -i "108s/.*/    [[aggregators]]/" artificial_pcd.toml
-    sed -i "109s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "124s/.*/[[observers]]/" artificial_pcd.toml
+    sed -i "125s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
+    sed -i "126s/.*/    [[aggregators]]/" artificial_pcd.toml
+    sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
     sed -i "3s/.*/-0.5 0 1/" pov.txt
@@ -679,8 +679,8 @@ do
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
     #cd ../../../../../lepp3/build
-    cd ~/lepp3/build/
-    timeout 6s ./lola --cfg ../artificial_pcd.toml
+    cd ~/Music/lepp3/build/
+    timeout 6s ./lola --cfg ../config/artificial_pcd.toml
     original_surface=0.392990
     echo "Original surface of $object: $original_surface"
     final_surface=$(echo $original_surface\*$scale_x\*$scale_y | bc -l | awk '{printf "%f", $0}')
@@ -688,7 +688,7 @@ do
     echo "Scale factor y: $scale_y"
     echo "Scale factor z: $scale_z"
     echo "Surface after application of scale factors: $final_surface"
-    cd ~/lepp3/surfaceEvaluation/
+    cd ~/Music/lepp3/surfaceEvaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r id area total_area angle < <(tail -1 surfeval.csv)
@@ -742,11 +742,11 @@ do
     scale_y=$(echo $R_y\/100 | bc -l | awk '{printf "%f", $0}')
     echo $scale_y
     scale_z=0.3
-    cd ~/lepp3/
-    sed -i "106s/.*/[[observers]]/" artificial_pcd.toml
-    sed -i "107s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
-    sed -i "108s/.*/    [[aggregators]]/" artificial_pcd.toml
-    sed -i "109s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "124s/.*/[[observers]]/" artificial_pcd.toml
+    sed -i "125s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
+    sed -i "126s/.*/    [[aggregators]]/" artificial_pcd.toml
+    sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
     sed -i "3s/.*/-0.5 0 3/" pov.txt
@@ -756,8 +756,8 @@ do
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
     #cd ../../../../../lepp3/build
-    cd ~/lepp3/build/
-    timeout 40s ./lola --cfg ../artificial_pcd.toml
+    cd ~/Music/lepp3/build/
+    timeout 40s ./lola --cfg ../config/artificial_pcd.toml
     original_surface_floor=40.0
     original_surface_platform=2.25
     echo "Original surface of floor: $original_surface_floor"
@@ -769,7 +769,7 @@ do
     echo "Scale factor z: $scale_z"
     echo "Floor surface after application of scale factors: $final_surface_floor"
     echo "Platform surface after application of scale factors: $final_surface_platform"
-    cd ~/lepp3/surfaceEvaluation/
+    cd ~/Music/lepp3/surfaceEvaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r id area_floor total_area angle < <(tail -2 surfeval.csv)

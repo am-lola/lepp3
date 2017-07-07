@@ -26,7 +26,7 @@ touch $store_data
 fi;
 printf '%s\n' Veloc_x Simul_Veloc_x Diff_x Ratio_x Veloc_y Simul_Veloc_y Diff_y Ratio_y Veloc_z Simul_Veloc_z Diff_z Ratio_z | paste -sd ' ' >> $store_data
 range1=10
-range2=100
+range2=20
 DIFF=$(($range2-$range1+1))
 RANDOM=$$
 for i in `seq 20`
@@ -127,9 +127,9 @@ do
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" --stream 10
     #cd ../../../../../lepp3/build
-    cd ~/lepp3/build/
-    timeout 5s ./lola --cfg ../artificial_stream.toml
-    cd ~/lepp3/evaluation/
+    cd ~/Music/lepp3/build/
+    timeout 5s ./lola --cfg ../config/artificial_stream.toml
+    cd ~/Music/lepp3/evaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)

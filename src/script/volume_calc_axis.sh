@@ -6,7 +6,7 @@ echo -e "Evaluation of $object :\n"
 splitting_step=1
 echo -n -e "Enter the number of splitting steps (0,1 or 2)\n"
 read splitting_step
-cd ~/Music/lepp3/
+cd ~/Music/lepp3/config
 sed -i "104s/.*/     depth = $splitting_step/" artificial_pcd.toml
 if [ "$object" = "box" ]; then
 file=box_vol.wrl
@@ -44,7 +44,7 @@ do
     sed -i "124,127s/.*/#/" artificial_pcd.toml
     sed -i "95s/.*/split_axis = \"smallest\"/" artificial_pcd.toml
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 3/" pov.txt
+    sed -i "3s/.*/-0.5 0 1/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
@@ -167,18 +167,18 @@ do
     scale_z=$(echo $R_z\/100 | bc -l | awk '{printf "%f", $0}')
     echo $scale_z
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
-    cd ~/lepp3/
-    sed -i "106,109s/.*/#/" artificial_pcd.toml
-    sed -i "77s/.*/split_axis = \"smallest\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "124,127s/.*/#/" artificial_pcd.toml
+    sed -i "95s/.*/split_axis = \"smallest\"/" artificial_pcd.toml
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 3/" pov.txt
+    sed -i "3s/.*/-0.5 0 1/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
     #cd ../../../../../lepp3/build
-    cd ~/lepp3/build/
-    timeout 5s ./lola --cfg ../artificial_pcd.toml
+    cd ~/Music/lepp3/build/
+    timeout 6s ./lola --cfg ../config/artificial_pcd.toml
     original_volume=0.0035
     echo "Original volume of $object: $original_volume"
     final_volume=$(echo $original_volume\*$scale_x\*$scale_y\*$scale_z | bc -l | awk '{printf "%f", $0}')
@@ -186,7 +186,7 @@ do
     echo "Scale factor y: $scale_y"
     echo "Scale factor z: $scale_z"
     echo "Volume after application of scale factors: $final_volume"
-    cd ~/lepp3/evaluation/
+    cd ~/Music/lepp3/evaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)
@@ -208,13 +208,13 @@ do
     printf '%s\n' Scale_x Scale_y Scale_z Calc Est_Smallest Ratio_Smallest | paste -sd ' ' >> $file_smallest
     fi;
     echo $scale_x $scale_y $scale_z $final_volume $est_smallest $ratio_smallest >> $file_smallest
-    cd ~/lepp3/
-    sed -i "77s/.*/split_axis = \"middle\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "95s/.*/split_axis = \"middle\"/" artificial_pcd.toml
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
-    cd ~/lepp3/build/
-    timeout 6s ./lola --cfg ../artificial_pcd.toml
-    cd ~/lepp3/evaluation/
+    cd ~/Music/lepp3/build/
+    timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+    cd ~/Music/lepp3/evaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)
@@ -234,13 +234,12 @@ do
     printf '%s\n' Scale_x Scale_y Scale_z Calc Est_Middle Ratio_Middle | paste -sd ' ' >> $file_middle
     fi;
     echo $scale_x $scale_y $scale_z $final_volume $est_middle $ratio_middle >> $file_middle
-    cd ~/lepp3/
-    sed -i "77s/.*/split_axis = \"largest\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "95s/.*/split_axis = \"largest\"/" artificial_pcd.toml
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
-    cd ~/lepp3/build/
-    timeout 6s ./lola --cfg ../artificial_pcd.toml
-    cd ~/lepp3/evaluation/
+    cd ~/Music/lepp3/build/
+    timeout 6s ./lola --cfg ../config/artificial_pcd.toml
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)
@@ -295,17 +294,17 @@ do
     echo $scale_z
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 3/" pov.txt
+    sed -i "3s/.*/-0.5 0 1/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
     #cd ../../../../../lepp3/build
-    cd ~/lepp3/
-    sed -i "106,109s/.*/#/" artificial_pcd.toml
-    sed -i "77s/.*/split_axis = \"smallest\"/" artificial_pcd.toml
-    cd ~/lepp3/build/
-    timeout 6s ./lola --cfg ../artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "124,127s/.*/#/" artificial_pcd.toml
+    sed -i "95s/.*/split_axis = \"smallest\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/build/
+    timeout 6s ./lola --cfg ../config/artificial_pcd.toml
     original_volume=0.000883
     echo "Original volume of $object: $original_volume"
     final_volume=$(echo $original_volume\*$scale_x\*$scale_y\*$scale_z | bc -l | awk '{printf "%f", $0}')
@@ -313,7 +312,7 @@ do
     echo "Scale factor y: $scale_y"
     echo "Scale factor z: $scale_z"
     echo "Volume after application of scale factors: $final_volume"
-    cd ~/lepp3/evaluation/
+    cd ~/Music/lepp3/evaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)
@@ -335,13 +334,13 @@ do
     printf '%s\n' Scale_x Scale_y Scale_z Calc Est_Smallest Ratio_Smallest | paste -sd ' ' >> $file_smallest
     fi;
     echo $scale_x $scale_y $scale_z $final_volume $est_smallest $ratio_smallest >> $file_smallest
-    cd ~/lepp3/
-    sed -i "77s/.*/split_axis = \"middle\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "95s/.*/split_axis = \"middle\"/" artificial_pcd.toml
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
-    cd ~/lepp3/build/
-    timeout 6s ./lola --cfg ../artificial_pcd.toml
-    cd ~/lepp3/evaluation/
+    cd ~/Music/lepp3/build/
+    timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+    cd ~/Music/lepp3/evaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)
@@ -361,13 +360,13 @@ do
     printf '%s\n' Scale_x Scale_y Scale_z Calc Est_Middle Ratio_Middle | paste -sd ' ' >> $file_middle
     fi;
     echo $scale_x $scale_y $scale_z $final_volume $est_middle $ratio_middle >> $file_middle
-    cd ~/lepp3/
-    sed -i "77s/.*/split_axis = \"largest\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "95s/.*/split_axis = \"largest\"/" artificial_pcd.toml
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
-    cd ~/lepp3/build/
-    timeout 6s ./lola --cfg ../artificial_pcd.toml
-    cd ~/lepp3/evaluation/
+    cd ~/Music/lepp3/build/
+    timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+    cd ~/Music/lepp3/evaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)
@@ -422,17 +421,17 @@ do
     echo $scale_z
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 3/" pov.txt
+    sed -i "3s/.*/-0.5 0 1/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
     #cd ../../../../../lepp3/build
-    cd ~/lepp3/
-    sed -i "106,109s/.*/#/" artificial_pcd.toml
-    sed -i "77s/.*/split_axis = \"smallest\"/" artificial_pcd.toml
-    cd ~/lepp3/build/
-    timeout 5s ./lola --cfg ../artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "124,127s/.*/#/" artificial_pcd.toml
+    sed -i "95s/.*/split_axis = \"smallest\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/build/
+    timeout 6s ./lola --cfg ../config/artificial_pcd.toml
     original_volume=0.000826
     echo "Original volume of $object: $original_volume"
     final_volume=$(echo $original_volume\*$scale_x\*$scale_y\*$scale_z | bc -l | awk '{printf "%f", $0}')
@@ -440,7 +439,7 @@ do
     echo "Scale factor y: $scale_y"
     echo "Scale factor z: $scale_z"
     echo "Volume after application of scale factors: $final_volume"
-    cd ~/lepp3/evaluation/
+    cd ~/Music/lepp3/evaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)
@@ -462,13 +461,13 @@ do
     printf '%s\n' Scale_x Scale_y Scale_z Calc Est_Smallest Ratio_Smallest | paste -sd ' ' >> $file_smallest
     fi;
     echo $scale_x $scale_y $scale_z $final_volume $est_smallest $ratio_smallest >> $file_smallest
-    cd ~/lepp3/
-    sed -i "77s/.*/split_axis = \"middle\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "95s/.*/split_axis = \"middle\"/" artificial_pcd.toml
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
-    cd ~/lepp3/build/
-    timeout 6s ./lola --cfg ../artificial_pcd.toml
-    cd ~/lepp3/evaluation/
+    cd ~/Music/lepp3/build/
+    timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+    cd ~/Music/lepp3/evaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)
@@ -488,13 +487,13 @@ do
     printf '%s\n' Scale_x Scale_y Scale_z Calc Est_Middle Ratio_Middle | paste -sd ' ' >> $file_middle
     fi;
     echo $scale_x $scale_y $scale_z $final_volume $est_middle $ratio_middle >> $file_middle
-    cd ~/lepp3/
-    sed -i "77s/.*/split_axis = \"largest\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "95s/.*/split_axis = \"largest\"/" artificial_pcd.toml
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
-    cd ~/lepp3/build/
-    timeout 6s ./lola --cfg ../artificial_pcd.toml
-    cd ~/lepp3/evaluation/
+    cd ~/Music/lepp3/build/
+    timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+    cd ~/Music/lepp3/evaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)
@@ -556,18 +555,18 @@ do
     echo $scale_z
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 3/" pov.txt
+    sed -i "3s/.*/-0.5 0 1/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     sed -i "13s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
     #cd ../../../../../lepp3/build
-    cd ~/lepp3/
-    sed -i "106,109s/.*/#/" artificial_pcd.toml
-    sed -i "77s/.*/split_axis = \"smallest\"/" artificial_pcd.toml
-    cd ~/lepp3/build/
-    timeout 5s ./lola --cfg ../artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "124,127s/.*/#/" artificial_pcd.toml
+    sed -i "95s/.*/split_axis = \"smallest\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/build/
+    timeout 6s ./lola --cfg ../config/artificial_pcd.toml
     original_volume_box=0.016
     original_volume_beam=0.0035
     echo "Original volume of box: $original_volume_box"
@@ -579,7 +578,7 @@ do
     echo "Scale factor z: $scale_z"
     echo "Box volume after application of scale factors: $final_volume_box"
     echo "Beam volume after application of scale factors: $final_volume_beam"
-    cd ~/lepp3/evaluation/
+    cd ~/Music/lepp3/evaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)
@@ -611,13 +610,13 @@ do
     printf '%s\n' Scale_x Scale_y Scale_z Calc_Beam Beam_Est_Smallest Beam_Ratio_Smallest Calc_Box Box_Est_Smallest Box_Ratio_Smallest | paste -sd ' ' >> $file_smallest
     fi;
     echo $scale_x $scale_y $scale_z $final_volume_beam $beam_est_smallest $ratio_beam_smallest $final_volume_box $box_est_smallest $ratio_box_smallest >> $file_smallest
-    cd ~/lepp3/
-    sed -i "77s/.*/split_axis = \"middle\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "95s/.*/split_axis = \"middle\"/" artificial_pcd.toml
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
-    cd ~/lepp3/build/
-    timeout 6s ./lola --cfg ../artificial_pcd.toml
-    cd ~/lepp3/evaluation/
+    cd ~/Music/lepp3/build/
+    timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+    cd ~/Music/lepp3/evaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)
@@ -649,13 +648,13 @@ do
     printf '%s\n' Scale_x Scale_y Scale_z Calc_Beam Beam_Est_Middle Beam_Ratio_Middle Calc_Box Box_Est_Middle Box_Ratio_Middle | paste -sd ' ' >> $file_middle
     fi;
     echo $scale_x $scale_y $scale_z $final_volume_beam $beam_est_middle $ratio_beam_middle $final_volume_box $box_est_middle $ratio_box_middle >> $file_middle
-    cd ~/lepp3/
-    sed -i "77s/.*/split_axis = \"largest\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "95s/.*/split_axis = \"largest\"/" artificial_pcd.toml
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
-    cd ~/lepp3/build/
-    timeout 6s ./lola --cfg ../artificial_pcd.toml
-    cd ~/lepp3/evaluation/
+    cd ~/Music/lepp3/build/
+    timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+    cd ~/Music/lepp3/evaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)

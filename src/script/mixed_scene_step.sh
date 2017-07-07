@@ -2,8 +2,8 @@
 split_axis=smallest
 echo -n -e "Enter the split axis (smallest, middle, largest)\n"
 read split_axis
-cd ~/lepp3/
-sed -i "77s/.*/  split_axis = \"$split_axis\"/" artificial_pcd.toml
+cd ~/Music/lepp3/config
+sed -i "95s/.*/  split_axis = \"$split_axis\"/" artificial_pcd.toml
 file=floorbox.wrl
 cd ~/am2b/etc/model/pcd_creation/lab_scene/
 if [ ! -e "$file" ] ; then
@@ -43,23 +43,23 @@ do
     echo $scale_y
     R_z=$(($(($RANDOM%$DIFF))+$range1))
     scale_z=$(echo $R_z\/100 | bc -l | awk '{printf "%f", $0}')
-    cd ~/lepp3/
-    sed -i "86s/.*/     depth = 0/" artificial_pcd.toml
-    sed -i "106s/.*/[[observers]]/" artificial_pcd.toml
-    sed -i "107s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
-    sed -i "108s/.*/    [[aggregators]]/" artificial_pcd.toml
-    sed -i "109s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "104s/.*/     depth = 0/" artificial_pcd.toml
+    sed -i "124s/.*/[[observers]]/" artificial_pcd.toml
+    sed -i "125s/.*/    type = \"SurfaceDetector\"/" artificial_pcd.toml
+    sed -i "126s/.*/    [[aggregators]]/" artificial_pcd.toml
+    sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 3/" pov.txt
+    sed -i "3s/.*/-0.5 0 1/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, 0.1]; /" "$file"
     sed -i "12s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
     #cd ../../../../../lepp3/build
-    cd ~/lepp3/build/
-    timeout 40s ./lola --cfg ../artificial_pcd.toml
+    cd ~/Music/lepp3/build/
+    timeout 40s ./lola --cfg ../config/artificial_pcd.toml
     original_surface=40.0
     original_volume=0.016
     echo "Original surface of floor: $original_surface"
@@ -71,7 +71,7 @@ do
     echo "Scale factor z: $scale_z"
     echo "Floor surface after application of scale factors: $final_surface"
     echo "Box volume after application of scale factors: $final_volume"
-    cd ~/lepp3/surfaceEvaluation/
+    cd ~/Music/lepp3/surfaceEvaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r id area_floor total_area angle < <(tail -2 surfeval.csv)
@@ -83,7 +83,7 @@ do
     ratio_floor=$(echo $area_floor\/$final_surface | bc -l | awk '{printf "%f", $0}')
     fi;
     echo "The difference between calculated and estimated floor surface is: $diff_floor"
-    cd ~/lepp3/evaluation/
+    cd ~/Music/lepp3/evaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)
@@ -103,13 +103,13 @@ do
     fi;
     printf '%s\n' Scale_x Scale_y Scale_z Calc Est_0_Axis Ratio_0_Axis | paste -sd ' ' >> $file_0_axis
     echo $scale_x $scale_y $scale_z $final_volume $est_0_axis $ratio_0_axis >> $file_0_axis
-    cd ~/lepp3/
-    sed -i "86s/.*/     depth = 1/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "104s/.*/     depth = 1/" artificial_pcd.toml
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
-    cd ~/lepp3/build/
-    timeout 40s ./lola --cfg ../artificial_pcd.toml
-    cd ~/lepp3/evaluation/
+    cd ~/Music/lepp3/build/
+    timeout 40s ./lola --cfg ../config/artificial_pcd.toml
+    cd ~/Music/lepp3/evaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)
@@ -129,13 +129,13 @@ do
     fi;
     printf '%s\n' Scale_x Scale_y Scale_z Calc Est_1_Axis Ratio_1_Axis | paste -sd ' ' >> $file_1_axis
     echo $scale_x $scale_y $scale_z $final_volume $est_1_axis $ratio_1_axis >> $file_1_axis
-    cd ~/lepp3/
-    sed -i "86s/.*/     depth = 2/" artificial_pcd.toml
+    cd ~/Music/lepp3/config/
+    sed -i "104s/.*/     depth = 2/" artificial_pcd.toml
     cd ~/am2b/etc/model/pcd_creation/build/
     ./pcd_creator -f "$file" -p
-    cd ~/lepp3/build/
-    timeout 40s ./lola --cfg ../artificial_pcd.toml
-    cd ~/lepp3/evaluation/
+    cd ~/Music/lepp3/build/
+    timeout 40s ./lola --cfg ../config/artificial_pcd.toml
+    cd ~/Music/lepp3/evaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)

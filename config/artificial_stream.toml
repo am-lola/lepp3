@@ -67,9 +67,33 @@ type = "ARVisualizer"
   width = 1024
   height = 768
   show_obstacles = true
-  show_surfaces = true
+  show_surfaces = false
 
 
+
+  # This visualizer shows a debug GUI for the GMM obstacle detction
+  [[observers.visualizer]]
+  type = "GMMTrackingVisualizer"
+  name = "GMM Obstacle Tracker Data"
+  debug_gui = true
+  width = 1024
+  height = 768
+
+    [observers.visualizer.debug_gui_params]
+    # Just an example: set "some" of the values here. The rest will be set to
+    # default by `DebugGUIParams`s ctor.
+    draw_gaussians = true
+    draw_velocities = true
+    draw_ssv = true
+    draw_trajectories = false
+    draw_debug_values = true
+    draw_voxels = false
+    downsample_res = 0.03 # downsampling leaf size in meters
+    enable_tracker = true
+    enable_tight_fit = true # use pc-based fitting instead of gaussian-based fitting
+    trajectory_length = 128
+    voxel_grid_resolution = 0.1 # voxel grid used for clustering, leaf size in meters
+    #color_mode = "NONE"
 
 # This enables the obstacle detector
 [[observers]]
@@ -88,9 +112,31 @@ type = "ObstacleDetector"
   # Available methods:
   #   - "Euclidean
   #   - "GMM" (see below)
-  method = "Euclidean"
+  method = "GMM"
   # The percentage of the original cloud that should be kept for the clusterization
   #min_filter_percentage = 0.9
+  voxel_grid_resolution = 0.1
+
+   # this much state-responsibility is needed for a point to be "hard" assigned to a state
+    #hard_assignment_state_resp = 0.9
+    # states with GMM mixing coefficients (pi) lower than this will be removed
+    #state_pi_removal_threshold = 0.01
+    # minimum number of points in a vcluster needed for a new state to be added
+    #min_vcluster_points = 10
+    # prior identity covariance scale for new states
+    #new_state_prior_covar_size = 0.01
+    # mixing of prior identity covariance for new states
+    #new_state_prior_covar_mix = 0.5
+    # number of frames a state has be be alive for splitting to be enabled
+    #num_split_life_time_frames = 20
+    # number of points a state has to have in its second largest vcluster for it to be split
+    #num_split_points = 15
+    # number of consecutive frames a state has to have points in two different vclusters until it is split
+    #num_split_frames = 6
+    # only split when the other vcluster has less than this percentage of points assigned to other states
+    #split_max_other_states_percentage = 0.2
+    # how much of the observation covariance is taken from the previous frame
+    #obs_covar_regularization = 0.95
 
   [ObstacleDetection.SplitStrategy]
   # Defines the split axis.
