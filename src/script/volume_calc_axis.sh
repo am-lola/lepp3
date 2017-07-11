@@ -22,8 +22,8 @@ echo 'objects = (
 });' > box_vol.wrl
 fi;
 cd ~
-range1=50
-range2=150
+range1=80
+range2=180
 DIFF=$(($range2-$range1+1))
 RANDOM=$$
 for i in `seq 20`
@@ -240,6 +240,7 @@ do
     ./pcd_creator -f "$file" -p
     cd ~/Music/lepp3/build/
     timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+    cd ~/Music/lepp3/evaluation/
     fn=$(ls -t | head -n1)
     cd $fn
     IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)
@@ -521,22 +522,22 @@ if [ ! -e "$file" ] ; then
 echo 'objects = (
 {
   url_wrl = "box";
-  translation = [0.0, 0.5, 0.0];
+  translation = [0.0, -0.3, 0.0];
   rotation = [0.0, 0.0, 0.0];
   scale = [0.5, 0.5, 0.5];
   velocity = [0.1, 0.1, 0.0];
 },
 {
   url_wrl = "beam";
-  translation = [0.0, 0.0, 0.0];
+  translation = [0.0, 0.3, 0.0];
   rotation = [1.5708, 0.0, 0.0];
   scale = [0.5, 0.5, 0.5];
   velocity = [0.1, 0.1, 0.0];
 });' > sequence_vol.wrl
 fi;
 cd ~
-range1=30
-range2=130
+range1=80
+range2=180
 DIFF=$(($range2-$range1+1))
 RANDOM=$$
 for i in `seq 20`
