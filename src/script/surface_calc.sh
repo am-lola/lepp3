@@ -21,8 +21,8 @@ if [ ! -e "$store_data" ]; then
 touch $store_data
 fi;
 printf '%s\n' Scale_x Scale_y Calculated Estimated Difference Ratio | paste -sd ' ' >> $store_data
-range1=10
-range2=100
+range1=50
+range2=150
 DIFF=$(($range2-$range1+1))
 RANDOM=$$
 for i in `seq 20`
@@ -43,7 +43,7 @@ do
     sed -i "126s/.*/    [[aggregators]]/" artificial_pcd.toml
     sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 1/" pov.txt
+    sed -i "3s/.*/-0.5 0 10/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
@@ -91,8 +91,8 @@ if [ ! -e "$store_data" ]; then
 touch $store_data
 fi;
 printf '%s\n' Scale_x Scale_y Calculated Estimated Difference Ratio | paste -sd ' ' >> $store_data
-range1=10
-range2=100
+range1=50
+range2=150
 DIFF=$(($range2-$range1+1))
 RANDOM=$$
 for i in `seq 20`
@@ -113,7 +113,7 @@ do
     sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 1/" pov.txt
+    sed -i "3s/.*/-0.5 0 10/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
@@ -161,8 +161,8 @@ if [ ! -e "$store_data" ]; then
 touch $store_data
 fi;
 printf '%s\n' Scale_x Scale_y Calculated Estimated Difference Ratio | paste -sd ' ' >> $store_data
-range1=20
-range2=110
+range1=50
+range2=150
 DIFF=$(($range2-$range1+1))
 RANDOM=$$
 for i in `seq 20`
@@ -183,7 +183,7 @@ do
     sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 1/" pov.txt
+    sed -i "3s/.*/-0.5 0 10/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
@@ -231,7 +231,7 @@ if [ ! -e "$store_data" ]; then
 touch $store_data
 fi;
 printf '%s\n' Scale_x Scale_y Calculated Estimated Difference Ratio | paste -sd ' ' >> $store_data
-range1=60
+range1=50
 range2=150
 DIFF=$(($range2-$range1+1))
 RANDOM=$$
@@ -253,7 +253,7 @@ do
     sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 1/" pov.txt
+    sed -i "3s/.*/-0.5 0 10/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
@@ -301,7 +301,7 @@ if [ ! -e "$store_data" ]; then
 touch $store_data
 fi;
 printf '%s\n' Scale_x Scale_y Calculated Estimated Difference Ratio | paste -sd ' ' >> $store_data
-range1=60
+range1=50
 range2=150
 DIFF=$(($range2-$range1+1))
 RANDOM=$$
@@ -323,7 +323,7 @@ do
     sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 1/" pov.txt
+    sed -i "3s/.*/-0.5 0 10/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
@@ -371,7 +371,7 @@ if [ ! -e "$store_data" ]; then
 touch $store_data
 fi;
 printf '%s\n' Scale_x Scale_y Calculated Estimated Difference Ratio | paste -sd ' ' >> $store_data
-range1=60
+range1=50
 range2=150
 DIFF=$(($range2-$range1+1))
 RANDOM=$$
@@ -393,7 +393,7 @@ do
     sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 1/" pov.txt
+    sed -i "3s/.*/-0.5 0 10/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
@@ -441,7 +441,7 @@ if [ ! -e "$store_data" ]; then
 touch $store_data
 fi;
 printf '%s\n' Scale_x Scale_y Calculated Estimated Difference Ratio | paste -sd ' ' >> $store_data
-range1=60
+range1=50
 range2=150
 DIFF=$(($range2-$range1+1))
 RANDOM=$$
@@ -463,7 +463,7 @@ do
     sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 1/" pov.txt
+    sed -i "3s/.*/-0.5 0 10/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
@@ -511,7 +511,7 @@ if [ ! -e "$store_data" ]; then
 touch $store_data
 fi;
 printf '%s\n' Scale_x Scale_y Calculated Estimated Difference Ratio | paste -sd ' ' >> $store_data
-range1=60
+range1=50
 range2=150
 DIFF=$(($range2-$range1+1))
 RANDOM=$$
@@ -533,7 +533,7 @@ do
     sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 1/" pov.txt
+    sed -i "3s/.*/-0.5 0 10/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
@@ -581,7 +581,7 @@ if [ ! -e "$store_data" ]; then
 touch $store_data
 fi;
 printf '%s\n' Scale_x Scale_y Calculated Estimated Difference Ratio | paste -sd ' ' >> $store_data
-range1=60
+range1=50
 range2=150
 DIFF=$(($range2-$range1+1))
 RANDOM=$$
@@ -603,7 +603,7 @@ do
     sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 3/" pov.txt
+    sed -i "3s/.*/-0.5 0 10/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/
@@ -651,7 +651,7 @@ if [ ! -e "$store_data" ]; then
 touch $store_data
 fi;
 printf '%s\n' Scale_x Scale_y Calculated Estimated Difference Ratio | paste -sd ' ' >> $store_data
-range1=60
+range1=50
 range2=150
 DIFF=$(($range2-$range1+1))
 RANDOM=$$
@@ -673,7 +673,7 @@ do
     sed -i "127s/.*/    type = \"SurfaceEvaluator\"/" artificial_pcd.toml
     #cd ../../../am2b/etc/model/pcd_creation/lab_scene
     cd ~/am2b/etc/model/pcd_creation/
-    sed -i "3s/.*/-0.5 0 1/" pov.txt
+    sed -i "3s/.*/-0.5 0 10/" pov.txt
     cd ~/am2b/etc/model/pcd_creation/lab_scene/
     sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
     cd ~/am2b/etc/model/pcd_creation/build/

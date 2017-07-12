@@ -275,8 +275,8 @@ echo 'objects = (
 });' > cylinder_vol.wrl
 fi;
 cd ~
-range1=100
-range2=200
+range1=90
+range2=190
 DIFF=$(($range2-$range1+1))
 RANDOM=$$
 for i in `seq 20`
@@ -395,15 +395,15 @@ if [ ! -e "$file" ] ; then
 echo 'objects = (
 {
   url_wrl = "triangle";
-  translation = [0.0, 0.0, 0.0];
+  translation = [0.0, 0.5, 0.0];
   rotation = [ 0.0, -1.5708, 1.5708 ];
   scale = [0.750000, 0.560000, 0.930000];
   velocity = [0.1, 0.1, 0.0];
 });' > triangle_vol.wrl
 fi;
 cd ~
-range1=100
-range2=200
+range1=90
+range2=190
 DIFF=$(($range2-$range1+1))
 RANDOM=$$
 for i in `seq 20`
