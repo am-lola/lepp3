@@ -332,6 +332,9 @@ inline ParseResult parse(std::istream& is)
 inline ParseResult parse(std::string const& path)
 {
     std::ifstream is(path);
+    if (!is.good())
+      throw std::runtime_error("Could not read file: " + path);
+
     internal::Parser parser(is);
     toml::Value v = parser.parse();
 
