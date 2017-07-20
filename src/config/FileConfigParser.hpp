@@ -48,7 +48,7 @@ public:
         surface_detector_active_(false),
         obstacle_detector_active_(false) {
 
-    if (!toml_tree_.valid()) {
+    if (!parser_.valid() || !toml_tree_.valid()) {
       throw std::runtime_error("Config parsing error: " + parser_.errorReason);
     }
 
@@ -294,7 +294,7 @@ protected:
                                            "ARVisualizer"};
 
     for (std::string const& type : type_order) {
-      std::cout << "observer type: " << type << std::endl;
+      std::cout << "checking for observer type: " << type << std::endl;
       for (toml::Value const* p : observers[type]) {
         toml::Value const& v = *p;
 
@@ -370,7 +370,7 @@ protected:
     } else if (axis_id == "smallest") {
       split_strat->set_split_axis(SplitStrategy::Smallest);
     } else {
-      throw "Invalid axis identifier";
+      throw std::runtime_error(std::string(base_key) + "split_axis: Invalid axis identifier '" + axis_id + "'");
     }
 
     toml::Value const* conditions = v->find("conditions");
@@ -440,7 +440,7 @@ protected:
       base_obstacle_segmenter_.reset(new GmmSegmenter(params));
     } else {
       std::ostringstream ss;
-      ss << "Unknown segmenter condition: " << segment_method;
+      ss << "Unknown Segmenter method: " << segment_method;
       throw std::runtime_error(ss.str());
     }
 
@@ -488,7 +488,7 @@ protected:
     surface_tracker_.reset(new SurfaceTracker<PointT>(tracker_params));
     surface_clusterer_->SurfaceDataSubject::attachObserver(surface_tracker_);
 
-    // initialize convex hull detector    
+    // initialize convex hull detector
     int numHullPoints = getTomlValue<int>(toml_tree_, "BasicSurfaceDetection.ConvexHullApproximation.numHullPoints");
     double mergeUpdatePercentage = getTomlValue<double>(toml_tree_,
                                                         "BasicSurfaceDetection.ConvexHullApproximation.mergeUpdatePercentage");
