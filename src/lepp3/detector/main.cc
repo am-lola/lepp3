@@ -18,16 +18,8 @@ using namespace lepp;
  * Prints out the expected CLI usage of the program.
  */
 void PrintUsage() {
-  std::cout << "usage: lola --cfg <cfg-file> | ((--pcd <file> | --oni <file> | --stream) [--live]])"
-      << std::endl;
-  std::cout << "--cfg    : " << "configure the vision subsytem by reading the "
-      << "given config file" << std::endl;
-  std::cout << "--pcd    : " << "read the input from a .pcd file" << std::endl;
-  std::cout << "--oni    : " << "read the input from an .oni file" << std::endl;
-  std::cout << "--stream : " << "read the input from a live stream based on a"
-      << " sensor attached to the computer" << std::endl;
-  std::cout << "--live   : " << "whether kinematics data is obtained from the robot"
-      << std::endl;
+  std::cout << std::endl << "usage:" << std::endl << "\tlola <cfg-file>" << std::endl;
+  std::cout << "\t\t<cfg-file> : configuration file to use (REQUIRED)" << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -35,22 +27,24 @@ int main(int argc, char* argv[]) {
 
   easyloggingpp::Loggers::reconfigureAllLoggers(easyloggingpp::ConfigurationType::Filename, "lola.log");
 
+  // ensure we were given at least one argument
+  if (argc < 2)
+  {
+    std::cerr << "ERROR: You must provide a config file!" << std::endl;
+    PrintUsage();
+    return 0;
+  }
+
   // Initialize the context container
   boost::shared_ptr<Parser<PointT> > parser;
   try {
-    for (int i = 1; i < argc; ++i) {
-      if (std::string(argv[i]) == "--cfg" && i != argc) {
-        // Default to using the FileConfigParser if a `cfg` CLI parameter is
-        // passed.
-        parser.reset(new FileConfigParser<PointT>(argv[i + 1]));
-      }
-    }
+      parser.reset(new FileConfigParser<PointT>(argv[1]));
   } catch (const std::exception& e) {
-    std::cerr << "Config: " << e.what() << std::endl;
+    std::cerr << "Configuration Error: " << e.what() << std::endl;
     PrintUsage();
     return 1;
   } catch (char const* exc) {
-    std::cerr << "Config: " << exc << std::endl;
+    std::cerr << "Configuration Error: " << exc << std::endl;
     PrintUsage();
     return 1;
   }
