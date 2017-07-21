@@ -709,9 +709,6 @@ private:
       return calib_visualizer;
 
     } else if (type == "ObsSurfVisualizer") {
-      if (!this->detector_) {
-        throw std::runtime_error("Visualizer 'ObsSurfVisualizer' requires a detector!!");
-      }
       ObsSurfVisualizerParameters params;
       params.name = name;
       params.height = height;
@@ -719,8 +716,29 @@ private:
       params.show_obstacles = getOptionalTomlValue(v, "show_obstacles", params.show_obstacles);
       params.show_surfaces = getOptionalTomlValue(v, "show_surfaces", params.show_surfaces);
 
+      // if we should show detected objects, ensure a compatible detector exists
+      if (params.show_obstacles && !this->detector_) {
+        throw std::runtime_error("Visualizer '" + type + "' with 'show_obstacles = true' requires an obstacle detector!");
+      }
+      else if (params.show_surfaces && !this->surface_detector_) {
+        throw std::runtime_error("Visualizer '" + type + "' with 'show_surfaces = true' requires a surface detector!");
+      }
+
       boost::shared_ptr<ObsSurfVisualizer> obs_surf_vis = boost::make_shared<ObsSurfVisualizer>(params);
-      this->detector_->FrameDataSubject::attachObserver(obs_surf_vis);
+      if (params.show_obstacles)
+      {
+        this->detector_->FrameDataSubject::attachObserver(obs_surf_vis);
+      }
+      else if (params.show_surfaces)
+      {
+        this->surface_detector_->FrameDataSubject::attachObserver(obs_surf_vis);
+      }
+      else
+      {
+        std::cout << "Warning: Visualizer '" << type << "' was configured NOT to show detected data" << std::endl;
+        this->source()->FrameDataSubject::attachObserver(obs_surf_vis);
+      }
+
       return obs_surf_vis;
 
     } else if (type == "GMMTrackingVisualizer") {
