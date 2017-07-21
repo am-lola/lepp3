@@ -746,7 +746,7 @@ private:
       }
       boost::shared_ptr<ImageVisualizer> img_vis(
           new ImageVisualizer(name, width, height));
-      this->detector_->FrameDataSubject::attachObserver(img_vis);
+      this->source()->FrameDataSubject::attachObserver(img_vis);
       boost::static_pointer_cast<RGBDataSubject>(this->raw_source_)->attachObserver(img_vis);
       return img_vis;
 
