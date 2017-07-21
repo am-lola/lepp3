@@ -9,7 +9,7 @@ namespace lepp {
 
 class SurfaceModel;
 
-class SurfaceVisitor 
+class SurfaceVisitor
 {
 public:
 	virtual void visitSurface(SurfaceModel &plane) = 0;
@@ -19,9 +19,9 @@ public:
 class SurfaceModel
 {
 public:
-	SurfaceModel(PointCloudConstPtr surfaceCloud, pcl::ModelCoefficients planeCoefficients) : 
-		cloud(surfaceCloud), 
-		planeCoefficients(planeCoefficients), 
+	SurfaceModel(PointCloudConstPtr surfaceCloud, pcl::ModelCoefficients planeCoefficients) :
+		cloud(surfaceCloud),
+		planeCoefficients(planeCoefficients),
 		hull(new PointCloudT()),
 		id_(0), mh_(-1), colorID_(-1)
 	{
@@ -29,7 +29,7 @@ public:
 		computeRadius();
 	}
 
-	void accept(SurfaceVisitor &visitor) 
+	void accept(SurfaceVisitor &visitor)
 	{
 		visitor.visitSurface(*this);
 	}
@@ -42,6 +42,7 @@ public:
 	PointCloudConstPtr get_cloud() const {return cloud;}
 	PointCloudConstPtr get_hull() const {return hull;}
 	const pcl::ModelCoefficients& get_planeCoefficients() const {return planeCoefficients;}
+	Eigen::Vector3d get_normal() { return Eigen::Vector3d(planeCoefficients.values[0],planeCoefficients.values[1],planeCoefficients.values[2]);}
 	int get_meshHandle() const {return mh_;}
 	double get_radius() const {return radius;}
 	int get_colorID() const {return colorID_;}
@@ -60,7 +61,7 @@ public:
 
 	/**
 	* Translate center point by given coordinate.
-	*/ 
+	*/
 	void translateCenterPoint(const Coordinate &tranlateVec)
 	{
 		center = center + tranlateVec;
@@ -75,17 +76,17 @@ private:
 	Coordinate center;
 	double radius;
 	int colorID_;
-	
+
 	/**
 	* Computer the centerpoint of the current surface cloud.
 	*/
 	void computeCenterpoint()
 	{
 		Eigen::Vector4f centroid;
-    	pcl::compute3DCentroid (*cloud, centroid);
-    	center.x = centroid[0];
-    	center.y = centroid[1];
-    	center.z = centroid[2];
+		pcl::compute3DCentroid (*cloud, centroid);
+		center.x = centroid[0];
+		center.y = centroid[1];
+		center.z = centroid[2];
 	}
 
 	/**

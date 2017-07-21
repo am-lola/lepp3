@@ -1,11 +1,7 @@
-# This is the master config. It is most likely not runnable but lists all
-# available options
-# The config file is in the [toml](https://github.com/toml-lang/toml) format
+# This config file is in the [toml](https://github.com/toml-lang/toml) format
 
 # All IPs and ports given in here are the defaults for a lab setup.
 
-# Mandatory options are given, optional options are commented out
-# and listed with the default values
 
 # This defines the pose service to use.
 # Requirements: None
@@ -15,12 +11,12 @@ port = 55555
 
 # This defines the specifics for the robot
 # Requirements: PoseService
-#[Robot]
+[Robot]
 # The size of the "bubble" in which no modifications or deletions of objects
 # are sent to the robot. **In meters**
 # This is required because the camera angle prevents the robot from seeing
 # the environment directly below its feet
-#bubble_size = 1.2
+bubble_size = 1.2
 
 # Video source
 [VideoSource]
@@ -85,7 +81,7 @@ type = "ARVisualizer"
   width = 1024
   height = 768
 
-  # # Basic visualizer: shows obstacles (euclidean) and surfaces
+  # Basic visualizer: shows obstacles (euclidean) and surfaces
   [[observers.visualizer]]
   type = "ObsSurfVisualizer"
   name = "Obs_Surf_Detector"
@@ -201,25 +197,28 @@ type = "ObstacleDetector"
     distance_threshold = 150
 
 ###########################################################################
-# # Aggregators is an array
-# # this will list all aggregators and options belonging to them
-#
-# # This aggregator sends data to listeners (Path planning, Lab Visualizer, ...)
-# [[aggregators]]
-# type = "RobotAggregator"
-# # Number of frames to wait before sending new data
-# update_frequency = 3
-# # Data to send
-# data = [ "obstacles", "surfaces", "images", "pointclouds"]
-# # Human readable target name, just for terminal/log output
-# target="Vision"
-# # Target IP
-# # ip = "192.168.0.3"  # Control computer IP
-# ip = "192.168.0.7"  # QNX computer IP
-# # Target Port, default is hexadecimal 0xF008
-# port = 61448
-# # Delay to wait after sending a message
-# #delay = 10
+ # Aggregators is an array
+ # this will list all aggregators and options belonging to them
+
+ # This aggregator sends data to listeners (Path planning, Lab Visualizer, ...)
+ [[aggregators]]
+ type = "RobotAggregator"
+ # Number of frames to wait before sending new data
+ update_frequency = 3
+ # Data to send
+ data = [ "obstacles", "surfaces" ]
+ # Human readable target name, just for terminal/log output
+ target="DebugOut"
+ # Target IP
+ ip = "127.0.0.1"  # Control computer IP
+ port = 61448
+ # Delay to wait after sending a message
+ delay = 10
+ # minimum height (m) above the ground plane a surface must match in order to be sent
+ min_surface_height = 0.05
+ # For surfaces failing min_surface_height test, if their normal deviates from the vertical
+ # axis by more than this amount (in radians) the surface will still be sent
+ surface_normal_tolerance = 0.523 # ~30 degrees
 
 ###########################################################################
 # Miscellaneous settings

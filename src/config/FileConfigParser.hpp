@@ -294,7 +294,7 @@ protected:
                                            "ARVisualizer"};
 
     for (std::string const& type : type_order) {
-      std::cout << "checking for observer type: " << type << std::endl;
+      std::cout << "checking for observer type: " << type << ", found " << observers[type].size() << std::endl;
       for (toml::Value const* p : observers[type]) {
         toml::Value const& v = *p;
 
@@ -783,7 +783,7 @@ private:
   boost::shared_ptr<FrameDataObserver> getAggregator(toml::Value const& v) {
     std::string const type = getTomlValue<std::string>(v, "type", "aggregators.");
 
-    std::cout << "agg type: " << type << std::endl;
+    std::cout << "aggregator type: " << type << std::endl;
     if (type == "RobotAggregator") {
       if (!this->robot()) {
         throw std::runtime_error("RobotAggregator requires a [Robot]");
@@ -791,12 +791,21 @@ private:
       int const update_frequency = getTomlValue<int>(v, "update_frequency", "aggregators.");
       std::vector<std::string> datatypes = getTomlValue<std::vector<std::string>>(v, "data", "aggregators.");
 
+      float min_surface_height = 0;
+      float surface_normal_tolerance = 0;
+      if (std::find(datatypes.begin(), datatypes.end(), "surfaces") != datatypes.end()) // check for surface parameters if we're going to process surfaces
+      {
+        min_surface_height = getTomlValue<double>(v, "min_surface_height", "aggregators.");
+        surface_normal_tolerance = getTomlValue<double>(v, "surface_normal_tolerance", "aggregators.");
+      }
       auto robotService = getRobotService(v);
 
       // attach to RGB data here since we always assume we're dealing with FrameDataObservers elsewhere...
       boost::shared_ptr<RobotAggregator> robotAggregator = boost::make_shared<RobotAggregator>(robotService,
                                                                                                update_frequency,
                                                                                                datatypes,
+                                                                                               min_surface_height,
+                                                                                               surface_normal_tolerance,
                                                                                                *this->robot());
       boost::static_pointer_cast<RGBDataSubject>(this->raw_source_)->attachObserver(robotAggregator);
       return robotAggregator;

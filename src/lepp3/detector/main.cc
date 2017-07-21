@@ -18,7 +18,7 @@ using namespace lepp;
  * Prints out the expected CLI usage of the program.
  */
 void PrintUsage() {
-  std::cout << std::endl << "usage:" << std::endl << "\tlola <cfg-file>" << std::endl;
+  std::cout << std::endl << "Usage:" << std::endl << "\tlola <cfg-file>" << std::endl;
   std::cout << "\t\t<cfg-file> : configuration file to use (REQUIRED)" << std::endl;
 }
 
@@ -40,11 +40,11 @@ int main(int argc, char* argv[]) {
   try {
       parser.reset(new FileConfigParser<PointT>(argv[1]));
   } catch (const std::exception& e) {
-    std::cerr << "Configuration Error: " << e.what() << std::endl;
+    std::cerr << "Configuration Error: \n\t" << e.what() << std::endl;
     PrintUsage();
     return 1;
   } catch (char const* exc) {
-    std::cerr << "Configuration Error: " << exc << std::endl;
+    std::cerr << "Configuration Error: \n\t" << exc << std::endl;
     PrintUsage();
     return 1;
   }
@@ -59,10 +59,10 @@ int main(int argc, char* argv[]) {
     while (true)
       boost::this_thread::sleep(boost::posix_time::milliseconds(8000));
   } catch (const std::exception& e) {
-    std::cerr << "Fatal error: " << e.what() << std::endl;
+    std::cerr << "Fatal error: \n\t" << e.what() << std::endl;
     return 1;
   } catch (char const* exc) {
-    std::cerr << "Fatal error: " << exc << std::endl;
+    std::cerr << "Fatal error: \n\t" << exc << std::endl;
     return 1;
   }
 }

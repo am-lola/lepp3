@@ -38,7 +38,12 @@ public:
    * Create a new `RobotAggregator` that will use the given service to
    * communicate to the robot and send status updates after every `freq` frames.
    */
-  RobotAggregator(boost::shared_ptr<RobotService> service, int freq, std::vector<std::string> datatypes, Robot& robot);
+  RobotAggregator(boost::shared_ptr<RobotService> service,
+                  int freq,
+                  std::vector<std::string> datatypes,
+                  double min_surface_height,
+                  double surface_normal_tolerance,
+                  Robot& robot);
   /**
    * `FrameDataObserver` interface implementation.
    */
@@ -55,7 +60,6 @@ public:
    * `RGBDataObserver` interface implementation.
    */
   void updateFrame(RGBDataPtr rgbData) {
-    std::cout << "Got new RGB FRAME!!!" << std::endl;
     if (send_images_)
     {
       sendRGBImage(rgbData->image, rgbData->frameNum);
@@ -145,6 +149,11 @@ private:
    * notified of.
    */
   int nextId() { return next_id_++; }
+  /**
+   * Determines whether the given surface should be sent to the planning system.
+   * Surfaces which fail this test have their convex hulls replaced with dummy_hull.
+   */
+  bool shouldSendSurface(SurfaceModel& model);
 
   /**
    * A handle to the service that is used to send notifications to the robot.
@@ -178,6 +187,27 @@ private:
   bool send_surfaces_    = false;
   bool send_images_      = false;
   bool send_pointclouds_ = false;
+
+  /**
+   * Minimum distance from the ground plane a surface must meet in order to
+   * be sent to be published. Any surface bellow this height will not be
+   * published or will be transformed to prevent it from being considered.
+   */
+  double min_surface_height = 0.0;
+
+  /**
+   * If a surface fails the min_surface_height test, we may still consider it
+   * if the surface's normal is more than surface_normal_tolerance radians from
+   * the world vertical axis (0, 0, 1).
+   */
+  double surface_normal_tolerance = 0.0;
+
+  /**
+   * A dummy convex hull used to prevent some surfaces from being used by the
+   * planning system. This is sent instead of the original hull to keep all the
+   * surface IDs consistent on both sides.
+   */
+  PointCloudPtr dummy_hull;
 };
 
 #endif
