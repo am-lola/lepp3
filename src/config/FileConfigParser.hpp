@@ -795,8 +795,8 @@ private:
       float surface_normal_tolerance = 0;
       if (std::find(datatypes.begin(), datatypes.end(), "surfaces") != datatypes.end()) // check for surface parameters if we're going to process surfaces
       {
-        min_surface_height = getTomlValue<double>(v, "min_surface_height", "aggregators.");
-        surface_normal_tolerance = getTomlValue<double>(v, "surface_normal_tolerance", "aggregators.");
+        min_surface_height = getOptionalTomlValue<double>(v, "min_surface_height", 0);
+        surface_normal_tolerance = getOptionalTomlValue<double>(v, "surface_normal_tolerance", 0);
       }
       auto robotService = getRobotService(v);
 
@@ -804,9 +804,9 @@ private:
       boost::shared_ptr<RobotAggregator> robotAggregator = boost::make_shared<RobotAggregator>(robotService,
                                                                                                update_frequency,
                                                                                                datatypes,
+                                                                                               *this->robot(),
                                                                                                min_surface_height,
-                                                                                               surface_normal_tolerance,
-                                                                                               *this->robot());
+                                                                                               surface_normal_tolerance);
       boost::static_pointer_cast<RGBDataSubject>(this->raw_source_)->attachObserver(robotAggregator);
       return robotAggregator;
 

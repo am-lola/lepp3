@@ -41,9 +41,10 @@ public:
   RobotAggregator(boost::shared_ptr<RobotService> service,
                   int freq,
                   std::vector<std::string> datatypes,
-                  double min_surface_height,
-                  double surface_normal_tolerance,
-                  Robot& robot);
+                  Robot& robot,
+                  double min_surface_height = 0,
+                  double surface_normal_tolerance = 0
+                );
   /**
    * `FrameDataObserver` interface implementation.
    */

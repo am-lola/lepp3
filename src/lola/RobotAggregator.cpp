@@ -50,9 +50,10 @@ private:
 RobotAggregator::RobotAggregator(boost::shared_ptr<RobotService> service,
                                 int freq,
                                 std::vector<std::string> datatypes,
+                                Robot& robot,
                                 double min_surface_height,
-                                double surface_normal_tolerance,
-                                Robot& robot)
+                                double surface_normal_tolerance
+                              )
     : service_(service), diff_(freq), next_id_(0),
       min_surface_height(min_surface_height),
       surface_normal_tolerance(surface_normal_tolerance),
