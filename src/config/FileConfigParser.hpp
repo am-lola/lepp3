@@ -543,8 +543,7 @@ protected:
 private:
   /// Helper functions for constructing parts of the pipeline.
 
-#if 0
-  GMM::DebugGUIParams readGMMDebugGuiParams(toml::Value const& v) {
+  ObstacleTrackerVisualizer::GUIParams readGMMGuiParams(toml::Value const& v) {
     const char* base_key = "observers.visualizer.debug_gui_params";
 
     bool const enableTracker = getTomlValue<bool>(v, "enable_tracker", base_key);
@@ -562,15 +561,15 @@ private:
     // TODO decide how to read ar::color info from config file
     // ar::Color gaussianColor;
     // ar::Color ssvColor;
-    GMM::ColorMode colorMode = GMM::ColorMode::NONE;
+    ObstacleTrackerVisualizer::ColorMode colorMode = ObstacleTrackerVisualizer::ColorMode::NONE;
     std::string const mode = getOptionalTomlValue<std::string>(v, "color_mode", "NONE");
     if (mode == "SOFT_ASSIGNMENT") {
-      colorMode = GMM::ColorMode::SOFT_ASSIGNMENT;
+      colorMode = ObstacleTrackerVisualizer::ColorMode::SOFT_ASSIGNMENT;
     } else if (mode == "HARD_ASSIGNMENT") {
-      colorMode = GMM::ColorMode::HARD_ASSIGNMENT;
+      colorMode = ObstacleTrackerVisualizer::ColorMode::HARD_ASSIGNMENT;
     }
 
-    GMM::DebugGUIParams params;
+    ObstacleTrackerVisualizer::GUIParams params;
     params.enableTracker = enableTracker;
     params.enableTightFit = enableTightFit;
     params.drawGaussians = drawGaussians;
@@ -586,7 +585,6 @@ private:
 
     return params;
   }
-#endif
 
   /**
    * A helper function that reads all the parameters that are required by the
@@ -742,22 +740,24 @@ private:
       return obs_surf_vis;
 
     } else if (type == "GMMTrackingVisualizer") {
-      /*
+      if (!this->detector_)
+        throw std::runtime_error("GMMDTrackingVisualizer requires an obstacle detector!");
+
        // TODO read all the necessary parameters from the config file.
        bool const debugGUI = getOptionalTomlValue(v, "debug_gui", false);
        // Set default values for GUI Debug parameters.
-       GMM::DebugGUIParams d_gui_params;
+       ObstacleTrackerVisualizer::GUIParams d_gui_params;
        // If there are debug parameters available in the config, get 'em
        if (debugGUI) {
          toml::Value const* debug_gui = v.find("debug_gui_params");
          if (!debug_gui) {
            throw std::runtime_error("To use the debug gui, you need to set its parameters [observers.visualizer.debug_gui_params]");
          }
-         d_gui_params = readGMMDebugGuiParams(*debug_gui);
+         d_gui_params = readGMMGuiParams(*debug_gui);
        }
-       return boost::shared_ptr<ObstacleTrackerVisualizer>(
-           new ObstacleTrackerVisualizer(d_gui_params, name, width, height));
-   */
+       auto visualizer = boost::shared_ptr<ObstacleTrackerVisualizer>(new ObstacleTrackerVisualizer(d_gui_params, name, width, height));
+       this->detector_->FrameDataSubject::attachObserver(visualizer);
+       return visualizer;
     } else if (type == "ImageVisualizer") {
       if (!enable_rgb) {
         throw std::runtime_error("Visualizer 'ImageVisualizer' requires an rgb source!!");

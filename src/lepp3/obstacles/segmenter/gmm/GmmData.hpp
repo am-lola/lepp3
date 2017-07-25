@@ -62,7 +62,8 @@ struct State {
     }
   }
 };
-}
-}
 
-#endif
+} // namespace GMM
+} // namespace lepp
+
+#endif // LEPP_OBSTACLES_SEGMENTER_GMM_GMMDATA_H
