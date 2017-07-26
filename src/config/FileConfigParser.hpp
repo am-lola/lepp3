@@ -14,6 +14,7 @@
 #include "lepp3/obstacles/segmenter/Segmenter.hpp"
 #include "lepp3/obstacles/segmenter/euclidean/EuclideanSegmenter.hpp"
 #include "lepp3/obstacles/segmenter/gmm/GmmSegmenter.hpp"
+#include "lepp3/obstacles/segmenter/gmm/GmmData.hpp"
 #include "deps/toml.h"
 
 #include "lepp3/ObstacleEvaluator.hpp"
@@ -432,6 +433,7 @@ protected:
     }
 
     std::string segment_method = getTomlValue<std::string>(*segmenter, "method", "ObstacleDetection.Segmenter");
+    std::cout << "Initializing obstacle detector with segmentation method: " << segment_method << std::endl;
     if ("Euclidean" == segment_method) {
       double min_filter_percentage = getOptionalTomlValue(*segmenter, "min_filter_percentage", 0.9);
       base_obstacle_segmenter_.reset(new EuclideanSegmenter(min_filter_percentage));
@@ -757,6 +759,8 @@ private:
        }
        auto visualizer = boost::shared_ptr<ObstacleTrackerVisualizer>(new ObstacleTrackerVisualizer(d_gui_params, name, width, height));
        this->detector_->FrameDataSubject::attachObserver(visualizer);
+       boost::shared_ptr<GMM::GMMDataSubject> s = boost::dynamic_pointer_cast<GMM::GMMDataSubject>(this->base_obstacle_segmenter_);
+       s->attachObserver(visualizer);
        return visualizer;
     } else if (type == "ImageVisualizer") {
       if (!enable_rgb) {

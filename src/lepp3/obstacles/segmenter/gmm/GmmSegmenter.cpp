@@ -143,6 +143,10 @@ std::vector<lepp::PointCloudPtr> lepp::GmmSegmenter::extractObstacleClouds(Point
     addState(state);
   }
 
+  for (size_t i = 0; i < states_.size(); i++)
+  {
+    GMM::GMMDataSubject::notifyObservers_Update(states_[i], i);
+  }
   return ret;
 }
 
@@ -229,7 +233,8 @@ void lepp::GmmSegmenter::e_step(PointCloudT const* pc, Eigen::MatrixXf& R, Eigen
 
 void lepp::GmmSegmenter::m_step(PointCloudT const* pc, Eigen::MatrixXf const& R, Eigen::MatrixXi const& C,
                                 Eigen::VectorXf const& rks,
-                                Eigen::VectorXi const& cks, std::vector<GMM::State>& newStates,
+                                Eigen::VectorXi const& cks,
+                                std::vector<GMM::State>& newStates,
                                 std::vector<int>& removedStates) {
 
   using namespace Eigen;
@@ -371,6 +376,8 @@ void lepp::GmmSegmenter::addState(const Eigen::Vector3f& mean, const Eigen::Matr
 }
 
 void lepp::GmmSegmenter::removeState(size_t index) {
+  GMM::GMMDataSubject::notifyObservers_Delete(states_[index], index);
+  
   std::swap(states_[index], states_.back());
   states_.pop_back();
 }

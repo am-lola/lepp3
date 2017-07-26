@@ -16,7 +16,7 @@
 
 namespace lepp {
 
-class GmmSegmenter : public ObstacleSegmenter {
+class GmmSegmenter : public ObstacleSegmenter, public GMM::GMMDataSubject {
   using VisualizerPCMapT = Eigen::Map<Eigen::MatrixXf, Eigen::Aligned, Eigen::OuterStride<
       sizeof(pcl::PointXYZRGBA) / sizeof(float)>>;
 
@@ -60,13 +60,6 @@ private:
   bool initialized_;
 };
 
-}
+} // namespace lepp
 
-#endif
-
-/*std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-    std::cout << "Hello World\n";
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::cout << "Printing took "
-              << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()
-              << "us.\n";*/
+#endif // LEPP_OBSTACLES_SEGMENTER_GMM_SEGMENTER_H
