@@ -95,9 +95,9 @@ RobotAggregator::RobotAggregator(boost::shared_ptr<RobotService> service,
     dummy_hull->points.resize(dummy_hull->width * dummy_hull->height);
     for (size_t i = 0; i < dummy_hull->width * dummy_hull->height; i++)
     {
-      (*dummy_hull)[i].x = -100;
-      (*dummy_hull)[i].y = -101;
-      (*dummy_hull)[i].z = -102;
+      (*dummy_hull)[i].x = -4.9 + (sin((float)i) * 0.01f);
+      (*dummy_hull)[i].y = -4.9 + (cos((float)i) * 0.01f);
+      (*dummy_hull)[i].z = -4.9 + ((float)i * 0.01f);
     }
   }
 }
