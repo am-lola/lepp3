@@ -105,10 +105,12 @@ SurfaceFinder<PointT>::SurfaceFinder(bool surfaceDetectorActive, Parameters cons
       DEVIATION_ANGLE(surfFinderParameters.DEVIATION_ANGLE) { //, cloud_surfaces_(new PointCloudT()) {
   // Parameter initialization of the plane segmentation
   segmentation_.setOptimizeCoefficients(true);
-  segmentation_.setModelType(pcl::SACMODEL_PLANE);
+  segmentation_.setModelType(pcl::SACMODEL_PERPENDICULAR_PLANE);
   segmentation_.setMethodType(pcl::SAC_RANSAC);
   segmentation_.setMaxIterations(MAX_ITERATIONS); // value recognized by Irem
   segmentation_.setDistanceThreshold(DISTANCE_THRESHOLD);
+  segmentation_.setAxis(Eigen::Vector3f(0.0, 0.0, 1.0));
+  segmentation_.setEpsAngle(0.26); // allowed deviation of surface normals from vertical axis: ~15 degrees
 }
 
 
