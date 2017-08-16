@@ -17,8 +17,8 @@ if [ ! -e "$store_data" ]; then
 touch $store_data
 fi;
 printf '%s\n' Scale_x Scale_y Scale_z Calculated Simulated Difference Ratio | paste -sd ' ' >> $store_data
-range1=30
-range2=130
+range1=50
+range2=150
 DIFF=$(($range2-$range1+1))
 RANDOM=$$
 for i in `seq 20`
