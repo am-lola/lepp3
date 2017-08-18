@@ -158,7 +158,7 @@ private:
   /**
    * Visualize obstacles in given vector with ARVisualizer.
    */
-  void drawObstacleClouds(std::vector<PointCloudPtr> const& clouds);
+  void drawObstacleClouds(std::vector<ObjectModelParams> const& clouds);
 
 
   ObsSurfVisualizerParameters params_;

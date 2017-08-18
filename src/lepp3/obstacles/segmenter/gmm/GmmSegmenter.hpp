@@ -22,9 +22,10 @@ class GmmSegmenter : public ObstacleSegmenter, public GMM::GMMDataSubject {
 
 public:
   GmmSegmenter(GMM::SegmenterParameters const& params);
+  void updateFrame(FrameDataPtr frameData) override;
 
 private:
-  virtual std::vector<PointCloudPtr> extractObstacleClouds(PointCloudConstPtr cloud) override;
+  virtual std::vector<ObjectModelParams> extractObstacleParams(PointCloudConstPtr cloud) override;
 
   void initialize(PointCloudT const* pc);
 

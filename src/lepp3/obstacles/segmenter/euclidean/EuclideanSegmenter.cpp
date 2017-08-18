@@ -17,7 +17,7 @@ lepp::EuclideanSegmenter::EuclideanSegmenter(double min_filter_percentage)
   clusterizer_.setMaxClusterSize(25000);
 }
 
-std::vector<lepp::PointCloudPtr> lepp::EuclideanSegmenter::extractObstacleClouds(PointCloudConstPtr cloud) {
+std::vector<lepp::ObjectModelParams> lepp::EuclideanSegmenter::extractObstacleParams(PointCloudConstPtr cloud) {
   std::vector<pcl::PointIndices> cluster_indices = getClusters(cloud);
   return clustersToPointClouds(cloud, cluster_indices);
 }
@@ -33,12 +33,12 @@ std::vector<pcl::PointIndices> lepp::EuclideanSegmenter::getClusters(PointCloudC
   return cluster_indices;
 }
 
-std::vector<lepp::PointCloudPtr>
+std::vector<lepp::ObjectModelParams>
 lepp::EuclideanSegmenter::clustersToPointClouds(PointCloudConstPtr const& cloud_filtered,
                                                 std::vector<pcl::PointIndices> const& cluster_indices) {
   // Now copy the points belonging to each cluster to a separate PointCloud
-  // and finally return a vector of these point clouds.
-  std::vector<PointCloudPtr> ret;
+  // and finally return a vector of ObjectModelParams containing these point clouds.
+  std::vector<ObjectModelParams> ret;
   size_t const cluster_count = cluster_indices.size();
   for (size_t i = 0; i < cluster_count; ++i) {
     PointCloudPtr current(new PointCloudT());
@@ -49,7 +49,7 @@ lepp::EuclideanSegmenter::clustersToPointClouds(PointCloudConstPtr const& cloud_
       current->push_back(cloud_filtered->at(curr_indices[j]));
     }
 
-    ret.push_back(current);
+    ret.push_back(ObjectModelParams(current));
   }
 
   return ret;

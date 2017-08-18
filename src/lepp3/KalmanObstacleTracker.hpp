@@ -14,11 +14,6 @@
 
 namespace lepp {
 
-
-/**
- * A `FrameDataObserver` decorator.
- *
- */
 class KalmanObstacleTracker : public FrameDataObserver, public FrameDataSubject
 {
 public:

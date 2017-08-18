@@ -1,6 +1,8 @@
 #ifndef LEPP3_MODELS_OBJECT_MODEL_H__
 #define LEPP3_MODELS_OBJECT_MODEL_H__
 
+#include <cmath>
+
 #include "lepp3/models/Coordinate.h"
 #include "lepp3/Typedefs.hpp"
 
@@ -52,6 +54,21 @@ private:
   Coordinate velocity_;
 };
 
+/**
+ * Set of parameters to hint at the final ObjectModel
+ * created by an Approximator
+ */
+struct ObjectModelParams {
+  PointCloudPtr obstacleCloud = nullptr;
+  int id = 0;
+  Coordinate center = Coordinate(std::nan(""), std::nan(""), std::nan(""));
+  Coordinate velocity = Coordinate(std::nan(""), std::nan(""), std::nan(""));
+  std::vector<Eigen::Vector3f> inertial_axes;
+
+  ObjectModelParams() {}
+  ObjectModelParams(PointCloudPtr p) : obstacleCloud(p) {}
+};
+
 typedef boost::shared_ptr<ObjectModel> ObjectModelPtr;
 
 class ModelVisitor {
@@ -72,7 +89,7 @@ public:
    * an std::vector.
    */
   void accept(ModelVisitor& visitor) { visitor.visitSphere(*this); }
-  Coordinate center_point() const { return center_; }
+  virtual Coordinate center_point() const { return center_; }
 
   double radius() const { return radius_; }
   Coordinate const& center() const { return center_; }
@@ -110,7 +127,7 @@ public:
       : radius_(radius), first_(first), second_(second) {}
 
   void accept(ModelVisitor& visitor) { visitor.visitCapsule(*this); }
-  Coordinate center_point() const { return (second_ + first_) / 2; }
+  virtual Coordinate center_point() const { return (second_ + first_) / 2; }
 
   double radius() const { return radius_; }
   Coordinate const& first() const { return first_; }

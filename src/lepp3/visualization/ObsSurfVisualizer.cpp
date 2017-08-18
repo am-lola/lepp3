@@ -282,7 +282,7 @@ void lepp::ObsSurfVisualizer::updateFrame(FrameDataPtr frameData) {
   // output frame num and surface frame num
   outputFrameNum(frameData);
 
-  drawObstacleClouds(frameData->obstacleClouds);
+  drawObstacleClouds(frameData->obstacleParams);
 
   // visualize the point cloud
   pointCloudData.pointData = static_cast<const void*>(&(frameData->cloud->points[0]));
@@ -325,7 +325,7 @@ void lepp::ObsSurfVisualizer::updateFrame(RGBDataPtr rgbData) {
   return;
 }
 
-void lepp::ObsSurfVisualizer::drawObstacleClouds(std::vector<PointCloudPtr> const& clouds) {
+void lepp::ObsSurfVisualizer::drawObstacleClouds(std::vector<ObjectModelParams> const& obstacles) {
   const bool show_clouds = optionsWindow->GetCheckBoxState(obstacleCloudsCheckBox);
 
   if (!show_clouds) {
@@ -339,7 +339,7 @@ void lepp::ObsSurfVisualizer::drawObstacleClouds(std::vector<PointCloudPtr> cons
 
   assert(obstacleCloudHandles.size() == obstacleCloudData.size());
 
-  for (size_t idx = 0; idx < clouds.size(); ++idx) {
+  for (size_t idx = 0; idx < obstacles.size(); ++idx) {
     assert(obstacleCloudHandles.size() >= idx);
     if (obstacleCloudHandles.size() == idx) {
       // We derive the color from the HSV color space (in 30° steps)
@@ -352,17 +352,17 @@ void lepp::ObsSurfVisualizer::drawObstacleClouds(std::vector<PointCloudPtr> cons
     }
 
     auto& cloudData = *obstacleCloudData[idx];
-    cloudData.pointData = &(clouds[idx]->points[0]);
-    cloudData.numPoints = clouds[idx]->size();
+    cloudData.pointData = &(obstacles[idx].obstacleCloud->points[0]);
+    cloudData.numPoints = obstacles[idx].obstacleCloud->size();
     arvis_->Update(obstacleCloudHandles[idx], cloudData);
   }
 
   // remove unused
-  if (clouds.size() < obstacleCloudHandles.size()) {
-    for (size_t i = clouds.size(); i < obstacleCloudHandles.size(); ++i) {
+  if (obstacles.size() < obstacleCloudHandles.size()) {
+    for (size_t i = obstacles.size(); i < obstacleCloudHandles.size(); ++i) {
       arvis_->Remove(obstacleCloudHandles[i]);
     }
-    obstacleCloudHandles.erase(std::begin(obstacleCloudHandles) + clouds.size(), std::end(obstacleCloudHandles));
-    obstacleCloudData.erase(std::begin(obstacleCloudData) + clouds.size(), std::end(obstacleCloudData));
+    obstacleCloudHandles.erase(std::begin(obstacleCloudHandles) + obstacles.size(), std::end(obstacleCloudHandles));
+    obstacleCloudData.erase(std::begin(obstacleCloudData) + obstacles.size(), std::end(obstacleCloudData));
   }
 }

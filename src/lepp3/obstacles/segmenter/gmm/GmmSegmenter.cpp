@@ -26,7 +26,138 @@ lepp::GmmSegmenter::GmmSegmenter(const GMM::SegmenterParameters& params) : param
                                                                            initialized_(false) {
 }
 
-std::vector<lepp::PointCloudPtr> lepp::GmmSegmenter::extractObstacleClouds(PointCloudConstPtr cloud) {
+void lepp::GmmSegmenter::updateFrame(FrameDataPtr frameData)
+{
+  if (0 < frameData->cloudMinusSurfaces->size()) {
+    auto& cloud = frameData->cloudMinusSurfaces;
+
+    using namespace Eigen;
+
+    if (!initialized_) {
+      initialize(cloud.get());
+      initialized_ = true;
+    }
+
+    voxel_grid_.build(*cloud.get());
+
+    const auto map = cloud->getMatrixXfMap();
+    const size_t N = cloud->size(); // number of points
+
+    // remove invalid states first (in reverse order because removeState does swap-with-end)
+    for (int k = states_.size() - 1; k >= 0; --k) {
+      if (!states_[k].validObsCovar) {
+        // shouldn't happen too often
+        LINFO << "removing state " << k << " due to invalid (non-invertible) observation covariance\n";
+        removeState(k);
+      }
+    }
+
+    if (N > vcluster_point_table.size())
+      vcluster_point_table.resize(N);
+    if (states_.size() > state_main_vcluster.size())
+      state_main_vcluster.resize(states_.size());
+
+    // R(i,j) = "responsibility" of state j for point i
+    MatrixXf R(N, states_.size());
+    // C(i,j) = points of state j that are in vcluster i (assuming a hard point-state assignment of sorts)
+    MatrixXi C = MatrixXi::Zero(voxel_grid_.numClusters(), states_.size());
+
+    Matrix4Xf VCMeans = Matrix4Xf::Zero(4, voxel_grid_.numClusters()); // vcluster means
+    std::vector<Matrix4f> VCSM; // vcluster scatter matrices
+    VCSM.resize(voxel_grid_.numClusters(), Matrix4f::Zero());
+
+    VectorXi VCPointCounts = VectorXi::Zero(voxel_grid_.numClusters()); // general vcluster point count
+
+    e_step(cloud.get(), R, C, VCMeans, VCSM, VCPointCounts);
+
+    // total responsibilities for states
+    const VectorXf rks = R.colwise().sum();
+    // total number of assigned points for clusters
+    const VectorXi cks = C.colwise().sum();
+
+    std::vector<GMM::State> newStates; // states that should be added
+    std::vector<int> removedStates; // indices of states that should be removed
+    // remove states with low mixing coefficients, indicating that they don't hold any significant probability over points
+    for (size_t k = 0; k < states_.size(); k++) {
+      if (rks(k) / N < parameters_.statePiRemovalThreshold) {
+        // need to defer the removal if we want to avoid recomputing all of the above
+        removedStates.push_back(k);
+      }
+    }
+
+    // handle the addition of new states
+    {
+      const VectorXi vcpoints = C.rowwise().sum(); // sum of known points within the clusters
+
+      for (int i = 0; i < vcpoints.size(); i++) {
+        // got points that are already covered by a state or don't have enough points? ignore!
+        if (vcpoints[i] > 0 || VCPointCounts[i] < parameters_.minVclusterPoints)
+          continue;
+
+        const Vector4f vcmean = VCMeans.col(i);
+
+        // compute actual covariance from scatter matrix
+        Matrix4f vccov = VCSM[i] / VCPointCounts[i];
+        vccov -= vcmean * vcmean.transpose();
+
+        // combine with prior covariance (I*alpha) to avoid "overfitting" to the vcluster
+        const float alpha = parameters_.newStatePriorCovarMix;
+        vccov = alpha * Matrix4f::Identity() * parameters_.newStatePriorCovarSize + (1.0f - alpha) * vccov;
+
+        GMM::State s(vcmean.head<3>(), vccov.block<3, 3>(0, 0));
+        s.pi = 0.05f; // TODO: this seems arbitrary
+
+        newStates.push_back(s);
+      }
+    }
+
+    m_step(cloud.get(), R, C, rks, cks, newStates, removedStates);
+
+    // Prepare results
+    std::vector<ObjectModelParams> ret;
+    for (size_t i = 0; i < states_.size(); ++i) {
+      ret.emplace_back(ObjectModelParams(boost::make_shared<PointCloudT>()));
+    }
+
+    for (size_t i = 0; i < N; i++) {
+      for (size_t k = 0; k < states_.size(); ++k) {
+        if (R(i, k) > parameters_.hardAssignmentStateResp) {
+          ret[k].obstacleCloud->push_back((*cloud)[i]);
+          break;
+        }
+      }
+    }
+
+    ret.erase(
+        std::remove_if(
+            std::begin(ret),
+            std::end(ret),
+            [](const ObjectModelParams& p) { return p.obstacleCloud->size() == 0; }),
+        std::end(ret));
+
+    // Add new  / remove old states
+    // sort in descending order for this to work (removeState does swap-with-end)
+    std::sort(removedStates.begin(), removedStates.end(), std::greater<size_t>());
+    for (int k : removedStates) {
+      removeState(k);
+    }
+
+    // add new states
+    for (GMM::State& state : newStates) {
+      addState(state);
+    }
+
+    for (size_t i = 0; i < states_.size(); i++)
+    {
+      GMM::GMMDataSubject::notifyObservers_Update(states_[i], i);
+    }
+
+    frameData->obstacleParams = ret;
+  }
+  notifyObservers(frameData);
+}
+
+std::vector<lepp::ObjectModelParams> lepp::GmmSegmenter::extractObstacleParams(PointCloudConstPtr cloud) {
   using namespace Eigen;
 
   if (!initialized_) {
@@ -110,15 +241,15 @@ std::vector<lepp::PointCloudPtr> lepp::GmmSegmenter::extractObstacleClouds(Point
   m_step(cloud.get(), R, C, rks, cks, newStates, removedStates);
 
   // Prepare results
-  std::vector<PointCloudPtr> ret;
+  std::vector<ObjectModelParams> ret;
   for (size_t i = 0; i < states_.size(); ++i) {
-    ret.emplace_back(new PointCloudT);
+    ret.emplace_back(boost::make_shared<PointCloudT>());
   }
 
   for (size_t i = 0; i < N; i++) {
     for (size_t k = 0; k < states_.size(); ++k) {
       if (R(i, k) > parameters_.hardAssignmentStateResp) {
-        ret[k]->push_back((*cloud)[i]);
+        ret[k].obstacleCloud->push_back((*cloud)[i]);
         break;
       }
     }
@@ -128,7 +259,7 @@ std::vector<lepp::PointCloudPtr> lepp::GmmSegmenter::extractObstacleClouds(Point
       std::remove_if(
           std::begin(ret),
           std::end(ret),
-          [](const PointCloudPtr& p) { return p->size() == 0; }),
+          [](const ObjectModelParams& p) { return p.obstacleCloud->size() == 0; }),
       std::end(ret));
 
   // Add new  / remove old states
@@ -377,7 +508,7 @@ void lepp::GmmSegmenter::addState(const Eigen::Vector3f& mean, const Eigen::Matr
 
 void lepp::GmmSegmenter::removeState(size_t index) {
   GMM::GMMDataSubject::notifyObservers_Delete(states_[index], index);
-  
+
   std::swap(states_[index], states_.back());
   states_.pop_back();
 }
