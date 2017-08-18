@@ -11,7 +11,7 @@ void lepp::ObjectApproximator::updateFrame(FrameDataPtr frameData) {
 
   // iterate in reverse, we need to remove clouds for invalid obstacles
   for (size_t i = frameData->obstacleParams.size() - 1; i < frameData->obstacleParams.size(); --i) {
-    ObjectModelPtr obstacle = approximate(frameData->obstacleParams[i].obstacleCloud);
+    ObjectModelPtr obstacle = approximate(frameData->obstacleParams[i]);
 
     if (isValidObstacle(obstacle, frameData->surfaces)) {
       frameData->obstacles.emplace_back(obstacle);
