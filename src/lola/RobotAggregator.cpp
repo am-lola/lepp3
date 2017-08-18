@@ -193,10 +193,15 @@ void RobotAggregator::mod_obstacle_cb_(ObjectModel& model, long frame_num) {
   std::vector<ObjectModel*> primitives(getPrimitives(model));
   size_t const new_size = primitives.size();
   std::vector<int>& ids = robot_ids_[model.id()];
+  for (auto& id : ids)
+  {
+    std::cout << id << ", ";
+  }
+  std::cout << "]" << std::endl;
   // The ids list includes the ID of the object itself (at index 0), not only
   // the primitives.
   // There always need to be at least two IDs in the vector (the model and at
-  // least on of its parts), therefore this will not underflow the `size_t`.
+  // least one of its parts), therefore this will not underflow the `size_t`.
   size_t const old_size = ids.size() - 1;
 
   if (new_size < old_size) {
@@ -277,29 +282,29 @@ void RobotAggregator::sendNew(SurfaceModel& new_surface, long frame_num) {
 
   VisionMessage msg = VisionMessage(SurfaceMessage::SetMessage(new_surface.id(), normal, vertices), frame_num);
 
-  LINFO << "RobotAggregator: Creating new surface ["
-        << "id = " << new_surface.id()
-        << "]";
+  // LINFO << "RobotAggregator: Creating new surface ["
+  //       << "id = " << new_surface.id()
+  //       << "]";
   service_->sendMessage(msg);
 }
 
 void RobotAggregator::sendDeleteObstacle(int id, long frame_num) {
-  LINFO << "RobotAggregator: Deleting a primitive id = "
-        << id;
+  // LINFO << "RobotAggregator: Deleting a primitive id = "
+  //       << id;
   VisionMessage del = VisionMessage(ObstacleMessage::DeleteMessage(id), frame_num);
   service_->sendMessage(del);
 }
 
 void RobotAggregator::sendDeleteObstaclePart(int model_id, int part_id, long frame_num) {
-  LINFO << "RobotAggregator: Deleting a primitive id = "
-        << part_id;
+  // LINFO << "RobotAggregator: Deleting a primitive id = "
+  //       << part_id;
   VisionMessage del = VisionMessage(ObstacleMessage::DeletePartMessage(model_id, part_id), frame_num);
   service_->sendMessage(del);
 }
 
 void RobotAggregator::sendDeleteSurface(int id, long frame_num)
 {
-  LINFO << "RobotAggregator: Deleting surface: " << id;
+  // LINFO << "RobotAggregator: Deleting surface: " << id;
   VisionMessage msg = VisionMessage(SurfaceMessage::DeleteMessage(id), frame_num);
   service_->sendMessage(msg);
 }
@@ -312,7 +317,7 @@ void RobotAggregator::sendModify(ObjectModel& model, int model_id, int part_id, 
       frame_num);
   LINFO << "RobotAggregator: Modifying existing primitive ["
             << "type = " << coefs.type_id()
-            << "; id = " << part_id
+            << "; id = " << model_id << " | " << part_id
             << "]";
   service_->sendMessage(msg);
 }
@@ -326,18 +331,13 @@ void RobotAggregator::sendModify(SurfaceModel& surface, long frame_num)
     vertices.push_back(point.x);
     vertices.push_back(point.y);
     vertices.push_back(point.z);
-     LINFO << "RobotAggregator: ["
-        << "x: " << point.x
-        << "y: " << point.y
-        << "z: " << point.z
-        << "]";
   }
 
   VisionMessage msg = VisionMessage(SurfaceMessage::ModifyMessage(surface.id(), normal, vertices), frame_num);
 
-  LINFO << "RobotAggregator: Modifying existing surface ["
-        << "id = " << surface.id()
-        << "]";
+  // LINFO << "RobotAggregator: Modifying existing surface ["
+  //       << "id = " << surface.id()
+  //      << "]";
   service_->sendMessage(msg);
 }
 

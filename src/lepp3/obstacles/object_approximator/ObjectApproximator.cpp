@@ -13,6 +13,12 @@ void lepp::ObjectApproximator::updateFrame(FrameDataPtr frameData) {
   for (size_t i = frameData->obstacleParams.size() - 1; i < frameData->obstacleParams.size(); --i) {
     ObjectModelPtr obstacle = approximate(frameData->obstacleParams[i]);
 
+    // if the obstacle params contained a valid id, pass it on to this obstacle
+    if (frameData->obstacleParams[i].id >= 0)
+    {
+      obstacle->set_id(frameData->obstacleParams[i].id);
+    }
+
     if (isValidObstacle(obstacle, frameData->surfaces)) {
       frameData->obstacles.emplace_back(obstacle);
     } else {

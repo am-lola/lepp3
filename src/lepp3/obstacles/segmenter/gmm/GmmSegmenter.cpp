@@ -113,7 +113,7 @@ std::vector<lepp::ObjectModelParams> lepp::GmmSegmenter::extractObstacleParams(P
   std::vector<ObjectModelParams> ret;
   for (size_t i = 0; i < states_.size(); ++i) {
     ret.emplace_back(boost::make_shared<PointCloudT>());
-    ret.back().id = i;
+    ret.back().id = i+1; // obstacle ids start at 1
   }
 
   for (size_t i = 0; i < N; i++) {

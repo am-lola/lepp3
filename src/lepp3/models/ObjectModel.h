@@ -60,7 +60,7 @@ private:
  */
 struct ObjectModelParams {
   PointCloudPtr obstacleCloud = nullptr;
-  int id = 0;
+  int id = -1;
   Coordinate center = Coordinate(std::nan(""), std::nan(""), std::nan(""));
   Coordinate velocity = Coordinate(std::nan(""), std::nan(""), std::nan(""));
   std::vector<Eigen::Vector3f> inertial_axes;
