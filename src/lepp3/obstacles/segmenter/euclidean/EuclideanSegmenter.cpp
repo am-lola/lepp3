@@ -50,6 +50,7 @@ lepp::EuclideanSegmenter::clustersToPointClouds(PointCloudConstPtr const& cloud_
     }
 
     ret.push_back(ObjectModelParams(current));
+    ret.back().id = i + 1; // object IDs start at 1
   }
 
   return ret;

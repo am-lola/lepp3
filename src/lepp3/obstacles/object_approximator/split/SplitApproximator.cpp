@@ -10,6 +10,7 @@ lepp::SplitObjectApproximator::SplitObjectApproximator(boost::shared_ptr<ObjectA
 
 lepp::ObjectModelPtr lepp::SplitObjectApproximator::approximate(const ObjectModelParams& object_params) {
   boost::shared_ptr<CompositeModel> approx(new CompositeModel);
+  approx->set_id(object_params.id);
   std::deque<std::pair<int, PointCloudPtr> > queue;
   queue.push_back(std::make_pair(0, object_params.obstacleCloud));
 
@@ -24,8 +25,10 @@ lepp::ObjectModelPtr lepp::SplitObjectApproximator::approximate(const ObjectMode
 
     ObjectModelParams current_params = object_params;
     current_params.obstacleCloud = nullptr; current_params.obstacleCloud = current_cloud;
+    current_params.id = approx->id() * 111000 + (approx->count()+1) * 111;
     // Delegates to the wrapped approximator for each part's approximation.
     ObjectModelPtr model = approximator_->approximate(current_params);
+
     // TODO Decide whether the model fits well enough for the current cloud.
     // For now we fix the number of split iterations.
     // The approximation should be improved. Try doing it for the split clouds

@@ -46,6 +46,7 @@ lepp::ObjectModelPtr lepp::MomentOfInertiaObjectApproximator::approximate(const 
   // Now we pack the model into a "composite" of one element to satisfy the
   // interface!
   boost::shared_ptr<CompositeModel> approx(new CompositeModel);
+  model->set_id(object_params.id);
   approx->addModel(model);
   return approx;
 }

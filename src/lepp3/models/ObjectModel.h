@@ -184,6 +184,11 @@ public:
   void set_models(std::vector<boost::shared_ptr<ObjectModel> > const& models) { models_ = models; }
   std::vector<boost::shared_ptr<ObjectModel> > const& models() { return models_; }
 
+  /**
+   * Returns a count of the number of models contained in this CompositeModel
+   */
+  size_t count() { return models_.size(); }
+
   void accept(ModelVisitor& visitor) {
     // We visit each individual part of the composite.
     size_t const sz = models_.size();
