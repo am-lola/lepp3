@@ -23,9 +23,12 @@ lepp::ObjectModelPtr lepp::SplitObjectApproximator::approximate(const ObjectMode
       continue;
     }
 
+ root: 1
+ sub: 111xxx
+
     ObjectModelParams current_params = object_params;
     current_params.obstacleCloud = nullptr; current_params.obstacleCloud = current_cloud;
-    current_params.id = approx->id() * 111000 + (approx->count()+1) * 111;
+    current_params.id = 100000 + approx->id() * 1000 + (approx->count()+1);
     // Delegates to the wrapped approximator for each part's approximation.
     ObjectModelPtr model = approximator_->approximate(current_params);
 
