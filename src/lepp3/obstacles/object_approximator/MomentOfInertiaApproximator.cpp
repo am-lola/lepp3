@@ -19,8 +19,12 @@ lepp::ObjectModelPtr lepp::MomentOfInertiaObjectApproximator::approximate(const 
     axes.push_back(eigenvectors.col(i));
   }
 
-  // Guesstimate the center of mass
-  Eigen::Vector3f mass_center(estimateMassCenter(object_params.obstacleCloud));
+  // if we have a hint for the object's center use it, if not estimate it from center of mass
+  Eigen::Vector3f mass_center;
+  if (!std::isnan(object_params.center.x) && !std::isnan(object_params.center.y) && !std::isnan(object_params.center.z))
+    mass_center = object_params.center;
+  else
+    mass_center = estimateMassCenter(object_params.obstacleCloud);
 
   // Based on these descriptors, decide which object type should be used.
   boost::shared_ptr<ObjectModel> model;
