@@ -74,7 +74,9 @@ ar::Color HsvToRgbColor(float h, float s, float v) {
 void lepp::ModelDrawer::visitSphere(lepp::SphereModel& sphere)
 {
   Coordinate const& center = sphere.center();
+  Coordinate const& sphereVelocity = sphere.velocity();
   double centerPoint[3] = {center.x, center.y, center.z};
+  Eigen::Vector3d velocity_step = 0.2*Eigen::Vector3d(sphereVelocity.x, sphereVelocity.y, sphereVelocity.z) + Eigen::Vector3d(center.x, center.y, center.z);
   double radius = sphere.radius();
 
   // update drawing variables
@@ -88,19 +90,31 @@ void lepp::ModelDrawer::visitSphere(lepp::SphereModel& sphere)
 
   // ar::Sphere obstacle(centerPoint, radius, ar::Color(0,127,127,0.3));
   ar::Sphere obstacle(centerPoint, radius, ar::Color(0.6, 0.35, 0.2, 0.4));
+  ar::LineSegment obstacle_vel(centerPoint, velocity_step.data(), 0.005f);
 
+  auto sphereData = visData.find(sphere.id());
   // sphere was not drawn before
-  if (sphere.get_meshHandle() == -1)
+  if (sphereData == visData.end())
   {
-    mesh_handle_t mh = vis_->Add(obstacle);
-    sphere.set_meshHandle(mh);
+    ObstacleVisualizationData vd;
+    vd.mh = vis_->Add(obstacle);
+    vd.vh = vis_->Add(obstacle_vel);
+    vd.lp = new ar::BufferedLinePath(10, 0.003f, ar::Color(1,1,1,1));
+    vd.lp->addPoint(centerPoint);
+    vd.th = vis_->Add(*vd.lp);
+    visData.insert(std::make_pair(sphere.id(), vd));
   }
   // update sphere
   else
-    vis_->Update(sphere.get_meshHandle(), obstacle);
+  {
+    vis_->Update(sphereData->second.mh, obstacle);
+    vis_->Update(sphereData->second.vh, obstacle_vel);
+    sphereData->second.lp->addPoint(centerPoint);
+    vis_->Update(sphereData->second.th, *(sphereData->second.lp));
+  }
 
   // add handle to visHandles
-  visHandles.push_back(sphere.get_meshHandle());
+  seenObstacles.push_back(sphere.id());
 }
 
 void lepp::ModelDrawer::visitCapsule(lepp::CapsuleModel& capsule)
@@ -108,6 +122,9 @@ void lepp::ModelDrawer::visitCapsule(lepp::CapsuleModel& capsule)
   // add capsule
   double center1[3] = {capsule.first().x, capsule.first().y, capsule.first().z};
   double center2[3] = {capsule.second().x, capsule.second().y, capsule.second().z};
+  double centerPoint[3] = {capsule.center_point().x, capsule.center_point().y, capsule.center_point().z};
+  Eigen::Vector3d velocity_step = 0.2*Eigen::Vector3d(capsule.velocity().x, capsule.velocity().y, capsule.velocity().z)
+                                  + Eigen::Vector3d(centerPoint[0], centerPoint[1], centerPoint[2]);
   double radius = capsule.radius();
 
   // update drawing variables
@@ -121,18 +138,31 @@ void lepp::ModelDrawer::visitCapsule(lepp::CapsuleModel& capsule)
 
   // ar::Capsule obstacle(center1, center2, radius, ar::Color(127,0,127,0.3));
   ar::Capsule obstacle(center1, center2, radius, ar::Color(0.0, 0.5, 0.5, 0.4));
+  ar::LineSegment obstacle_vel(centerPoint, velocity_step.data(), 0.005f);
+
+  auto capsuleData = visData.find(capsule.id());
   // capsule was not drawn before
-  if (capsule.get_meshHandle() == -1)
+  if (capsuleData == visData.end())
   {
-    mesh_handle_t mh = vis_->Add(obstacle);
-    capsule.set_meshHandle(mh);
+    ObstacleVisualizationData vd;
+    vd.mh = vis_->Add(obstacle);
+    vd.vh = vis_->Add(obstacle_vel);
+    vd.lp = new ar::BufferedLinePath(10, 0.003f, ar::Color(1,1,1,1));
+    vd.lp->addPoint(centerPoint);
+    vd.th = vis_->Add(*vd.lp);
+    visData.insert(std::make_pair(capsule.id(), vd));
   }
   // update capsule
   else
-    vis_->Update(capsule.get_meshHandle(), obstacle);
+  {
+    vis_->Update(capsuleData->second.mh, obstacle);
+    vis_->Update(capsuleData->second.vh, obstacle_vel);
+    capsuleData->second.lp->addPoint(centerPoint);
+    vis_->Update(capsuleData->second.th, *(capsuleData->second.lp));
+  }
 
   // add handle to visHandles
-  visHandles.push_back(capsule.get_meshHandle());
+  seenObstacles.push_back(capsule.id());
 }
 
 
@@ -202,6 +232,8 @@ lepp::ObsSurfVisualizer::ObsSurfVisualizer(ObsSurfVisualizerParameters const& pa
   optionsWindow = arvis_->AddUIWindow("Options");
   gridCheckBox = optionsWindow->AddCheckBox("Draw grid", params.show_grid);
   obstaclesCheckBox = optionsWindow->AddCheckBox("Draw obstacles", params.show_obstacles);
+  velocitiesCheckBox = optionsWindow->AddCheckBox("Draw velocities", params.show_obstacle_velocities);
+  trajectoriesCheckBox = optionsWindow->AddCheckBox("Draw trajectories", params.show_obstacle_trajectories);
   surfacesCheckBox = optionsWindow->AddCheckBox("Draw surfaces", params.show_surfaces);
   obstacleCloudsCheckBox = optionsWindow->AddCheckBox("Draw obstacle clouds", params.show_obstacle_clouds);
 
@@ -221,9 +253,9 @@ void lepp::ObsSurfVisualizer::drawSurfaces(std::vector<SurfaceModelPtr> surfaces
     surfaces[i]->accept(sd);
 }
 
-void lepp::ObsSurfVisualizer::drawObstacles(std::vector<ObjectModelPtr> obstacles, std::vector<mesh_handle_t> &visHandles) {
+void lepp::ObsSurfVisualizer::drawObstacles(std::vector<ObjectModelPtr> obstacles, std::map<int, ObstacleVisualizationData> &obsVisData) {
   // create model drawer object
-  ModelDrawer md(arvis_, visHandles);
+  ModelDrawer md(arvis_, obsVisData);
 
   // draw obstacles
   for (size_t i = 0; i < obstacles.size(); i++)
@@ -262,22 +294,27 @@ void lepp::ObsSurfVisualizer::removeOldSurfObst(std::vector<mesh_handle_t> &visH
 
 void lepp::ObsSurfVisualizer::updateFrame(FrameDataPtr frameData) {
   // visualize all obstacles and surfaces and store their handles
-  std::vector<mesh_handle_t> visHandles, visHandlesSurfaces;
-  drawObstacles(frameData->obstacles, visHandles);
+  std::vector<mesh_handle_t> visHandlesSurfaces;
+  drawObstacles(frameData->obstacles, obsVisData);
   drawSurfaces(frameData->surfaces, visHandlesSurfaces);
 
   const bool show_obstacles = optionsWindow->GetCheckBoxState(obstaclesCheckBox);
-  for (mesh_handle_t h : visHandles) {
-    arvis_->SetVisibility(h, show_obstacles);
+  const bool show_velocities = optionsWindow->GetCheckBoxState(velocitiesCheckBox);
+  const bool show_trajectories = optionsWindow->GetCheckBoxState(trajectoriesCheckBox);
+  for (auto& o : obsVisData) {
+    arvis_->SetVisibility(o.second.mh, show_obstacles);
+    arvis_->SetVisibility(o.second.vh, show_velocities);
+    arvis_->SetVisibility(o.second.th, show_trajectories);
   }
+
+
   const bool show_surfaces = optionsWindow->GetCheckBoxState(surfacesCheckBox);
   for (mesh_handle_t h : visHandlesSurfaces) {
     arvis_->SetVisibility(h, show_surfaces);
-    visHandles.push_back(h);
   }
 
   // Remove old obstacles and surfaces that are no longer visualized
-  removeOldSurfObst(visHandles);
+  removeOldSurfObst(visHandlesSurfaces);
 
   // output frame num and surface frame num
   outputFrameNum(frameData);

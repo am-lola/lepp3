@@ -78,6 +78,8 @@ private:
   ar::PointCloudData main_cloud_data_;
   ar::mesh_handle largest_plane_handle_;
   ar::PointCloudData largest_plane_data_;
+  std::map<int, ObstacleVisualizationData> obsVisData;
+
   // UI elements
   ar::IUIWindow* ui_values_window_;
   ar::ui_element_handle mean_z_txt;
@@ -89,7 +91,7 @@ private:
   /**
  * Visualize obstacles in given vector with ARVisualizer.
  */
-  void drawObstacles(std::vector<ObjectModelPtr> obstacles, std::vector<mesh_handle_t> &visHandles);
+  void drawObstacles(std::vector<ObjectModelPtr> obstacles, std::map<int, ObstacleVisualizationData> &visHandles);
   /**
 * Remove old obstacles and surfaces that are no longer visualized.
 */
@@ -145,7 +147,7 @@ private:
 };
 
   template<class PointT>
-void CalibratorVisualizer<PointT>::drawObstacles(std::vector<ObjectModelPtr> obstacles, std::vector<mesh_handle_t> &visHandles)
+void CalibratorVisualizer<PointT>::drawObstacles(std::vector<ObjectModelPtr> obstacles, std::map<int, ObstacleVisualizationData> &visHandles)
 {
   // create model drawer object
   ModelDrawer md(arvis_, visHandles);
@@ -264,11 +266,11 @@ void CalibratorVisualizer<PointT>::updateFrame(FrameDataPtr frameData) {
   arvis_->SetVisibility(gridHandle, (bool)gridWindow->GetCheckBoxState(gridCheckBox));
 
   // visualize all obstacles and surfaces and store their handles
-  std::vector<mesh_handle_t> visHandles;
+  std::map<int, ObstacleVisualizationData> visHandles;
   if (show_obstacles_)
       drawObstacles(frameData->obstacles, visHandles);
   // Remove old obstacles and surfaces that are no longer visualized
-  removeOldObst(visHandles);
+  // removeOldObst(visHandles);
 }
   template<class PointT>
   void CalibratorVisualizer<PointT>::updateFrame(RGBDataPtr rgbData) {
