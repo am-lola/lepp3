@@ -20,6 +20,7 @@ public:
    */
   clock::time_point start() {
     startTime_ = clock::now();
+    running_ = true;
     return startTime_;
   }
 
@@ -29,6 +30,7 @@ public:
    */
   clock::time_point stop() {
     endTime_ = clock::now();
+    running_ = false;
     return endTime_;
   }
 
@@ -39,9 +41,19 @@ public:
     return std::chrono::duration<double, std::milli>(endTime_ - startTime_).count();
   }
 
+  /**
+   * Gets the current state of the timer.
+   * Returns TRUE if start has been called and stop has not been called.
+   * Returns FALSE otherwise.
+   */
+  bool running() const {
+      return running_;
+  }
+
 private:
   clock::time_point startTime_;
   clock::time_point endTime_;
+  bool running_ = false;
 };
 
 }  // namespace lepp

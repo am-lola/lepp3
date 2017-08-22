@@ -11,7 +11,6 @@
 #include "Parser.h"
 #include "lepp3/SurfaceDetector.hpp"
 #include "lepp3/SurfaceTracker.hpp"
-#include "lepp3/KalmanObstacleTracker.hpp"
 #include "lepp3/obstacles/segmenter/Segmenter.hpp"
 #include "lepp3/obstacles/segmenter/euclidean/EuclideanSegmenter.hpp"
 #include "lepp3/obstacles/segmenter/gmm/GmmSegmenter.hpp"
@@ -460,15 +459,10 @@ protected:
 
     base_obstacle_segmenter_->FrameDataSubject::attachObserver(approx);
 
-    /// TODO: Only add this if the config file asks for it
-    boost::shared_ptr<KalmanObstacleTracker> kalman_filter_tracker(
-            new KalmanObstacleTracker);
-
     boost::shared_ptr<LowPassObstacleTracker> low_pass_obstacle_tracker(
         new LowPassObstacleTracker);
 
     approx->FrameDataSubject::attachObserver(low_pass_obstacle_tracker);
-    low_pass_obstacle_tracker->FrameDataSubject::attachObserver(kalman_filter_tracker);
 
     this->detector_ = low_pass_obstacle_tracker;
   }

@@ -2,6 +2,7 @@
 #define LEPP_OBSTACLES_SEGMENTER_GMM_SEGMENTER_H
 
 #include "lepp3/Typedefs.hpp"
+#include "lepp3/KalmanObstacleTracker.hpp"
 #include "lepp3/obstacles/segmenter/Segmenter.hpp"
 #include "lepp3/util/VoxelGrid3D.h"
 
@@ -52,7 +53,7 @@ private:
 
   std::vector<GMM::State> states_;
   lepp::util::VoxelGrid3D voxel_grid_;
-
+  KalmanObstacleTracker kalmanFilter_;
   // cached vclusters for points
   std::vector<int> vcluster_point_table;
   std::vector<int> state_main_vcluster;

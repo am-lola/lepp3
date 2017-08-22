@@ -23,7 +23,9 @@ float probability_density_function(const lepp::GMM::State& state, const Eigen::V
 
 lepp::GmmSegmenter::GmmSegmenter(const GMM::SegmenterParameters& params) : parameters_(params),
                                                                            voxel_grid_(params.voxelGridResolution),
-                                                                           initialized_(false) {
+                                                                           initialized_(false),
+                                                                           kalmanFilter_(0.01f, 0.15f, 0.10f)
+{
 }
 
 std::vector<lepp::ObjectModelParams> lepp::GmmSegmenter::extractObstacleParams(PointCloudConstPtr cloud) {
@@ -149,6 +151,8 @@ std::vector<lepp::ObjectModelParams> lepp::GmmSegmenter::extractObstacleParams(P
   {
     GMM::GMMDataSubject::notifyObservers_Update(states_[i], i);
   }
+
+  kalmanFilter_.update(ret);
   return ret;
 }
 
