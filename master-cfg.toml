@@ -278,6 +278,12 @@ port = 61448
 # Delay to wait after sending a message
 #delay = 10
 
+ # minimum height (m) above the ground plane a surface must match in order to be sent
+min_surface_height = 0.05
+  # For surfaces failing min_surface_height test, if their normal deviates from the vertical
+  # axis by more than this amount (in radians) the surface will still be sent
+surface_normal_tolerance = 0.523 # ~30 degrees
+
 ###########################################################################
 # Miscellaneous settings
 
