@@ -438,6 +438,7 @@ protected:
       double min_filter_percentage = getOptionalTomlValue(*segmenter, "min_filter_percentage", 0.9);
       base_obstacle_segmenter_.reset(new EuclideanSegmenter(min_filter_percentage));
     } else if ("GMM" == segment_method) {
+        /// TODO: Check for kalman params
       auto params = readGmmSegmenterParameters(*segmenter);
       base_obstacle_segmenter_.reset(new GmmSegmenter(params));
     } else {
@@ -459,12 +460,34 @@ protected:
 
     base_obstacle_segmenter_->FrameDataSubject::attachObserver(approx);
 
-    boost::shared_ptr<LowPassObstacleTracker> low_pass_obstacle_tracker(
-        new LowPassObstacleTracker);
+    toml::Value const* tracker = toml_tree_.find("ObstacleDetection.Tracker");
+    if (!tracker)
+    {
+        // without an obstacle tracker, the approximator should be the end of the detection pipeline
+        this->detector_ = approx;
+        std::cout << "Initing without an obstacle tracker" << std::endl;
+    }
+    else
+    {
+      std::string tracker_type = getTomlValue<std::string>(*tracker, "type", "ObstacleDetection.Tracker");
+      if (tracker_type == "LowPassFilter")
+      {
+        std::cout << "Adding low-pass obstacle tracker" << std::endl;
+        /// TODO: low-pass filter has some params we should expose to cfg files
+        boost::shared_ptr<LowPassObstacleTracker> low_pass_obstacle_tracker(
+            new LowPassObstacleTracker);
 
-    approx->FrameDataSubject::attachObserver(low_pass_obstacle_tracker);
+        approx->FrameDataSubject::attachObserver(low_pass_obstacle_tracker);
 
-    this->detector_ = low_pass_obstacle_tracker;
+        this->detector_ = low_pass_obstacle_tracker;
+      }
+      else
+      {
+        std::ostringstream ss;
+        ss << "Unknown Obstacle Tracker type: " << tracker_type;
+        throw std::runtime_error(ss.str());
+      }
+    }
   }
 
   virtual void initSurfaceDetector() override {
