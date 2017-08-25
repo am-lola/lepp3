@@ -35,6 +35,11 @@ public:
    */
   void update(std::vector<lepp::ObjectModelParams>& obstacles);
 
+  /**
+   * Discards any current tracking data for the given object
+   */
+  void reset(int id);
+
 private:
   std::map<int, ObstacleKalmanFilter> states_; // map obstacle id to kalman state
   HiResTimer frameTimer_; // used to track time between frames

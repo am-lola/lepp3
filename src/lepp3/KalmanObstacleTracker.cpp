@@ -51,5 +51,13 @@ void KalmanObstacleTracker::update(std::vector<lepp::ObjectModelParams>& obstacl
   }
 }
 
-}  // namespace lepp
+void KalmanObstacleTracker::reset(int id)
+{
+  auto state = states_.find(id);
+  if (state != states_.end())
+  {
+    states_.erase(state);
+  }
+}
 
+}  // namespace lepp

@@ -263,7 +263,7 @@ void lepp::GmmSegmenter::initialize(const PointCloudT* pc) {
   Eigen::Matrix4f covar = Eigen::Matrix4f::Zero();
 
   const size_t N = pc->size(); // number of points
-  std::cout << "GMM Init with " << N << " points" << std::endl; 
+  std::cout << "GMM Init with " << N << " points" << std::endl;
   for (size_t i = 0; i < N; i++) {
     const Eigen::Vector4f x = map.col(i);
     covar += x * x.transpose();
@@ -403,6 +403,8 @@ void lepp::GmmSegmenter::m_step(PointCloudT const* pc, Eigen::MatrixXf const& R,
           states_[k].lifeTime = 0;
           states_[k].splitCounter = 0;
           states_[k].resetNonSplitCounter++;
+          if (parameters_.enableKalmanFilter) // clear kalman tracking state if we had one
+            kalmanFilter_.reset(k+1); // IDs tracked by kalman start at 1
         }
       }
     } else {
