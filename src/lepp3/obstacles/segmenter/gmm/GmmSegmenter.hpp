@@ -23,8 +23,23 @@ class GmmSegmenter : public ObstacleSegmenter, public GMM::GMMDataSubject {
 
 public:
   GmmSegmenter(GMM::SegmenterParameters const& params);
+  void updateFrame(FrameDataPtr frameData)
+  {
+    // wait until we have a few ground removal iterations
+    if (frameData->planeCoeffsIteration <= 20 ||
+        frameData->cloudMinusSurfaces->size() == 0)
+    {
+      notifyObservers(frameData);
+      return;
+    }
 
+    frameData->obstacleParams = extractObstacleParams(frameData->cloudMinusSurfaces);
+    notifyObservers(frameData);
+//    ObstacleSegmenter::updateFrame(frameData);
+  }
 private:
+  void fitSSVs(int k, const PointCloudT* pc, const Eigen::MatrixXf& R, const Eigen::MatrixXi& C);
+  void generateSSVs(GMM::State& state, ObjectModelParams& params, FrameDataPtr frameData);
   virtual std::vector<ObjectModelParams> extractObstacleParams(PointCloudConstPtr cloud) override;
 
   void initialize(PointCloudT const* pc);
