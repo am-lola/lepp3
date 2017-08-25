@@ -63,6 +63,7 @@ struct ObjectModelParams {
   int id = -1;
   Coordinate center = Coordinate(std::nan(""), std::nan(""), std::nan(""));
   Coordinate velocity = Coordinate(std::nan(""), std::nan(""), std::nan(""));
+  Eigen::Vector3f inertial_values;
   std::vector<Eigen::Vector3f> inertial_axes;
 
   ObjectModelParams() {}

@@ -211,6 +211,12 @@ std::vector<lepp::ObjectModelParams> lepp::GmmSegmenter::extractObstacleParams(P
     ret.emplace_back(boost::make_shared<PointCloudT>());
     ret.back().id = i+1; // obstacle ids start at 1
     ret.back().center = states_[i].pos;
+
+    // provide moment of inertia data for later SSV approximation
+    SelfAdjointEigenSolver<Matrix3f> eigensolver(states_[i].obsCovar);
+    const Matrix3f evecs = eigensolver.eigenvectors();
+    ret.back().inertial_values = eigensolver.eigenvalues().reverse(); // reversed b/c approximators expect these to be in descending order
+    ret.back().inertial_axes = {evecs.col(0), evecs.col(1), evecs.col(2)};
   }
 
   for (size_t i = 0; i < N; i++) {
@@ -231,8 +237,6 @@ std::vector<lepp::ObjectModelParams> lepp::GmmSegmenter::extractObstacleParams(P
           [](const ObjectModelParams& p) { return p.obstacleCloud->size() == 0; }),
       std::end(ret));
 
-  for (size_t k = 0; k < states_.size(); ++k)
-      fitSSVs(k, cloud.get(), R, C);
   // Add new  / remove old states
   // sort in descending order for this to work (removeState does swap-with-end)
   std::sort(removedStates.begin(), removedStates.end(), std::greater<size_t>());

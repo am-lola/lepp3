@@ -7,16 +7,28 @@
 lepp::ObjectModelPtr lepp::MomentOfInertiaObjectApproximator::approximate(const ObjectModelParams& object_params) {
   // Firstly, obtain the principal component descriptors
   float major_value, middle_value, minor_value;
-  pcl::PCA<PointT> pca;
-  pca.setInputCloud(object_params.obstacleCloud);
-  Eigen::Vector3f eigenvalues = pca.getEigenValues();
-  major_value = eigenvalues(0);
-  middle_value = eigenvalues(1);
-  minor_value = eigenvalues(2);
-  Eigen::Matrix3f eigenvectors = pca.getEigenVectors();
   std::vector<Eigen::Vector3f> axes;
-  for (size_t i = 0; i < 3; ++i) {
-    axes.push_back(eigenvectors.col(i));
+
+  // if we have a hint for the moment of inertia, use it
+  if (object_params.inertial_axes.size() > 0)
+  {
+    axes = object_params.inertial_axes;
+    major_value = object_params.inertial_values(0);
+    middle_value = object_params.inertial_values(1);
+    minor_value = object_params.inertial_values(2);
+  }
+  else // if inertia data was not provided, estimate it
+  {
+    pcl::PCA<PointT> pca;
+    pca.setInputCloud(object_params.obstacleCloud);
+    Eigen::Vector3f eigenvalues = pca.getEigenValues();
+    major_value = eigenvalues(0);
+    middle_value = eigenvalues(1);
+    minor_value = eigenvalues(2);
+    Eigen::Matrix3f eigenvectors = pca.getEigenVectors();
+    for (size_t i = 0; i < 3; ++i) {
+      axes.push_back(eigenvectors.col(i));
+    }
   }
 
   // if we have a hint for the object's center use it, if not estimate it from center of mass
