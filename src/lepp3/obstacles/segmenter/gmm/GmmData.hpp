@@ -27,6 +27,14 @@ struct SegmenterParameters {
   float splitMaxOtherStatesPercentage = 0.2f;
   // how much of the observation covariance is taken from the previous frame
   float obsCovarRegularization = 0.95f;
+  // whether to apply a kalman filter to estimate object positions & velocities
+  bool enableKalmanFilter = false;
+  // noise assumed for object positions
+  float kalman_PositionNoise = 0.01f;
+  // noise assumed for object velocities
+  float kalman_VelocityNoise = 0.15f;
+  // noise assumed from measurement of positions
+  float kalman_MeasurementNoise = 0.1f;
 };
 
 struct State {
@@ -62,7 +70,57 @@ struct State {
     }
   }
 };
-}
-}
 
-#endif
+class GMMDataObserver {
+public:
+  /**
+  * Virtual deconstructor.
+  */
+  virtual ~GMMDataObserver() {}
+
+  /**
+  * Update observer with new state data.
+  */
+  virtual void updateState(State& gmmState, size_t idx) = 0;
+  virtual void deleteState(State& gmmState, size_t idx) = 0;
+};
+
+
+class GMMDataSubject {
+public:
+  /**
+  * Virtual deconstructor.
+  */
+  virtual ~GMMDataSubject() {}
+
+  /**
+  * Attach new observer to observer list.
+  */
+  void attachObserver(boost::shared_ptr<GMMDataObserver> observer) {
+    observers.push_back(observer);
+  }
+
+protected:
+  /**
+  * Notify all attached observers.
+  */
+  void notifyObservers_Update(State& gmmState, size_t idx) {
+    for (size_t i = 0; i < observers.size(); i++) {
+      observers[i]->updateState(gmmState, idx);
+    }
+  }
+  void notifyObservers_Delete(State& gmmState, size_t idx) {
+    for (size_t i = 0; i < observers.size(); i++) {
+      observers[i]->deleteState(gmmState, idx);
+    }
+  }
+
+private:
+  // vector holding all attached observers of this subject
+  std::vector<boost::shared_ptr<GMMDataObserver> > observers;
+};
+
+} // namespace GMM
+} // namespace lepp
+
+#endif // LEPP_OBSTACLES_SEGMENTER_GMM_GMMDATA_H

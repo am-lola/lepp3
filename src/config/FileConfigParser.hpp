@@ -14,6 +14,7 @@
 #include "lepp3/obstacles/segmenter/Segmenter.hpp"
 #include "lepp3/obstacles/segmenter/euclidean/EuclideanSegmenter.hpp"
 #include "lepp3/obstacles/segmenter/gmm/GmmSegmenter.hpp"
+#include "lepp3/obstacles/segmenter/gmm/GmmData.hpp"
 #include "deps/toml.h"
 
 #include "lepp3/ObstacleEvaluator.hpp"
@@ -294,7 +295,7 @@ protected:
                                            "ARVisualizer"};
 
     for (std::string const& type : type_order) {
-      std::cout << "checking for observer type: " << type << std::endl;
+      std::cout << "checking for observer type: " << type << ", found " << observers[type].size() << std::endl;
       for (toml::Value const* p : observers[type]) {
         toml::Value const& v = *p;
 
@@ -432,10 +433,12 @@ protected:
     }
 
     std::string segment_method = getTomlValue<std::string>(*segmenter, "method", "ObstacleDetection.Segmenter");
+    std::cout << "Initializing obstacle detector with segmentation method: " << segment_method << std::endl;
     if ("Euclidean" == segment_method) {
       double min_filter_percentage = getOptionalTomlValue(*segmenter, "min_filter_percentage", 0.9);
       base_obstacle_segmenter_.reset(new EuclideanSegmenter(min_filter_percentage));
     } else if ("GMM" == segment_method) {
+        /// TODO: Check for kalman params
       auto params = readGmmSegmenterParameters(*segmenter);
       base_obstacle_segmenter_.reset(new GmmSegmenter(params));
     } else {
@@ -457,13 +460,34 @@ protected:
 
     base_obstacle_segmenter_->FrameDataSubject::attachObserver(approx);
 
+    toml::Value const* tracker = toml_tree_.find("ObstacleDetection.Tracker");
+    if (!tracker)
+    {
+        // without an obstacle tracker, the approximator should be the end of the detection pipeline
+        this->detector_ = approx;
+        std::cout << "Initing without an obstacle tracker" << std::endl;
+    }
+    else
+    {
+      std::string tracker_type = getTomlValue<std::string>(*tracker, "type", "ObstacleDetection.Tracker");
+      if (tracker_type == "LowPassFilter")
+      {
+        std::cout << "Adding low-pass obstacle tracker" << std::endl;
+        /// TODO: low-pass filter has some params we should expose to cfg files
+        boost::shared_ptr<LowPassObstacleTracker> low_pass_obstacle_tracker(
+            new LowPassObstacleTracker);
 
-    boost::shared_ptr<LowPassObstacleTracker> low_pass_obstacle_tracker(
-        new LowPassObstacleTracker);
+        approx->FrameDataSubject::attachObserver(low_pass_obstacle_tracker);
 
-    approx->FrameDataSubject::attachObserver(low_pass_obstacle_tracker);
-
-    this->detector_ = low_pass_obstacle_tracker;
+        this->detector_ = low_pass_obstacle_tracker;
+      }
+      else
+      {
+        std::ostringstream ss;
+        ss << "Unknown Obstacle Tracker type: " << tracker_type;
+        throw std::runtime_error(ss.str());
+      }
+    }
   }
 
   virtual void initSurfaceDetector() override {
@@ -543,8 +567,7 @@ protected:
 private:
   /// Helper functions for constructing parts of the pipeline.
 
-#if 0
-  GMM::DebugGUIParams readGMMDebugGuiParams(toml::Value const& v) {
+  ObstacleTrackerVisualizer::GUIParams readGMMGuiParams(toml::Value const& v) {
     const char* base_key = "observers.visualizer.debug_gui_params";
 
     bool const enableTracker = getTomlValue<bool>(v, "enable_tracker", base_key);
@@ -562,15 +585,15 @@ private:
     // TODO decide how to read ar::color info from config file
     // ar::Color gaussianColor;
     // ar::Color ssvColor;
-    GMM::ColorMode colorMode = GMM::ColorMode::NONE;
+    ObstacleTrackerVisualizer::ColorMode colorMode = ObstacleTrackerVisualizer::ColorMode::NONE;
     std::string const mode = getOptionalTomlValue<std::string>(v, "color_mode", "NONE");
     if (mode == "SOFT_ASSIGNMENT") {
-      colorMode = GMM::ColorMode::SOFT_ASSIGNMENT;
+      colorMode = ObstacleTrackerVisualizer::ColorMode::SOFT_ASSIGNMENT;
     } else if (mode == "HARD_ASSIGNMENT") {
-      colorMode = GMM::ColorMode::HARD_ASSIGNMENT;
+      colorMode = ObstacleTrackerVisualizer::ColorMode::HARD_ASSIGNMENT;
     }
 
-    GMM::DebugGUIParams params;
+    ObstacleTrackerVisualizer::GUIParams params;
     params.enableTracker = enableTracker;
     params.enableTightFit = enableTightFit;
     params.drawGaussians = drawGaussians;
@@ -586,7 +609,6 @@ private:
 
     return params;
   }
-#endif
 
   /**
    * A helper function that reads all the parameters that are required by the
@@ -606,7 +628,10 @@ private:
     params.numSplitFrames = getOptionalTomlValue(v, "num_split_frames", 6);
     params.splitMaxOtherStatesPercentage = getOptionalTomlValue(v, "split_max_other_states_percentage", 0.2);
     params.obsCovarRegularization = getOptionalTomlValue(v, "obs_covar_regularization", 0.95);
-
+    params.enableKalmanFilter = getOptionalTomlValue(v, "enable_kalman_filter", false);
+    params.kalman_PositionNoise = getOptionalTomlValue(v, "kalman_noise_position", 0.01);
+    params.kalman_VelocityNoise = getOptionalTomlValue(v, "kalman_noise_velocity", 0.15);
+    params.kalman_MeasurementNoise = getOptionalTomlValue(v, "kalman_noise_measurement", 0.1);
     return params;
   }
 
@@ -742,22 +767,26 @@ private:
       return obs_surf_vis;
 
     } else if (type == "GMMTrackingVisualizer") {
-      /*
+      if (!this->detector_)
+        throw std::runtime_error("GMMDTrackingVisualizer requires an obstacle detector!");
+
        // TODO read all the necessary parameters from the config file.
        bool const debugGUI = getOptionalTomlValue(v, "debug_gui", false);
        // Set default values for GUI Debug parameters.
-       GMM::DebugGUIParams d_gui_params;
+       ObstacleTrackerVisualizer::GUIParams d_gui_params;
        // If there are debug parameters available in the config, get 'em
        if (debugGUI) {
          toml::Value const* debug_gui = v.find("debug_gui_params");
          if (!debug_gui) {
            throw std::runtime_error("To use the debug gui, you need to set its parameters [observers.visualizer.debug_gui_params]");
          }
-         d_gui_params = readGMMDebugGuiParams(*debug_gui);
+         d_gui_params = readGMMGuiParams(*debug_gui);
        }
-       return boost::shared_ptr<ObstacleTrackerVisualizer>(
-           new ObstacleTrackerVisualizer(d_gui_params, name, width, height));
-   */
+       auto visualizer = boost::shared_ptr<ObstacleTrackerVisualizer>(new ObstacleTrackerVisualizer(d_gui_params, name, width, height));
+       this->detector_->FrameDataSubject::attachObserver(visualizer);
+       boost::shared_ptr<GMM::GMMDataSubject> s = boost::dynamic_pointer_cast<GMM::GMMDataSubject>(this->base_obstacle_segmenter_);
+       s->attachObserver(visualizer);
+       return visualizer;
     } else if (type == "ImageVisualizer") {
       if (!enable_rgb) {
         throw std::runtime_error("Visualizer 'ImageVisualizer' requires an rgb source!!");
@@ -783,7 +812,7 @@ private:
   boost::shared_ptr<FrameDataObserver> getAggregator(toml::Value const& v) {
     std::string const type = getTomlValue<std::string>(v, "type", "aggregators.");
 
-    std::cout << "agg type: " << type << std::endl;
+    std::cout << "aggregator type: " << type << std::endl;
     if (type == "RobotAggregator") {
       if (!this->robot()) {
         throw std::runtime_error("RobotAggregator requires a [Robot]");
@@ -791,13 +820,22 @@ private:
       int const update_frequency = getTomlValue<int>(v, "update_frequency", "aggregators.");
       std::vector<std::string> datatypes = getTomlValue<std::vector<std::string>>(v, "data", "aggregators.");
 
+      float min_surface_height = 0;
+      float surface_normal_tolerance = 0;
+      if (std::find(datatypes.begin(), datatypes.end(), "surfaces") != datatypes.end()) // check for surface parameters if we're going to process surfaces
+      {
+        min_surface_height = getOptionalTomlValue<double>(v, "min_surface_height", 0);
+        surface_normal_tolerance = getOptionalTomlValue<double>(v, "surface_normal_tolerance", 0);
+      }
       auto robotService = getRobotService(v);
 
       // attach to RGB data here since we always assume we're dealing with FrameDataObservers elsewhere...
       boost::shared_ptr<RobotAggregator> robotAggregator = boost::make_shared<RobotAggregator>(robotService,
                                                                                                update_frequency,
                                                                                                datatypes,
-                                                                                               *this->robot());
+                                                                                               *this->robot(),
+                                                                                               min_surface_height,
+                                                                                               surface_normal_tolerance);
       boost::static_pointer_cast<RGBDataSubject>(this->raw_source_)->attachObserver(robotAggregator);
       return robotAggregator;
 

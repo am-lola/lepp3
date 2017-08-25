@@ -16,12 +16,12 @@ public:
   virtual void updateFrame(FrameDataPtr frameData) override;
 
   /**
-   * Generate the approximations for the given point cloud.
+   * Generate the approximations for the object parameters (point cloud, etc).
    * The method assumes that the given point cloud segment is a single physical
    * object and tries to find the best approximations for this object, using its
-   * own specific approximation method.
+   * own specific approximation method, and any hints given in the object_params.
    */
-  virtual ObjectModelPtr approximate(PointCloudConstPtr const& point_cloud) = 0;
+  virtual ObjectModelPtr approximate(ObjectModelParams const& object_params) = 0;
 
 private:
   /**

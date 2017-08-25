@@ -223,6 +223,12 @@ type = "ObstacleDetector"
   #split_max_other_states_percentage = 0.2
   # how much of the observation covariance is taken from the previous frame
   #obs_covar_regularization = 0.95
+  # whether to enable a kalman filter for estimating object positions & velocities
+  #enable_kalman_filter = true
+  # noise parameters for the kalman filter
+  #kalman_noise_position = 0.01
+  #kalman_noise_velocity = 0.15
+  #kalman_noise_measurement = 0.1
 
   [ObstacleDetection.SplitStrategy]
   # Defines the split axis.
@@ -256,6 +262,13 @@ type = "ObstacleDetector"
     type = "DistanceThreshold"
     # Distance is in [cm]
     distance_threshold = 150
+
+  # (Optional) This sets the method used to track objects across frames
+  # NOTE: The GMM Segmenter performs its own tracking.
+  #       When using the GMM Segmenter, this block should be omitted to
+  #       avoid any of the tracked data being overwritten.
+  [ObstacleDetection.Tracker]
+  type = "LowPassFilter"
 
 ###########################################################################
 # Aggregators is an array

@@ -10,7 +10,7 @@ public:
   virtual void updateFrame(FrameDataPtr frameData) override;
 
 private:
-  virtual std::vector<PointCloudPtr> extractObstacleClouds(PointCloudConstPtr cloud) = 0;
+  virtual std::vector<ObjectModelParams> extractObstacleParams(PointCloudConstPtr cloud) = 0;
 };
 
 }

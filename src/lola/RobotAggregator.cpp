@@ -47,8 +47,16 @@ private:
 };
 }  // namespace <anonymous>
 
-RobotAggregator::RobotAggregator(boost::shared_ptr<RobotService> service, int freq, std::vector<std::string> datatypes, Robot& robot)
+RobotAggregator::RobotAggregator(boost::shared_ptr<RobotService> service,
+                                int freq,
+                                std::vector<std::string> datatypes,
+                                Robot& robot,
+                                double min_surface_height,
+                                double surface_normal_tolerance
+                              )
     : service_(service), diff_(freq), next_id_(0),
+      min_surface_height(min_surface_height),
+      surface_normal_tolerance(surface_normal_tolerance),
       robot_(robot) {
 
   for (auto t : datatypes)
@@ -78,7 +86,30 @@ RobotAggregator::RobotAggregator(boost::shared_ptr<RobotService> service, int fr
     diff_.set_new_surface_callback(boost::bind(&RobotAggregator::new_surface_cb_, this, _1, _2));
     diff_.set_modified_surface_callback(boost::bind(&RobotAggregator::mod_surface_cb_, this, _1, _2));
     diff_.set_deleted_surface_callback(boost::bind(&RobotAggregator::del_surface_cb_, this, _1, _2));
+
+    // prepare dummy convex hull for surfaces we don't want the planning system to consider
+    dummy_hull.reset(new PointCloudT());
+    dummy_hull->width = 8;
+    dummy_hull->height = 1;
+    dummy_hull->is_dense = false;
+    dummy_hull->points.resize(dummy_hull->width * dummy_hull->height);
+    for (size_t i = 0; i < dummy_hull->width * dummy_hull->height; i++)
+    {
+      (*dummy_hull)[i].x = -4.9 + (sin((float)i) * 0.01f);
+      (*dummy_hull)[i].y = -4.9 + (cos((float)i) * 0.01f);
+      (*dummy_hull)[i].z = -4.9 + ((float)i * 0.01f);
+    }
   }
+}
+
+bool RobotAggregator::shouldSendSurface(SurfaceModel& model) {
+  if (fabs(model.centerpoint().z) < min_surface_height)
+  {
+    double angle = acos(model.get_normal().dot(Eigen::Vector3d(0, 0, 1)));
+    if (angle < surface_normal_tolerance)
+      return false;
+  }
+  return true;
 }
 
 void RobotAggregator::new_obstacle_cb_(ObjectModel& model, long frame_num) {
@@ -104,7 +135,16 @@ void RobotAggregator::new_obstacle_cb_(ObjectModel& model, long frame_num) {
   }
 }
 void RobotAggregator::new_surface_cb_(SurfaceModel& model, long frame_num) {
-      sendNew(model, frame_num);
+  if (shouldSendSurface(model))
+  {
+    sendNew(model, frame_num);
+  }
+  else
+  {
+    SurfaceModel hack = model;
+    hack.set_hull(dummy_hull);
+    sendNew(hack, frame_num);
+  }
 }
 
 bool RobotAggregator::del_obstacle_cb_(ObjectModel& model, long frame_num) {
@@ -153,10 +193,15 @@ void RobotAggregator::mod_obstacle_cb_(ObjectModel& model, long frame_num) {
   std::vector<ObjectModel*> primitives(getPrimitives(model));
   size_t const new_size = primitives.size();
   std::vector<int>& ids = robot_ids_[model.id()];
+  for (auto& id : ids)
+  {
+    std::cout << id << ", ";
+  }
+  std::cout << "]" << std::endl;
   // The ids list includes the ID of the object itself (at index 0), not only
   // the primitives.
   // There always need to be at least two IDs in the vector (the model and at
-  // least on of its parts), therefore this will not underflow the `size_t`.
+  // least one of its parts), therefore this will not underflow the `size_t`.
   size_t const old_size = ids.size() - 1;
 
   if (new_size < old_size) {
@@ -192,7 +237,17 @@ void RobotAggregator::mod_surface_cb_(SurfaceModel& model, long frame_num) {
  if (robot_.isInRobotBoundary(model)) {
    return;
  }
-  sendModify(model, frame_num);
+
+  if (shouldSendSurface(model))
+  {
+    sendModify(model, frame_num);
+  }
+  else
+  {
+    SurfaceModel hack = model;
+    hack.set_hull(dummy_hull);
+    sendModify(hack, frame_num);
+  }
 }
 
 std::vector<ObjectModel*> RobotAggregator::getPrimitives(ObjectModel& model) const {
@@ -210,7 +265,8 @@ void RobotAggregator::sendNew(ObjectModel& new_model, int model_id, int part_id,
       frame_num);
   LINFO << "RobotAggregator: Creating new primitive ["
         << "type = " << coefs.type_id()
-        << "; id = " << part_id;
+        << "; id = " << part_id
+        << "]";
   service_->sendMessage(msg);
 }
 
@@ -226,29 +282,29 @@ void RobotAggregator::sendNew(SurfaceModel& new_surface, long frame_num) {
 
   VisionMessage msg = VisionMessage(SurfaceMessage::SetMessage(new_surface.id(), normal, vertices), frame_num);
 
-  LINFO << "RobotAggregator: Creating new surface ["
-        << "id = " << new_surface.id()
-        << "]";
+  // LINFO << "RobotAggregator: Creating new surface ["
+  //       << "id = " << new_surface.id()
+  //       << "]";
   service_->sendMessage(msg);
 }
 
 void RobotAggregator::sendDeleteObstacle(int id, long frame_num) {
-  LINFO << "RobotAggregator: Deleting a primitive id = "
-        << id;
+  // LINFO << "RobotAggregator: Deleting a primitive id = "
+  //       << id;
   VisionMessage del = VisionMessage(ObstacleMessage::DeleteMessage(id), frame_num);
   service_->sendMessage(del);
 }
 
 void RobotAggregator::sendDeleteObstaclePart(int model_id, int part_id, long frame_num) {
-  LINFO << "RobotAggregator: Deleting a primitive id = "
-        << part_id;
+  // LINFO << "RobotAggregator: Deleting a primitive id = "
+  //       << part_id;
   VisionMessage del = VisionMessage(ObstacleMessage::DeletePartMessage(model_id, part_id), frame_num);
   service_->sendMessage(del);
 }
 
 void RobotAggregator::sendDeleteSurface(int id, long frame_num)
 {
-  LINFO << "RobotAggregator: Deleting surface: " << id;
+  // LINFO << "RobotAggregator: Deleting surface: " << id;
   VisionMessage msg = VisionMessage(SurfaceMessage::DeleteMessage(id), frame_num);
   service_->sendMessage(msg);
 }
@@ -261,7 +317,8 @@ void RobotAggregator::sendModify(ObjectModel& model, int model_id, int part_id, 
       frame_num);
   LINFO << "RobotAggregator: Modifying existing primitive ["
             << "type = " << coefs.type_id()
-            << "; id = " << part_id;
+            << "; id = " << model_id << " | " << part_id
+            << "]";
   service_->sendMessage(msg);
 }
 
@@ -274,18 +331,13 @@ void RobotAggregator::sendModify(SurfaceModel& surface, long frame_num)
     vertices.push_back(point.x);
     vertices.push_back(point.y);
     vertices.push_back(point.z);
-     LINFO << "RobotAggregator:"
-        << "x: " << point.x 
-        <<" y: "<< point.y 
-        << " z: " << point.z 
-        << "]";
   }
 
   VisionMessage msg = VisionMessage(SurfaceMessage::ModifyMessage(surface.id(), normal, vertices), frame_num);
 
-  LINFO << "RobotAggregator: Modifying existing surface ["
-        << "id = " << surface.id()
-        << "]";
+  // LINFO << "RobotAggregator: Modifying existing surface ["
+  //       << "id = " << surface.id()
+  //      << "]";
   service_->sendMessage(msg);
 }
 
@@ -304,7 +356,7 @@ void RobotAggregator::sendRGBImage(cv::Mat const& image, long frame_num)
     img_data = image.data;
   } else {
     std::ostringstream ss;
-    ss << "Unknown image format: " << image.type();
+    ss << "Unexpected image format: " << image.type();
     throw std::runtime_error(ss.str());
   }
 

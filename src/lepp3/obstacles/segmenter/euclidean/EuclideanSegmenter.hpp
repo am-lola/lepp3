@@ -16,7 +16,7 @@ public:
   EuclideanSegmenter(double min_filter_percentage);
 
 private:
-  virtual std::vector<PointCloudPtr> extractObstacleClouds(PointCloudConstPtr cloud) override;
+  virtual std::vector<ObjectModelParams> extractObstacleParams(PointCloudConstPtr cloud) override;
 
 
   /**
@@ -32,7 +32,7 @@ private:
    * by copying the corresponding points from the cloud to the corresponding
    * new point cloud.
    */
-  std::vector<PointCloudPtr> clustersToPointClouds(
+  std::vector<ObjectModelParams> clustersToPointClouds(
       PointCloudConstPtr const& cloud_filtered,
       std::vector<pcl::PointIndices> const& cluster_indices);
 

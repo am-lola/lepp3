@@ -4,11 +4,11 @@
 #include <pcl/common/common.h>
 #include <pcl/kdtree/kdtree_flann.h>
 
-lepp::ObjectModelPtr lepp::MomentOfInertiaObjectApproximator::approximate(const PointCloudConstPtr& point_cloud) {
+lepp::ObjectModelPtr lepp::MomentOfInertiaObjectApproximator::approximate(const ObjectModelParams& object_params) {
   // Firstly, obtain the principal component descriptors
   float major_value, middle_value, minor_value;
   pcl::PCA<PointT> pca;
-  pca.setInputCloud(point_cloud);
+  pca.setInputCloud(object_params.obstacleCloud);
   Eigen::Vector3f eigenvalues = pca.getEigenValues();
   major_value = eigenvalues(0);
   middle_value = eigenvalues(1);
@@ -19,29 +19,34 @@ lepp::ObjectModelPtr lepp::MomentOfInertiaObjectApproximator::approximate(const 
     axes.push_back(eigenvectors.col(i));
   }
 
-  // Guesstimate the center of mass
-  Eigen::Vector3f mass_center(estimateMassCenter(point_cloud));
+  // if we have a hint for the object's center use it, if not estimate it from center of mass
+  Eigen::Vector3f mass_center;
+  if (!std::isnan(object_params.center.x) && !std::isnan(object_params.center.y) && !std::isnan(object_params.center.z))
+    mass_center = object_params.center;
+  else
+    mass_center = estimateMassCenter(object_params.obstacleCloud);
 
   // Based on these descriptors, decide which object type should be used.
   boost::shared_ptr<ObjectModel> model;
   if ((middle_value / major_value > .6) && (minor_value / major_value > .1)) {
     boost::shared_ptr<SphereModel> sphere(new SphereModel(0, Coordinate()));
-    performFitting(sphere, point_cloud, mass_center, axes);
+    performFitting(sphere, object_params.obstacleCloud, mass_center, axes);
     model = sphere;
   } else if (middle_value / major_value < .25) {
     boost::shared_ptr<CapsuleModel> capsule(new CapsuleModel(0, Coordinate(), Coordinate()));
-    performFitting(capsule, point_cloud, mass_center, axes);
+    performFitting(capsule, object_params.obstacleCloud, mass_center, axes);
     model = capsule;
   } else {
     // The fall-back is a sphere
     boost::shared_ptr<SphereModel> sphere(new SphereModel(0, Coordinate()));
-    performFitting(sphere, point_cloud, mass_center, axes);
+    performFitting(sphere, object_params.obstacleCloud, mass_center, axes);
     model = sphere;
   }
 
   // Now we pack the model into a "composite" of one element to satisfy the
   // interface!
   boost::shared_ptr<CompositeModel> approx(new CompositeModel);
+  model->set_id(object_params.id);
   approx->addModel(model);
   return approx;
 }

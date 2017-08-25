@@ -1,11 +1,7 @@
-# This is the master config. It is most likely not runnable but lists all
-# available options
-# The config file is in the [toml](https://github.com/toml-lang/toml) format
+# This config file is in the [toml](https://github.com/toml-lang/toml) format
 
 # All IPs and ports given in here are the defaults for a lab setup.
 
-# Mandatory options are given, optional options are commented out
-# and listed with the default values
 
 # This defines the pose service to use.
 # Requirements: None
@@ -15,12 +11,12 @@ port = 55555
 
 # This defines the specifics for the robot
 # Requirements: PoseService
-#[Robot]
+[Robot]
 # The size of the "bubble" in which no modifications or deletions of objects
 # are sent to the robot. **In meters**
 # This is required because the camera angle prevents the robot from seeing
 # the environment directly below its feet
-#bubble_size = 1.2
+bubble_size = 1.2
 
 # Video source
 [VideoSource]
@@ -79,13 +75,13 @@ type = "ARVisualizer"
 # - height: the window dimensions
 
   # Image Visualizer: shows the camera's rgb data
-  [[observers.visualizer]]
-  type = "ImageVisualizer"
-  name = "RGBImage"
-  width = 1024
-  height = 768
+  # [[observers.visualizer]]
+  # type = "ImageVisualizer"
+  # name = "RGBImage"
+  # width = 1024
+  # height = 768
 
-  # # Basic visualizer: shows obstacles (euclidean) and surfaces
+  # Basic visualizer: shows obstacles (euclidean) and surfaces
   [[observers.visualizer]]
   type = "ObsSurfVisualizer"
   name = "Obs_Surf_Detector"
@@ -94,23 +90,23 @@ type = "ARVisualizer"
   show_obstacles = true
   show_surfaces = true
 
-  # # This visualizer shows a debug GUI for the GMM obstacle detction
+  # This visualizer shows a debug GUI for the GMM obstacle detction
   # [[observers.visualizer]]
   # type = "GMMTrackingVisualizer"
   # name = "GMM Obstacle Tracker Data"
   # debug_gui = true
   # width = 1024
   # height = 768
-
-  #  [observers.visualizer.debug_gui_params]
+  #
+  #   [observers.visualizer.debug_gui_params]
   #   # Just an example: set "some" of the values here. The rest will be set to
   #   # default by `DebugGUIParams`s ctor.
-  #  draw_gaussians = true
-  #  draw_velocities = true
+  #   draw_gaussians = true
+  #   draw_velocities = true
   #   draw_ssv = true
-  #   draw_trajectories = false
+  #   draw_trajectories = true
   #   draw_debug_values = true
-  #   draw_voxels = false
+  #   draw_voxels = true
   #   downsample_res = 0.03 # downsampling leaf size in meters
   #   enable_tracker = true
   #   enable_tight_fit = true # use pc-based fitting instead of gaussian-based fitting
@@ -132,7 +128,7 @@ type = "ObstacleDetector"
   # plane in order to be considered an inlier on this plane
   minDistToPlane = 0.04
 
-  # # Segmentation Method
+  # Segmentation Method
   [ObstacleDetection.Segmenter]
   # Available methods:
   #   - "Euclidean
@@ -145,27 +141,26 @@ type = "ObstacleDetector"
   # method = "GMM"
   # # voxel grid used for clustering, leaf size in meters
   # voxel_grid_resolution = 0.1
-
-  # this much state-responsibility is needed for a point to be "hard" assigned to a state
-  #hard_assignment_state_resp = 0.9
-  # states with GMM mixing coefficients (pi) lower than this will be removed
-  #state_pi_removal_threshold = 0.01
-  # minimum number of points in a vcluster needed for a new state to be added
-  #min_vcluster_points = 10
-  # prior identity covariance scale for new states
-  #new_state_prior_covar_size = 0.01
-  # mixing of prior identity covariance for new states
-  #new_state_prior_covar_mix = 0.5
-  # number of frames a state has be be alive for splitting to be enabled
-  #num_split_life_time_frames = 20
-  # number of points a state has to have in its second largest vcluster for it to be split
-  #num_split_points = 15
-  # number of consecutive frames a state has to have points in two different vclusters until it is split
-  #num_split_frames = 6
-  # only split when the other vcluster has less than this percentage of points assigned to other states
-  #split_max_other_states_percentage = 0.2
-  # how much of the observation covariance is taken from the previous frame
-  #obs_covar_regularization = 0.95
+  # # this much state-responsibility is needed for a point to be "hard" assigned to a state
+  # hard_assignment_state_resp = 0.9
+  # # states with GMM mixing coefficients (pi) lower than this will be removed
+  # state_pi_removal_threshold = 0.01
+  # # minimum number of points in a vcluster needed for a new state to be added
+  # min_vcluster_points = 10
+  # # prior identity covariance scale for new states
+  # new_state_prior_covar_size = 0.01
+  # # mixing of prior identity covariance for new states
+  # new_state_prior_covar_mix = 0.5
+  # # number of frames a state has be be alive for splitting to be enabled
+  # num_split_life_time_frames = 20
+  # # number of points a state has to have in its second largest vcluster for it to be split
+  # num_split_points = 15
+  # # number of consecutive frames a state has to have points in two different vclusters until it is split
+  # num_split_frames = 6
+  # # only split when the other vcluster has less than this percentage of points assigned to other states
+  # split_max_other_states_percentage = 0.2
+  # # how much of the observation covariance is taken from the previous frame
+  # obs_covar_regularization = 0.95
 
   [ObstacleDetection.SplitStrategy]
   # Defines the split axis.
@@ -201,25 +196,47 @@ type = "ObstacleDetector"
     distance_threshold = 150
 
 ###########################################################################
-# # Aggregators is an array
-# # this will list all aggregators and options belonging to them
-#
-# # This aggregator sends data to listeners (Path planning, Lab Visualizer, ...)
-# [[aggregators]]
-# type = "RobotAggregator"
-# # Number of frames to wait before sending new data
-# update_frequency = 3
-# # Data to send
-# data = [ "obstacles", "surfaces", "images", "pointclouds"]
-# # Human readable target name, just for terminal/log output
-# target="Vision"
-# # Target IP
-# # ip = "192.168.0.3"  # Control computer IP
-# ip = "192.168.0.7"  # QNX computer IP
-# # Target Port, default is hexadecimal 0xF008
-# port = 61448
-# # Delay to wait after sending a message
-# #delay = 10
+ # Aggregators is an array
+ # this will list all aggregators and options belonging to them
+
+ # This aggregator sends data to listeners (Path planning, Lab Visualizer, ...)
+ [[aggregators]]
+ type = "RobotAggregator"
+ # Number of frames to wait before sending new data
+ update_frequency = 1
+ # Data to send
+ data = [ "obstacles", "surfaces"]
+ # Human readable target name, just for terminal/log output
+ target="Hololens"
+ # Target IP
+ ip = "192.168.0.100"  # Control computer IP
+ port = 9090
+ # Delay to wait after sending a message
+ delay = 2
+ # minimum height (m) above the ground plane a surface must match in order to be sent
+min_surface_height = 0.05
+ # For surfaces failing min_surface_height test, if their normal deviates from the vertical
+ # axis by more than this amount (in radians) the surface will still be sent
+surface_normal_tolerance = 0.523 # ~30 degrees
+
+ [[aggregators]]
+ type = "RobotAggregator"
+ # Number of frames to wait before sending new data
+ update_frequency = 1
+ # Data to send
+ data = [ "obstacles", "surfaces"]
+ # Human readable target name, just for terminal/log output
+ target="lola-listener"
+ # Target IP
+ ip = "127.0.0.1"  # Control computer IP
+ port = 9091
+ # Delay to wait after sending a message
+ delay = 2
+ # minimum height (m) above the ground plane a surface must match in order to be sent
+min_surface_height = 0.05
+ # For surfaces failing min_surface_height test, if their normal deviates from the vertical
+ # axis by more than this amount (in radians) the surface will still be sent
+surface_normal_tolerance = 0.523 # ~30 degrees
 
 ###########################################################################
 # Miscellaneous settings

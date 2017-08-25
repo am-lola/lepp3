@@ -26,7 +26,7 @@ public:
         boost::shared_ptr<SplitStrategy> splitter);
 
   ObjectModelPtr approximate(
-      const PointCloudConstPtr& point_cloud);
+      const ObjectModelParams& object_params);
 private:
   /**
    * An `ObjectApproximator` used to generate approximations for object parts.
