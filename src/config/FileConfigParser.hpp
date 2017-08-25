@@ -628,7 +628,10 @@ private:
     params.numSplitFrames = getOptionalTomlValue(v, "num_split_frames", 6);
     params.splitMaxOtherStatesPercentage = getOptionalTomlValue(v, "split_max_other_states_percentage", 0.2);
     params.obsCovarRegularization = getOptionalTomlValue(v, "obs_covar_regularization", 0.95);
-
+    params.enableKalmanFilter = getOptionalTomlValue(v, "enable_kalman_filter", false);
+    params.kalman_PositionNoise = getOptionalTomlValue(v, "kalman_noise_position", 0.01);
+    params.kalman_VelocityNoise = getOptionalTomlValue(v, "kalman_noise_velocity", 0.15);
+    params.kalman_MeasurementNoise = getOptionalTomlValue(v, "kalman_noise_measurement", 0.1);
     return params;
   }
 

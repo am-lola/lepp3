@@ -27,6 +27,14 @@ struct SegmenterParameters {
   float splitMaxOtherStatesPercentage = 0.2f;
   // how much of the observation covariance is taken from the previous frame
   float obsCovarRegularization = 0.95f;
+  // whether to apply a kalman filter to estimate object positions & velocities
+  bool enableKalmanFilter = false;
+  // noise assumed for object positions
+  float kalman_PositionNoise = 0.01f;
+  // noise assumed for object velocities
+  float kalman_VelocityNoise = 0.15f;
+  // noise assumed from measurement of positions
+  float kalman_MeasurementNoise = 0.1f;
 };
 
 struct State {
