@@ -42,6 +42,7 @@ lepp::ObjectModelPtr lepp::SplitObjectApproximator::approximate(const ObjectMode
     } else {
       // Keep the approximation
       approx->addModel(model);
+      approx->set_velocity(object_params.velocity);
     }
   }
 

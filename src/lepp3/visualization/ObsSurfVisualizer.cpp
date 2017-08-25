@@ -76,7 +76,7 @@ void lepp::ModelDrawer::visitSphere(lepp::SphereModel& sphere)
   Coordinate const& center = sphere.center();
   Coordinate const& sphereVelocity = sphere.velocity();
   double centerPoint[3] = {center.x, center.y, center.z};
-  Eigen::Vector3d velocity_step = 0.2*Eigen::Vector3d(sphereVelocity.x, sphereVelocity.y, sphereVelocity.z) + Eigen::Vector3d(center.x, center.y, center.z);
+  Eigen::Vector3d velocity_step = Eigen::Vector3d(sphereVelocity.x, sphereVelocity.y, sphereVelocity.z) + Eigen::Vector3d(center.x, center.y, center.z);
   double radius = sphere.radius();
 
   // update drawing variables
@@ -123,7 +123,7 @@ void lepp::ModelDrawer::visitCapsule(lepp::CapsuleModel& capsule)
   double center1[3] = {capsule.first().x, capsule.first().y, capsule.first().z};
   double center2[3] = {capsule.second().x, capsule.second().y, capsule.second().z};
   double centerPoint[3] = {capsule.center_point().x, capsule.center_point().y, capsule.center_point().z};
-  Eigen::Vector3d velocity_step = 0.2*Eigen::Vector3d(capsule.velocity().x, capsule.velocity().y, capsule.velocity().z)
+  Eigen::Vector3d velocity_step = Eigen::Vector3d(capsule.velocity().x, capsule.velocity().y, capsule.velocity().z)
                                   + Eigen::Vector3d(centerPoint[0], centerPoint[1], centerPoint[2]);
   double radius = capsule.radius();
 

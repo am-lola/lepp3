@@ -50,6 +50,7 @@ lepp::ObjectModelPtr lepp::MomentOfInertiaObjectApproximator::approximate(const 
   // interface!
   boost::shared_ptr<CompositeModel> approx(new CompositeModel);
   model->set_id(object_params.id);
+  model->set_velocity(object_params.velocity);
   approx->addModel(model);
   return approx;
 }
