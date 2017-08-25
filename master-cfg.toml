@@ -263,6 +263,13 @@ type = "ObstacleDetector"
     # Distance is in [cm]
     distance_threshold = 150
 
+  # (Optional) This sets the method used to track objects across frames
+  # NOTE: The GMM Segmenter performs its own tracking.
+  #       When using the GMM Segmenter, this block should be omitted to
+  #       avoid any of the tracked data being overwritten.
+  [ObstacleDetection.Tracker]
+  type = "LowPassFilter"
+
 ###########################################################################
 # Aggregators is an array
 # this will list all aggregators and options belonging to them
