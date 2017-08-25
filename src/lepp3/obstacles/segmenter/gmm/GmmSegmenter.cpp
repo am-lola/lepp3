@@ -222,8 +222,8 @@ std::vector<lepp::ObjectModelParams> lepp::GmmSegmenter::extractObstacleParams(P
   for (size_t i = 0; i < N; i++) {
     for (size_t k = 0; k < states_.size(); ++k) {
       if (R(i, k) > parameters_.hardAssignmentStateResp
-          && vcluster_point_table[i] != state_main_vcluster[k]
-          && C(vcluster_point_table[i], k) < parameters_.numSplitPoints) {
+          && (vcluster_point_table[i] = state_main_vcluster[k]
+          || C(vcluster_point_table[i], k) > parameters_.numSplitPoints)) {
         ret[k].obstacleCloud->push_back((*cloud)[i]);
         break;
       }
