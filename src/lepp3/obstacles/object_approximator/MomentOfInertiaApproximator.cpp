@@ -44,18 +44,15 @@ lepp::ObjectModelPtr lepp::MomentOfInertiaObjectApproximator::approximate(const 
     boost::shared_ptr<SphereModel> sphere(new SphereModel(0, Coordinate()));
     performFitting(sphere, object_params.obstacleCloud, mass_center, axes);
     model = sphere;
-    std::cout << "akk MOI SPHERE RADIUS [ " << object_params.id << " ]: " << sphere->radius() << std::endl;
   } else if (middle_value / major_value < .25) {
     boost::shared_ptr<CapsuleModel> capsule(new CapsuleModel(0, Coordinate(), Coordinate()));
     performFitting(capsule, object_params.obstacleCloud, mass_center, axes);
     model = capsule;
-    std::cout << "akk MOI CAPSULE RADIUS [ " << object_params.id << " ]: " << capsule->radius() << std::endl;
   } else {
     // The fall-back is a sphere
     boost::shared_ptr<SphereModel> sphere(new SphereModel(0, Coordinate()));
     performFitting(sphere, object_params.obstacleCloud, mass_center, axes);
     model = sphere;
-    std::cout << "akk MOI SPHERE RADIUS [ " << object_params.id << " ]: " << sphere->radius() << std::endl;
   }
 
   // Now we pack the model into a "composite" of one element to satisfy the
