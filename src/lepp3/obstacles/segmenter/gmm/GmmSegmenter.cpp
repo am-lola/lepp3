@@ -30,98 +30,6 @@ lepp::GmmSegmenter::GmmSegmenter(const GMM::SegmenterParameters& params) : param
 {
 }
 
-void lepp::GmmSegmenter::generateSSVs(GMM::State& state, ObjectModelParams& params, FrameDataPtr frameData)
-{
-  using namespace Eigen;
-
-  float SQRT_CHI_SQUARE = 2.7955f;
-  const Vector3f filteredPos = params.center;
-
-  SelfAdjointEigenSolver<Matrix3f> eigensolver(state.obsCovar);
-  const Vector3f evals = eigensolver.eigenvalues();
-  const Matrix3f evecs = eigensolver.eigenvectors();
-
-  // two thresholds to make a hysteresis
-  const float threshold =  0.35; //_parameters.eigvalRatioCapsuleThreshold; // _parameters.eigvalRatioSphereThreshold;
-
-  if (evals(1)/evals(2) < threshold)
-  {
-    // capsule
-    const float radius = sqrtf(evals(1)) * SQRT_CHI_SQUARE;
-    const Vector3f extent = evecs.col(2) * (sqrtf(evals(2)) * SQRT_CHI_SQUARE - radius);
-
-    Vector3f center = params.center;
-
-    const Vector3f pointA = center - extent;
-    const Vector3f pointB = center + extent;
-    auto objectModel = new CapsuleModel((double)radius, Coordinate(pointA), Coordinate(pointB));
-    objectModel->set_id(params.id);
-    frameData->obstacles.emplace_back(objectModel);
-
-  }
-  else
-  {
-    // sphere
-    const float radius = sqrtf(evals(2)) * SQRT_CHI_SQUARE;
-    const Vector3f center = params.center;
-    auto objectModel = new SphereModel(radius, Coordinate(center));
-    objectModel->set_id(params.id);
-    frameData->obstacles.emplace_back(objectModel);
-  }
-
-  const Coordinate velocity(params.velocity);
-  frameData->obstacles.back()->set_velocity(velocity);
-}
-
-
-void lepp::GmmSegmenter::fitSSVs(int k, const PointCloudT* pc, const Eigen::MatrixXf& R, const Eigen::MatrixXi& C)
-{
-   using namespace Eigen;
-   float SSV_EXPFILTER_ALPHA = 0.9f;
-
-   auto& state = states_[k];
-//   ObstacleSSVData& ssvData = state.ssvData;
-   const auto map = pc->getMatrixXfMap();
-   const size_t N = pc->size();
- // number of points
-   Vector3f mean = state.pos;
-   SelfAdjointEigenSolver<Matrix3f> eigensolver(state.obsCovar);
-   const Matrix3f evecs = eigensolver.eigenvectors();
-   float ssvCapsuleMin = -0.01f;
-   float ssvCapsuleMax = 0.01f;
-   float radiusSphere = 0.0f;
-   float radiusCapsule = 0.0f;
-   const int mainVCluster = state_main_vcluster[k]; //stateMainVCluster[k];
-   int npoints_obstacle = 0;
-   int npoints_fit = 0;
-   for (size_t i = 0; i < N; i++)
-   {
-     if (R(i,k) > parameters_.hardAssignmentStateResp)
-     {
-       npoints_obstacle++;
-       // if this point is in a vcluster (which is not the main vcluster)
-       // for which the state does not have enough points, ignore it
-       if (vcluster_point_table[i] != mainVCluster && C(vcluster_point_table[i], k) < parameters_.numSplitPoints)
-         continue;
-       const Vector4f x = map.col(i);
-       Vector3f a = x.head<3>() - mean;
-       radiusSphere = std::max(radiusSphere, a.norm());
-       // for the capsule, transform into eigenvector space first
-       const Vector3f b = a.transpose() * evecs;
-       // project onto the 2D plane spanned by the two smaller eigenvectors
-       radiusCapsule = std::max(radiusCapsule, b.head<2>().norm());
-       // take min/max along the largest eigenvector
-       ssvCapsuleMax = std::max(ssvCapsuleMax, b.z());
-       ssvCapsuleMin = std::min(ssvCapsuleMin, b.z());
-       npoints_fit++;
-     }
-   }
-   // clamp to some small value to avoid issues later on
-   radiusSphere = std::max(0.01f, radiusSphere);
-   radiusCapsule = std::max(0.01f, radiusCapsule);
-   std::cout << "akk GMM SSV FIT [ " << k+1 << " ]: sphere ( " << radiusSphere << " ), capsule ( " << radiusCapsule << " ) " << npoints_fit << " / " << npoints_obstacle << std::endl;
- }
-
 std::vector<lepp::ObjectModelParams> lepp::GmmSegmenter::extractObstacleParams(PointCloudConstPtr cloud) {
   using namespace Eigen;
 
@@ -221,7 +129,9 @@ std::vector<lepp::ObjectModelParams> lepp::GmmSegmenter::extractObstacleParams(P
 
   for (size_t i = 0; i < N; i++) {
     for (size_t k = 0; k < states_.size(); ++k) {
-      if (R(i, k) > parameters_.hardAssignmentStateResp
+      if (states_[k].lifeTime < parameters_.minPersistentFrames)
+          continue;
+      else if (R(i, k) > parameters_.hardAssignmentStateResp
           && vcluster_point_table[i] != state_main_vcluster[k]
           && C(vcluster_point_table[i], k) < parameters_.numSplitPoints) {
         ret[k].obstacleCloud->push_back((*cloud)[i]);

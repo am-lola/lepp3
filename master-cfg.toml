@@ -223,6 +223,8 @@ type = "ObstacleDetector"
   #split_max_other_states_percentage = 0.2
   # how much of the observation covariance is taken from the previous frame
   #obs_covar_regularization = 0.95
+  # minimum number of consecutive frames an obstacle must be observed in to be treated as real
+  #min_persistent_frames = 1
   # whether to enable a kalman filter for estimating object positions & velocities
   #enable_kalman_filter = true
   # noise parameters for the kalman filter

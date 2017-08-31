@@ -27,6 +27,8 @@ struct SegmenterParameters {
   float splitMaxOtherStatesPercentage = 0.2f;
   // how much of the observation covariance is taken from the previous frame
   float obsCovarRegularization = 0.95f;
+  // minimum number of frames an obstacle must be observed in to count as 'real'
+  int minPersistentFrames = 1;
   // whether to apply a kalman filter to estimate object positions & velocities
   bool enableKalmanFilter = false;
   // noise assumed for object positions
