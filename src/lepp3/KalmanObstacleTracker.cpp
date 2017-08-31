@@ -17,7 +17,6 @@ void KalmanObstacleTracker::update(std::vector<lepp::ObjectModelParams>& obstacl
 
   for (auto& obstacle : obstacles)
   {
-    std::cout << "--+ Kalman processing object: " << obstacle.id << std::endl;
     auto state = states_.find(obstacle.id);
     if (state == states_.end()) // new obstacle
     {
@@ -40,13 +39,8 @@ void KalmanObstacleTracker::update(std::vector<lepp::ObjectModelParams>& obstacl
       state->second.predict(sys);
       auto newState = state->second.update(mm, ObstacleFilter::Measurement(pos));
 
-      /// TODO: Set obstacle position; should probably use a ModelVisitor
       obstacle.velocity = newState.velocity();
       obstacle.center = newState.position();
-      std::cout << "--+ Obstacle " << obstacle.id << " with velocity: " <<
-                   obstacle.velocity.x << ", " <<
-                   obstacle.velocity.y << ", " <<
-                   obstacle.velocity.z << std::endl;
     }
   }
 }
