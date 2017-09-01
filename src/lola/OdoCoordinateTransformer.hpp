@@ -190,8 +190,8 @@ void OdoCoordinateTransformer<PointT>::setNext(lepp::LolaKinematicsParams const&
   }
   transpose(A_odo_cam_no_trans, transform_params_.A_odo_cam);
 
-  LTRACE << "New transformaion matrices calculated: "
-         << transform_params_;
+//  LTRACE << "New transformaion matrices calculated: "
+//         << transform_params_;
 }
 
 template<class PointT>
