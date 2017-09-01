@@ -272,6 +272,14 @@ type = "ObstacleDetector"
   [ObstacleDetection.Tracker]
   type = "LowPassFilter"
 
+  # (Optional) This adds an additional filter to the end of the obstacle
+  #            detection pipeline.
+  [ObstacleDetection.Filter]
+  type = "KalmanFilter"
+  noise_position = 0.02
+  noise_velocity = 0.1
+  noise_measurement = 0.1
+
 ###########################################################################
 # Aggregators is an array
 # this will list all aggregators and options belonging to them
