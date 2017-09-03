@@ -321,6 +321,11 @@ surface_normal_tolerance = 0.523 # ~30 degrees
   #How small the left (extracted) pointcloud should be for termination of the plane segmentation
   minFilterPercentage = 0.08
 
+  # If enabled, will allow the reuse of old surface coefficients to trim the point cloud down 
+  # before trying to detect new surfaces. Increases performance, but may allow additional noisy
+  # points to propagate further down the pipeline (i.e. may make obstacle detection worse).
+#  experimental_enableSurfaceReuse = true
+
   [BasicSurfaceDetection.Classification]
   # The function to classify segmented planes according to deviation in their normals
   # This step is only for Surface Segmentation
