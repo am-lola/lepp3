@@ -132,11 +132,31 @@ std::vector<lepp::ObjectModelParams> lepp::GmmSegmenter::extractObstacleParams(P
       if (states_[k].lifeTime < parameters_.minPersistentFrames)
           continue;
       else if (R(i, k) > parameters_.hardAssignmentStateResp
-          && vcluster_point_table[i] != state_main_vcluster[k]
-          && C(vcluster_point_table[i], k) < parameters_.numSplitPoints) {
+           && (vcluster_point_table[i] == state_main_vcluster[k]
+           || C(vcluster_point_table[i], k) > parameters_.numSplitPoints))
+           {
         ret[k].obstacleCloud->push_back((*cloud)[i]);
         break;
       }
+    }
+  }
+
+  // remove obstacle clouds that have too low a density
+  for (size_t i = 0; i < ret.size(); i++)
+  {
+    PointT min_pt;
+    PointT max_pt;
+    pcl::getMinMax3D(*ret[i].obstacleCloud, min_pt, max_pt);
+    auto diagonal_len = (Eigen::Vector3d(max_pt.x, max_pt.y, max_pt.z) - Eigen::Vector3d(min_pt.x, min_pt.y, min_pt.z)).norm();
+    auto density = (double)ret[i].obstacleCloud->size() / diagonal_len;
+    if (density > 0) {
+        std::cout << "Density of state " << i << ": " << density << std::endl;
+        std::cout << "\tDiagonal: " << diagonal_len << std::endl;
+    }
+    if (density < parameters_.obstacleDensity)
+    {
+      std::cout << "Clearing cloud " << i << std::endl;
+      ret[i].obstacleCloud->clear();
     }
   }
 

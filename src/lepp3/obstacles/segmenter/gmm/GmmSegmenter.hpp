@@ -26,9 +26,10 @@ public:
   void updateFrame(FrameDataPtr frameData)
   {
     // wait until we have a few ground removal iterations
-    if (frameData->planeCoeffsIteration <= 20 ||
+    if (frameData->planeCoeffsIteration <= 60 ||
         frameData->cloudMinusSurfaces->size() == 0)
     {
+      std::cout << "Waiting for surface iteration count (" << frameData->planeCoeffsIteration << ")" << std::endl;
       notifyObservers(frameData);
       return;
     }

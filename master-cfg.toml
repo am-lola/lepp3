@@ -201,7 +201,7 @@ type = "ObstacleDetector"
   [ObstacleDetection.Segmenter]
   method = "GMM"
   # voxel grid used for clustering, leaf size in meters
-  voxel_grid_resolution = 0.1  
+  voxel_grid_resolution = 0.1
 
   # this much state-responsibility is needed for a point to be "hard" assigned to a state
   #hard_assignment_state_resp = 0.9
@@ -225,6 +225,9 @@ type = "ObstacleDetector"
   #obs_covar_regularization = 0.95
   # minimum number of consecutive frames an obstacle must be observed in to be treated as real
   #min_persistent_frames = 1
+  # approx. density of obstacles to consider them good enough to use (in points / meter,
+  #  with length defined as diagonal of bounding box enclosing the obstacle's points)
+  #obstacle_density = 30.0
   # whether to enable a kalman filter for estimating object positions & velocities
   #enable_kalman_filter = true
   # noise parameters for the kalman filter
@@ -246,12 +249,12 @@ type = "ObstacleDetector"
     [[ObstacleDetection.SplitStrategy.conditions]]
     type = "DepthLimit" # How many 'splitting steps' are performed. Max number of SSV's per obstacle = 2 ^ DepthLimit
     depth = 1
-    
+
     [[ObstacleDetection.SplitStrategy.conditions]]
     type = "SizeLimit" # After this volume is reached, a sub point cloud is not splitted any more
     # size is a volume in [cm^3]
     size = 3000.
-    
+
     [[ObstacleDetection.SplitStrategy.conditions]]
     type = "ShapeCondition"
     # The threshold values to consider something "very much" a sphere
@@ -259,7 +262,7 @@ type = "ObstacleDetector"
     sphere2 = 0.1
     # The threshold value to consider something "very much" a cylinder
     cylinder = 0.25
-    
+
     [[SplitStrategy.conditions]]
     type = "DistanceThreshold"
     # Distance is in [cm]
@@ -276,7 +279,7 @@ type = "ObstacleDetector"
   #            detection pipeline.
   # NOTE: The GMM Segmenter supports an internal kalman filter which can
   #       take advantage of state information not available this far down
-  #       the pipeline. When using GMM, it is recommended to use the 
+  #       the pipeline. When using GMM, it is recommended to use the
   #       enable_kalman_filter flag above instead of using this filter here.
   [ObstacleDetection.Filter]
   type = "KalmanFilter"
@@ -325,7 +328,7 @@ surface_normal_tolerance = 0.523 # ~30 degrees
   #How small the left (extracted) pointcloud should be for termination of the plane segmentation
   minFilterPercentage = 0.08
 
-  # If enabled, will allow the reuse of old surface coefficients to trim the point cloud down 
+  # If enabled, will allow the reuse of old surface coefficients to trim the point cloud down
   # before trying to detect new surfaces. Increases performance, but may allow additional noisy
   # points to propagate further down the pipeline (i.e. may make obstacle detection worse).
 #  experimental_enableSurfaceReuse = true

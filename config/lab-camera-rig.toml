@@ -5,9 +5,9 @@
 
 # This defines the pose service to use.
 # Requirements: None
-[PoseService]
-ip = "127.0.0.1"
-port = 55555
+# [PoseService]
+# ip = "127.0.0.1"
+# port = 55555
 
 # This defines the specifics for the robot
 # Requirements: PoseService
@@ -24,10 +24,17 @@ bubble_size = 1.2
 #   - `type`: "stream", "oni", "pcd", "am_offline"
 # `oni` and `pcd` types require an additional parameter: file_path
 # `am_offline` type requires an additional parameters: dir_path
-type = "stream"
+
+type = "am_offline"
 #file_path = "path/to/file"
-#dir_path = "path/to/folder"
+dir_path = "/home/lola/git/exp_data/walkingobstsurf2"
 enable_rgb = true  # Capture RGB images
+enable_pose = true  # Replay pose data (only am_offline, [PoseService] must be disabled)
+#
+# type = "stream"
+# #file_path = "path/to/file"
+# #dir_path = "path/to/folder"
+# enable_rgb = true  # Capture RGB images
 #enable_pose = false  # Replay pose data (only am_offline, [PoseService] must be disabled)
 
 # This sets up the filtered source, which will be passed to all
@@ -54,10 +61,34 @@ pre_filter = "downsample"
   # each filter requires a "type" and may need additional options
 
   [[FilteredVideoSource.filters]]
+  # Calibration filters. Sets the calibration parameters of the used camera
+  type = "SensorCalibrationFilter" # Makes a linear correction of the sensor's z value
+  a = 1.0117
+  b = -0.0100851
+
+  [[FilteredVideoSource.filters]]
+  # The background filter erases all points far away from the camera (below z=threshold in the camera coordinate system).
+  # This is used to remove points that are noisy anyway and simplify further processing
+  type = "BackgroundFilter"
+  # Unit in meters
+  threshold = 2.8
+
+  [[FilteredVideoSource.filters]]
   # The RobotOdoTransformer transforms coordinates from the local coordinate
   # sytem to the global one referenced in Lola's right foot sole
   # Requirements: PoseService
   type = "RobotOdoTransformer"
+
+  [[FilteredVideoSource.filters]]
+  # The crop filter erases all points out of an xy rectangle with the given boundaries respect to world's origin.
+  # This is used to ignore everything outside of the experimental area
+  type = "CropFilter"
+  # Unit in meters
+  xmax = 5.5
+  xmin = -1.5
+  ymax = 1.2
+  ymin = -1.2
+
 
 ###########################################################################
 # Observers is an array
@@ -89,30 +120,28 @@ type = "ARVisualizer"
   height = 768
   show_obstacles = true
   show_surfaces = true
-
-  # This visualizer shows a debug GUI for the GMM obstacle detction
-#   [[observers.visualizer]]
-#   type = "GMMTrackingVisualizer"
-#   name = "GMM Obstacle Tracker Data"
-#   debug_gui = true
-#   width = 1024
-#   height = 768
-  
-#    [observers.visualizer.debug_gui_params]
-    # Just an example: set "some" of the values here. The rest will be set to
-     # default by `DebugGUIParams`s ctor.
-#     draw_gaussians = true
-#     draw_velocities = true
-#     draw_ssv = true
-#     draw_trajectories = true
-#     draw_debug_values = true
-#     draw_voxels = true
-#     downsample_res = 0.01 # downsampling leaf size in meters
-#     enable_tracker = true
-#     enable_tight_fit = true # use pc-based fitting instead of gaussian-based fitting
-#     trajectory_length = 128
-#     voxel_grid_resolution = 0.1 # voxel grid used for clustering, leaf size in meters
-#     color_mode = "NONE"
+  #
+  # # This visualizer shows a debug GUI for the GMM obstacle detction
+  # [[observers.visualizer]]
+  # type = "GMMTrackingVisualizer"
+  # name = "GMM Obstacle Tracker Data"
+  # debug_gui = true
+  # width = 1024
+  # height = 768
+  #
+  #  [observers.visualizer.debug_gui_params]
+  #   draw_gaussians = true
+  #   draw_velocities = true
+  #   draw_ssv = true
+  #   draw_trajectories = true
+  #   draw_debug_values = true
+  #   draw_voxels = true
+  #   downsample_res = 0.01 # downsampling leaf size in meters
+  #   enable_tracker = true
+  #   enable_tight_fit = true # use pc-based fitting instead of gaussian-based fitting
+  #   trajectory_length = 128
+  #   voxel_grid_resolution = 0.1 # voxel grid used for clustering, leaf size in meters
+  #   color_mode = "NONE"
 
 # This enables the surface detector
 [[observers]]
@@ -129,41 +158,34 @@ type = "ObstacleDetector"
   minDistToPlane = 0.04
 
   # Segmentation Method
-  [ObstacleDetection.Segmenter]
-  # Available methods:
-  #   - "Euclidean
-  #   - "GMM" (see below)
-  method = "Euclidean"
-  # The percentage of the original cloud that should be kept for the clusterization
-  min_filter_percentage = 0.9
+  # [ObstacleDetection.Segmenter]
+  # # Available methods:
+  # #   - "Euclidean
+  # #   - "GMM" (see below)
+  # method = "Euclidean"
+  # # The percentage of the original cloud that should be kept for the clusterization
+  # min_filter_percentage = 0.9
 
-#   [ObstacleDetection.Segmenter]
-#   method = "GMM"
-   # voxel grid used for clustering, leaf size in meters
-#   voxel_grid_resolution = 0.1
-   # this much state-responsibility is needed for a point to be "hard" assigned to a state
-#   hard_assignment_state_resp = 0.9
-   # states with GMM mixing coefficients (pi) lower than this will be removed
-#   state_pi_removal_threshold = 0.01
-   # minimum number of points in a vcluster needed for a new state to be added
-#   min_vcluster_points = 10
-   # prior identity covariance scale for new states
-#   new_state_prior_covar_size = 0.01
-   # mixing of prior identity covariance for new states
-#   new_state_prior_covar_mix = 0.5
-   # number of frames a state has be be alive for splitting to be enabled
-#   num_split_life_time_frames = 20
-   # number of points a state has to have in its second largest vcluster for it to be split
-#   num_split_points = 15
-   # number of consecutive frames a state has to have points in two different vclusters until it is split
-#   num_split_frames = 6
-   # only split when the other vcluster has less than this percentage of points assigned to other states
-#   split_max_other_states_percentage = 0.2
-   # how much of the observation covariance is taken from the previous frame
-#   min_persistent_frames = 4
-   # obstacles will only be accepted if they're detected for this many frames in a row
-   # how much of the observation covariance is taken from the previous frame
-#   obs_covar_regularization = 0.95
+  [ObstacleDetection.Segmenter]
+  method = "GMM"
+  # voxel grid used for clustering, leaf size in meters
+  voxel_grid_resolution = 0.1
+  hard_assignment_state_resp = 0.9999
+  state_pi_removal_threshold = 0.5
+  min_vcluster_points = 25
+  new_state_prior_covar_size = 0.01
+  new_state_prior_covar_mix = 0.5
+  num_split_life_time_frames = 10
+  num_split_points = 15
+  num_split_frames = 3
+  split_max_other_states_percentage = 0.5
+  obs_covar_regularization = 0.95
+  min_persistent_frames = 15
+  obstacle_density = 1500.0
+  enable_kalman_filter = true
+  kalman_noise_position = 0.01
+  kalman_noise_velocity = 0.15
+  kalman_noise_measurement = 0.1
 
   [ObstacleDetection.SplitStrategy]
   # Defines the split axis.
@@ -198,57 +220,48 @@ type = "ObstacleDetector"
     # Distance is in [cm]
     distance_threshold = 150
 
-  [ObstacleDetection.Tracker]
-  type = "LowPassFilter"
-
-  [ObstacleDetection.Filter]
-  type = "KalmanFilter"
-  noise_position = 0.02
-  noise_velocity = 0.1
-  noise_measurement = 0.1
-
 ###########################################################################
  # Aggregators is an array
  # this will list all aggregators and options belonging to them
 
  # This aggregator sends data to listeners (Path planning, Lab Visualizer, ...)
- [[aggregators]]
- type = "RobotAggregator"
- # Number of frames to wait before sending new data
- update_frequency = 1
- # Data to send
- data = [ "obstacles", "surfaces"]
- # Human readable target name, just for terminal/log output
- target="Hololens"
- # Target IP
- ip = "192.168.0.100"  # Control computer IP
- port = 9090
- # Delay to wait after sending a message
- delay = 2
- # minimum height (m) above the ground plane a surface must match in order to be sent
-min_surface_height = 0.05
- # For surfaces failing min_surface_height test, if their normal deviates from the vertical
- # axis by more than this amount (in radians) the surface will still be sent
-surface_normal_tolerance = 0.523 # ~30 degrees
-
- [[aggregators]]
- type = "RobotAggregator"
- # Number of frames to wait before sending new data
- update_frequency = 1
- # Data to send
- data = [ "obstacles", "surfaces"]
- # Human readable target name, just for terminal/log output
- target="lola-listener"
- # Target IP
- ip = "127.0.0.1"  # Control computer IP
- port = 9091
- # Delay to wait after sending a message
- delay = 2
- # minimum height (m) above the ground plane a surface must match in order to be sent
-min_surface_height = 0.05
- # For surfaces failing min_surface_height test, if their normal deviates from the vertical
- # axis by more than this amount (in radians) the surface will still be sent
-surface_normal_tolerance = 0.523 # ~30 degrees
+#  [[aggregators]]
+#  type = "RobotAggregator"
+#  # Number of frames to wait before sending new data
+#  update_frequency = 1
+#  # Data to send
+#  data = [ "obstacles", "surfaces"]
+#  # Human readable target name, just for terminal/log output
+#  target="Hololens"
+#  # Target IP
+#  ip = "192.168.0.100"  # Control computer IP
+#  port = 9090
+#  # Delay to wait after sending a message
+#  delay = 2
+#  # minimum height (m) above the ground plane a surface must match in order to be sent
+# min_surface_height = 0.05
+#  # For surfaces failing min_surface_height test, if their normal deviates from the vertical
+#  # axis by more than this amount (in radians) the surface will still be sent
+# surface_normal_tolerance = 0.523 # ~30 degrees
+#
+#  [[aggregators]]
+#  type = "RobotAggregator"
+#  # Number of frames to wait before sending new data
+#  update_frequency = 1
+#  # Data to send
+#  data = [ "obstacles", "surfaces"]
+#  # Human readable target name, just for terminal/log output
+#  target="lola-listener"
+#  # Target IP
+#  ip = "127.0.0.1"  # Control computer IP
+#  port = 9091
+#  # Delay to wait after sending a message
+#  delay = 2
+#  # minimum height (m) above the ground plane a surface must match in order to be sent
+# min_surface_height = 0.05
+#  # For surfaces failing min_surface_height test, if their normal deviates from the vertical
+#  # axis by more than this amount (in radians) the surface will still be sent
+# surface_normal_tolerance = 0.523 # ~30 degrees
 
 ###########################################################################
 # Miscellaneous settings
@@ -264,7 +277,7 @@ surface_normal_tolerance = 0.523 # ~30 degrees
   #How small the left (extracted) pointcloud should be for termination of the plane segmentation
   minFilterPercentage = 0.08
 
-  experimental_enableSurfaceReuse = true
+  # experimental_enableSurfaceReuse = true
 
   [BasicSurfaceDetection.Classification]
   # The function to classify segmented planes according to deviation in their normals

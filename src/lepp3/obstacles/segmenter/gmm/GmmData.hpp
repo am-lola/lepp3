@@ -29,6 +29,9 @@ struct SegmenterParameters {
   float obsCovarRegularization = 0.95f;
   // minimum number of frames an obstacle must be observed in to count as 'real'
   int minPersistentFrames = 1;
+  // approx. density of obstacles to consider them good enough to use (in points / meter,
+  //  with length defined as diagonal of bounding box enclosing the obstacle's points)
+  double obstacleDensity = 30;
   // whether to apply a kalman filter to estimate object positions & velocities
   bool enableKalmanFilter = false;
   // noise assumed for object positions
