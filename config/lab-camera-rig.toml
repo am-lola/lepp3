@@ -6,8 +6,8 @@
 # This defines the pose service to use.
 # Requirements: None
 [PoseService]
-ip = "127.0.0.1"
-port = 55555
+ip = "192.168.0.8"
+port = 53249        # default value is hexadecimal 0xd001
 
 # This defines the specifics for the robot
 # Requirements: PoseService
@@ -25,10 +25,11 @@ bubble_size = 1.2
 # `oni` and `pcd` types require an additional parameter: file_path
 # `am_offline` type requires an additional parameters: dir_path
 type = "stream"
-#file_path = "path/to/file"
-#dir_path = "path/to/folder"
-enable_rgb = true  # Capture RGB images
-#enable_pose = false  # Replay pose data (only am_offline, [PoseService] must be disabled)
+# type = "am_offline"
+# #file_path = "path/to/file"
+# dir_path = "recordings/rec1error"
+# enable_rgb = false  # Capture RGB images
+# enable_pose = true  # Replay pose data (only am_offline, [PoseService] must be disabled)
 
 # This sets up the filtered source, which will be passed to all
 # steps requiring a video
@@ -54,14 +55,53 @@ pre_filter = "downsample"
   # each filter requires a "type" and may need additional options
 
   [[FilteredVideoSource.filters]]
+  # Calibration filters. Sets the calibration parameters of the used camera
+  type = "SensorCalibrationFilter" # Makes a linear correction of the sensor's z value
+  a = 1.0117
+  b = -0.0100851
+
+  [[FilteredVideoSource.filters]]
+  # The background filter erases all points far away from the camera (below z=threshold in the camera coordinate system).
+  # This is used to remove points that are noisy anyway and simplify further processing
+  type = "BackgroundFilter"
+  # Unit in meters
+  threshold = 2.8
+
+  [[FilteredVideoSource.filters]]
   # The RobotOdoTransformer transforms coordinates from the local coordinate
   # sytem to the global one referenced in Lola's right foot sole
   # Requirements: PoseService
   type = "RobotOdoTransformer"
 
+
+  [[FilteredVideoSource.filters]]
+  # The crop filter erases all points out of an xy rectangle with the given boundaries respect to world's origin.
+  # This is used to ignore everything outside of the experimental area
+  type = "CropFilter"
+  # Unit in meters
+  xmax = 5.0
+  xmin = -1.5
+  ymax = 1.5
+  ymin = -1.5
+
 ###########################################################################
 # Observers is an array
 # this will list all observers and options belonging to them
+
+# This observer saves the input data. The saved data can be replayed later
+# with the "am_offline" video source
+[[observers]]
+type = "Recorder"
+
+  [ObserverOptions.Recorder]
+  # Output directory. The final output will end up in a subfolder named
+  # "rec_{datetime}"
+  output_folder= "recordings"
+  # Defines which data to record
+  cloud = true
+  rgb = true
+  pose = true
+
 
 # This defines all available visualizers, there can be more than one
 [[observers]]
@@ -97,7 +137,7 @@ type = "ARVisualizer"
 #   debug_gui = true
 #   width = 1024
 #   height = 768
-  
+
 #    [observers.visualizer.debug_gui_params]
     # Just an example: set "some" of the values here. The rest will be set to
      # default by `DebugGUIParams`s ctor.
@@ -178,20 +218,20 @@ type = "ObstacleDetector"
   # If no split conditions are provided, the objects will never be split.
     [[ObstacleDetection.SplitStrategy.conditions]]
     type = "DepthLimit" # How many 'splitting steps' are performed. Max number of SSV's per obstacle = 2 ^ DepthLimit
-    depth = 0
+    depth = 1
 
     [[ObstacleDetection.SplitStrategy.conditions]]
     type = "SizeLimit" # After this volume is reached, a sub point cloud is not splitted any more
     # size is a volume in [cm^3]
-    size = 3000.
+    size = 2000.
 
-    # [[ObstacleDetection.SplitStrategy.conditions]]
-    # type = "ShapeCondition"
-    # # The threshold values to consider something "very much" a sphere
-    # sphere1 = 0.8
-    # sphere2 = 0.1
-    # # The threshold value to consider something "very much" a cylinder
-    # cylinder = 0.25
+    [[ObstacleDetection.SplitStrategy.conditions]]
+    type = "ShapeCondition"
+    # The threshold values to consider something "very much" a sphere
+    sphere1 = 0.8
+    sphere2 = 0.1
+    # The threshold value to consider something "very much" a cylinder
+    cylinder = 0.25
 
     [[SplitStrategy.conditions]]
     type = "DistanceThreshold"
@@ -201,11 +241,11 @@ type = "ObstacleDetector"
   [ObstacleDetection.Tracker]
   type = "LowPassFilter"
 
-  [ObstacleDetection.Filter]
-  type = "KalmanFilter"
-  noise_position = 0.02
-  noise_velocity = 0.1
-  noise_measurement = 0.1
+  # [ObstacleDetection.Filter]
+  # type = "KalmanFilter"
+  # noise_position = 0.02
+  # noise_velocity = 0.1
+  # noise_measurement = 0.1
 
 ###########################################################################
  # Aggregators is an array
@@ -234,16 +274,16 @@ surface_normal_tolerance = 0.523 # ~30 degrees
  [[aggregators]]
  type = "RobotAggregator"
  # Number of frames to wait before sending new data
- update_frequency = 1
+ update_frequency = 5
  # Data to send
  data = [ "obstacles", "surfaces"]
  # Human readable target name, just for terminal/log output
- target="lola-listener"
+ target="QNX"
  # Target IP
- ip = "127.0.0.1"  # Control computer IP
- port = 9091
+ ip = "192.168.0.7"  # Control computer IP
+ port = 61448
  # Delay to wait after sending a message
- delay = 2
+ delay = 10
  # minimum height (m) above the ground plane a surface must match in order to be sent
 min_surface_height = 0.05
  # For surfaces failing min_surface_height test, if their normal deviates from the vertical
@@ -260,7 +300,7 @@ surface_normal_tolerance = 0.523 # ~30 degrees
   #max number of ransac iterations
   maxIterations = 200
   # How close a point must be to the model [in meters] in order to be considered an inlier
-  distanceThreshold = 0.03
+  distanceThreshold = 0.04
   #How small the left (extracted) pointcloud should be for termination of the plane segmentation
   minFilterPercentage = 0.08
 

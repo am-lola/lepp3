@@ -109,16 +109,33 @@ type = "ARVisualizer"
 # This enables the obstacle detector
 [[observers]]
 type = "ObstacleDetector"
-# Available methods accepted by ObstacleDetector:
-#   - "EuclideanClustering"
-#   - "GMM" (see below)
-method = "EuclideanClustering"
 
-[ObstacleDetetction.Euclidean.SplitStrategy]
-# Defines the split axis.
-# The point cloud is splitted with a plane through the centroid and perpendicular to the chosen axis.
-# Values: largest|middle|smallest
-split_axis = "middle"
+  # Removes points belonging to surfaces from the cloud
+  [ObstacleDetection.PlaneRemover]
+  # minimum distance a point must have to its projection onto a
+  # plane in order to be considered an inlier on this plane
+  minDistToPlane = 0.04
+
+  # Segmentation Method
+  [ObstacleDetection.Segmenter]
+  # Available methods:
+  #   - "Euclidean
+  #   - "GMM" (see below)
+  method = "Euclidean"
+  # The percentage of the original cloud that should be kept for the clusterization
+  min_filter_percentage = 0.9
+
+  [ObstacleDetection.SplitStrategy]
+  # Defines the split axis.
+  # The point cloud is splitted with a plane through the centroid and perpendicular to the chosen axis.
+  # Values: largest|middle|smallest
+  split_axis = "middle"
+  # A number of split conditions that need to be satisfied in order for an object
+  # split to occur.
+  # Care should be taken to define the conditions in a way that guarantees that
+  # splitting eventually stops for each object (possibly the easiest way is to
+  # always include the DepthLimit condition with a fairly high depth limit).
+  # If no split conditions are provided, the objects will never be split.
 
 ###########################################################################
 # Miscellaneous settings
@@ -140,16 +157,6 @@ split_axis = "middle"
   # The angle values represent how much deviation is allowed
   # Given in degrees.
   deviationAngle = 4.0
-
-  [BasicSurfaceDetection.Downsampling]
-  #Voxel grid for reducing the number of points before passing them to the clustering step.
-  coarseVoxelSize_X = 0.01
-  coarseVoxelSize_Y = 0.01
-  coarseVoxelSize_Z = 0.01
-  fineVoxelSize_X = 0.007
-  fineVoxelSize_Y = 0.007
-  fineVoxelSize_Z = 0.007
-  coarseFineLimit = 11000
 
   [BasicSurfaceDetection.Clustering]
   #Euclidean clustering to cluster (separate) detected surfaces
@@ -175,11 +182,3 @@ split_axis = "middle"
   # the old convex hull. All points of the old convex hull are moved 1-mergeUpdatePercentage percent
   # along the vector pointing to the closest boundary point of the new convex hull.
   mergeUpdatePercentage = 0.2
-
-# These settings define basic parameters for detecting obstacles
-# They are mandatory if any kind of bstacle detection is enabled
-[BasicObstacleDetection]
-  [BasicObstacleDetection.InlierFinder]
-  # minimum distance a point must have to its projection onto a
-  # plane in order to be considered an inlier on this plane
-  minDistToPlane = 0.04
