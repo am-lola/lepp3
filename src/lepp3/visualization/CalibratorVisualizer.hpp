@@ -95,7 +95,7 @@ private:
   /**
 * Remove old obstacles and surfaces that are no longer visualized.
 */
-  void removeOldObst(std::vector<mesh_handle_t> &visHandles);
+  void removeOldObst(std::map<int, ObstacleVisualizationData> &visData);
 
   // visulize obstacles and surfaces only if options were chosen in config file
   bool show_obstacles_;
@@ -241,10 +241,16 @@ void CalibratorVisualizer<PointT>::drawLargestPlane(PointCloudPtr const& plane) 
 }
 
   template<class PointT>
-void CalibratorVisualizer<PointT>::removeOldObst(std::vector<mesh_handle_t> &visHandles)
+void CalibratorVisualizer<PointT>::removeOldObst(std::map<int, ObstacleVisualizationData> &visData)
 {
   // compare the newly visualized handles with the old ones. Remove all handles that appear
   // in the old handle list but not in the new one.
+  std::vector<mesh_handle_t> visHandles;
+  for (auto& v : visData)
+  {
+    visHandles.push_back(v.second.mh);
+  }
+
   std::sort(visHandles.begin(), visHandles.end());
   for (mesh_handle_t &mh : oldHandles)
   {
