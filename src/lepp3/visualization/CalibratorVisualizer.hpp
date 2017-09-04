@@ -270,7 +270,7 @@ void CalibratorVisualizer<PointT>::updateFrame(FrameDataPtr frameData) {
   if (show_obstacles_)
       drawObstacles(frameData->obstacles, visHandles);
   // Remove old obstacles and surfaces that are no longer visualized
-  // removeOldObst(visHandles);
+  removeOldObst(visHandles);
 }
   template<class PointT>
   void CalibratorVisualizer<PointT>::updateFrame(RGBDataPtr rgbData) {
