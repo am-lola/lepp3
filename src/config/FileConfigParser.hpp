@@ -488,6 +488,29 @@ protected:
         throw std::runtime_error(ss.str());
       }
     }
+
+    toml::Value const* obstaclefilter = toml_tree_.find("ObstacleDetection.Filter");
+    if (obstaclefilter)
+    {
+      std::string filter_type = getTomlValue<std::string>(*obstaclefilter, "type", "ObstacleDetection.Filter");
+      if (filter_type == "KalmanFilter")
+      {
+        std::cout << "Adding Kalman obstacle filter" << std::endl;
+        float noise_position = getOptionalTomlValue(*obstaclefilter, "noise_position", 0.01);
+        float noise_velocity = getOptionalTomlValue(*obstaclefilter, "noise_velocity", 0.15);
+        float noise_measurement = getOptionalTomlValue(*obstaclefilter, "noise_measurement", 0.10);
+        boost::shared_ptr<KalmanTrackerFilter> kalman_obstacle_tracker(
+            new KalmanTrackerFilter(noise_position, noise_velocity, noise_measurement));
+        this->detector_->FrameDataSubject::attachObserver(kalman_obstacle_tracker);
+        this->detector_ = kalman_obstacle_tracker; // this filter is now the end of the detection pipeline
+      }
+      else
+      {
+        std::ostringstream ss;
+        ss << "Unknown Obstacle Filter type: " << filter_type;
+        throw std::runtime_error(ss.str());
+      }
+    }
   }
 
   virtual void initSurfaceDetector() override {
@@ -628,6 +651,7 @@ private:
     params.numSplitFrames = getOptionalTomlValue(v, "num_split_frames", 6);
     params.splitMaxOtherStatesPercentage = getOptionalTomlValue(v, "split_max_other_states_percentage", 0.2);
     params.obsCovarRegularization = getOptionalTomlValue(v, "obs_covar_regularization", 0.95);
+    params.minPersistentFrames = getOptionalTomlValue(v, "min_persistent_frames", 1);
     params.enableKalmanFilter = getOptionalTomlValue(v, "enable_kalman_filter", false);
     params.kalman_PositionNoise = getOptionalTomlValue(v, "kalman_noise_position", 0.01);
     params.kalman_VelocityNoise = getOptionalTomlValue(v, "kalman_noise_velocity", 0.15);
@@ -869,7 +893,7 @@ private:
   static T getTomlValue(toml::Value const& v, std::string const& key, std::string const& key_hint = "") {
     toml::Value const* el = v.find(key);
     if (!el) {
-      throw std::runtime_error("Required key '" + key_hint + key + "' is missing from the config");
+      throw std::runtime_error("Required key '" + key_hint + "." + key + "' is missing from the config");
     }
 
     try {
