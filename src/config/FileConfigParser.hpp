@@ -664,6 +664,7 @@ private:
     params.MAX_ITERATIONS = getTomlValue<int>(toml_tree_, "BasicSurfaceDetection.RANSAC.maxIterations");
     params.DISTANCE_THRESHOLD = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.RANSAC.distanceThreshold");
     params.MIN_FILTER_PERCENTAGE = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.RANSAC.minFilterPercentage");
+    params.EXPERIMENTAL_ENABLE_SURFACE_REUSE = getOptionalTomlValue(toml_tree_, "BasicSurfaceDetection.RANSAC.experimental_enableSurfaceReuse", false);
     params.DEVIATION_ANGLE = getTomlValue<double>(toml_tree_, "BasicSurfaceDetection.Classification.deviationAngle");
 
     surface_detector_.reset(new SurfaceDetector<PointT>(surface_detector_active_, params));

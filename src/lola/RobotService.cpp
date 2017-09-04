@@ -56,8 +56,8 @@ void AsyncRobotService::start() {
 
 void AsyncRobotService::inner_send(VisionMessage const& next_message) {
   am2b_iface::MsgHeader msg_header = { am2b_iface::VISION_MESSAGE, (uint32_t)sizeof(VisionMessageHeader) + next_message.header.len };
-  LINFO << "AsyncRobotService (" << remoteName_ << "): Sending a queued message: "
-        << "msg == " << next_message;
+//  LINFO << "AsyncRobotService (" << remoteName_ << "): Sending a queued message: "
+//        << "msg == " << next_message;
   // Synchronously send the message, i.e. block until the send is complete.
   try {
     sendBytes(reinterpret_cast<char const*>(&msg_header), sizeof(msg_header));

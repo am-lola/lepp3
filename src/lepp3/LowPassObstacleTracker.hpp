@@ -240,10 +240,7 @@ LowPassObstacleTracker::matchToPrevious(
   // match.
   for (size_t i = 0; i < new_obstacles.size(); ++i) {
     model_id_t model_id = new_obstacles[i]->id();
-    if (model_id <= 0)
-    {
-      model_id = getMatchByDistance(new_obstacles[i]);
-    }
+    model_id = getMatchByDistance(new_obstacles[i]);
 
     correspondence[model_id] = i;
     // If this one wasn't in the tracked models before, add it!

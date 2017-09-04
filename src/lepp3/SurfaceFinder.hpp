@@ -2,7 +2,9 @@
 #define lepp3_SURFACE_FINDER_HPP__
 
 #include "lepp3/Typedefs.hpp"
+#include "lepp3/util/Timer.hpp"
 
+#include <pcl/filters/model_outlier_removal.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/extract_indices.h>
 
@@ -26,6 +28,10 @@ public:
     // The function to classify segmented planes according to deviation in their normals
     double DEVIATION_ANGLE;
 
+    // Allows the reuse of old surface coefficients to trim down the pointcloud before
+    // trying to detect new surfaces. Can reduce runtime of findSurfaces().
+    // EXPERIMENTAL, and may produce unexpected results!
+    bool EXPERIMENTAL_ENABLE_SURFACE_REUSE;
   };
 
   SurfaceFinder(bool surfaceDetectorActive, Parameters const& surfFinderParameters);
@@ -74,7 +80,7 @@ private:
 
 
   //Previous plane coeffs are only used for tricking ransac, comment out for trial with the rest of the relevant part
-  //std::vector<pcl::ModelCoefficients> previous_plane_coeffs;
+  std::vector<pcl::ModelCoefficients> previous_plane_coeffs;
 
   /**
   * Instance used to extract the planes from the input cloud.
@@ -93,6 +99,7 @@ private:
   // The function to classify segmented planes according to deviation in their normals
   const double DEVIATION_ANGLE;
 
+  const bool EXPERIMENTAL_ENABLE_SURFACE_REUSE;
   // boolean indicating whether the surface detector was activated in config file
   bool surfaceDetectorActive;
 };
@@ -102,7 +109,9 @@ SurfaceFinder<PointT>::SurfaceFinder(bool surfaceDetectorActive, Parameters cons
     : surfaceDetectorActive(surfaceDetectorActive), MAX_ITERATIONS(surfFinderParameters.MAX_ITERATIONS),
       DISTANCE_THRESHOLD(surfFinderParameters.DISTANCE_THRESHOLD),
       MIN_FILTER_PERCENTAGE(surfFinderParameters.MIN_FILTER_PERCENTAGE),
-      DEVIATION_ANGLE(surfFinderParameters.DEVIATION_ANGLE) { //, cloud_surfaces_(new PointCloudT()) {
+      DEVIATION_ANGLE(surfFinderParameters.DEVIATION_ANGLE),
+      EXPERIMENTAL_ENABLE_SURFACE_REUSE(surfFinderParameters.EXPERIMENTAL_ENABLE_SURFACE_REUSE)
+{
   // Parameter initialization of the plane segmentation
   segmentation_.setOptimizeCoefficients(true);
   segmentation_.setModelType(pcl::SACMODEL_PERPENDICULAR_PLANE);
@@ -160,6 +169,8 @@ void SurfaceFinder<PointT>::findPlanes(
     std::vector<PointCloudPtr>& planes,
     std::vector<pcl::ModelCoefficients>& planeCoefficients) {
 
+  HiResTimer timer;
+  timer.start();
   // Instance that will be used to perform the elimination of unwanted points
   // from the point cloud.
   pcl::ExtractIndices<PointT> extract;
@@ -171,39 +182,42 @@ void SurfaceFinder<PointT>::findPlanes(
   const size_t pointThreshold = MIN_FILTER_PERCENTAGE * cloud_filtered->size();
 
   /************ TRICK RANSAC HERE ************Comment out with previous plane coeff variable above for trial********/
-  /*
-  std::cout << "Tricking RANSAC, original size: " << cloud_filtered->points.size() << std::endl;
-  std::cout << "Previous Coeffs: " << previous_plane_coeffs.size() << std::endl;
-  for (size_t i = 0; i < previous_plane_coeffs.size(); i++)
-  {
-    PointCloudPtr currentPlane(new PointCloudT());
-  // PointCloudPtr plane_points (new pcl::PointCloud<PointT>);
-  pcl::PointIndices::Ptr plane_indices(new pcl::PointIndices);
-  pcl::ModelOutlierRemoval<PointT> plane_filter(true);
-  plane_filter.setModelCoefficients (previous_plane_coeffs[i]);
-  plane_filter.setThreshold (0.04);
-  plane_filter.setModelType (pcl::SACMODEL_PLANE);
-  plane_filter.setInputCloud (cloud_filtered);
-  plane_filter.filter (plane_indices->indices);
+  if (EXPERIMENTAL_ENABLE_SURFACE_REUSE)
+  { 
+      std::cout << "Tricking RANSAC, original size: " << cloud_filtered->points.size() << std::endl;
+      std::cout << "Previous Coeffs: " << previous_plane_coeffs.size() << std::endl;
+      for (size_t i = 0; i < previous_plane_coeffs.size(); i++)
+      {
+        PointCloudPtr currentPlane(new PointCloudT());
+        // PointCloudPtr plane_points (new pcl::PointCloud<PointT>);
+        pcl::PointIndices::Ptr plane_indices(new pcl::PointIndices);
+        pcl::ModelOutlierRemoval<PointT> plane_filter(true);
+        plane_filter.setModelCoefficients (previous_plane_coeffs[i]);
+        plane_filter.setThreshold (0.04);
+        plane_filter.setModelType (pcl::SACMODEL_PLANE);
+        plane_filter.setInputCloud (cloud_filtered);
+        plane_filter.filter (plane_indices->indices);
 
-  if (plane_indices->indices.size() < 1000)
-    continue;
+        if (plane_indices->indices.size() < 1000)
+          continue;
 
-  std::cout << "Plane " << i << ": " << plane_indices->indices.size() << " inliers" << std::endl;
+        std::cout << "Plane " << i << ": " << plane_indices->indices.size() << " inliers" << std::endl;
 
-  pcl::ExtractIndices<PointT> extract;
-  extract.setIndices(plane_indices);
-  extract.setInputCloud(cloud_filtered);
-  extract.setNegative(false);
-  extract.filter(*currentPlane);
+        pcl::ExtractIndices<PointT> extract;
+        extract.setIndices(plane_indices);
+        extract.setInputCloud(cloud_filtered);
+        extract.setNegative(false);
+        extract.filter(*currentPlane);
 
-  extract.setNegative(true);
-  extract.filter(*cloud_filtered);
+        extract.setNegative(true);
+        extract.filter(*cloud_filtered);
 
-  classify(currentPlane, previous_plane_coeffs[i], planes, planeCoefficients);
-}
-std::cout << "Tricking RANSAC, filtered size: " << cloud_filtered->points.size() << "/" << pointThreshold << std::endl;
-  */
+        classify(currentPlane, previous_plane_coeffs[i], planes, planeCoefficients);
+      }
+      std::cout << "Tricking RANSAC, filtered size: " << cloud_filtered->points.size() << "/" << pointThreshold << std::endl;
+  }
+  previous_plane_coeffs.clear(); 
+  
   //******************TRICK RANSAC**************************/
 
   bool first = true;
@@ -233,7 +247,10 @@ std::cout << "Tricking RANSAC, filtered size: " << cloud_filtered->points.size()
 
     //Classify the Cloud
     classify(currentPlane, currentPlaneCoefficients, planes, planeCoefficients);
+    previous_plane_coeffs.push_back(currentPlaneCoefficients);
   }
+  timer.stop();
+  std::cout << "Finding planes took " << timer.duration() << " ms." << std::endl;
 }
 
 
