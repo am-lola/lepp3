@@ -396,7 +396,7 @@ void lepp::ObsSurfVisualizer::drawObstacleClouds(std::vector<ObjectModelParams> 
       // We derive the color from the HSV color space (in 30° steps)
       // This should lead to easily distinguishable colors
       float h = (idx * 30) % 360;
-      ar::Color color = HsvToRgbColor(h, 0.7f, 0.5f);
+      ar::Color color = HsvToRgbColor(h, 0.7f, 0.8f);
 
       obstacleCloudData.emplace_back(new ar::PointCloudData(ar::PCL_PointXYZ, color));
       obstacleCloudHandles.push_back(arvis_->Add(*obstacleCloudData.back()));
