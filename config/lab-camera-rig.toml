@@ -1,7 +1,10 @@
-# This config file is in the [toml](https://github.com/toml-lang/toml) format
+# This is the real experiments config file.
+# The config file is in the [toml](https://github.com/toml-lang/toml) format
 
 # All IPs and ports given in here are the defaults for a lab setup.
 
+# Mandatory options are given, optional options are commented out
+# and listed with the default values
 
 # This defines the pose service to use.
 # Requirements: None
@@ -24,18 +27,12 @@ bubble_size = 1.2
 #   - `type`: "stream", "oni", "pcd", "am_offline"
 # `oni` and `pcd` types require an additional parameter: file_path
 # `am_offline` type requires an additional parameters: dir_path
-
-type = "am_offline"
-#file_path = "path/to/file"
-dir_path = "/home/lola/git/exp_data/walkingobstsurf2"
-enable_rgb = true  # Capture RGB images
-enable_pose = true  # Replay pose data (only am_offline, [PoseService] must be disabled)
-#
-# type = "stream"
+type = "stream"
+# type = "am_offline"
 # #file_path = "path/to/file"
-# #dir_path = "path/to/folder"
-# enable_rgb = true  # Capture RGB images
-#enable_pose = false  # Replay pose data (only am_offline, [PoseService] must be disabled)
+# dir_path = "recordings/rec1error"
+ enable_rgb = true  # Capture RGB images
+# enable_pose = true  # Replay pose data (only am_offline, [PoseService] must be disabled)
 
 # This sets up the filtered source, which will be passed to all
 # steps requiring a video
@@ -59,6 +56,14 @@ pre_filter = "downsample"
   # The following list of filters is optional
   # The order of the filters themselves IS NOT SIGNIFICANT.
   # each filter requires a "type" and may need additional options
+
+
+  [[FilteredVideoSource.filters]]
+  # The background filter erases all points far away from the camera (below z=threshold in the camera coordinate system).
+  # This is used to remove points that are noisy anyway and simplify further processing
+  type = "BackgroundFilter"
+  # Unit in meters
+  threshold = 2.8
 
   [[FilteredVideoSource.filters]]
   # Calibration filters. Sets the calibration parameters of the used camera
@@ -113,35 +118,37 @@ type = "ARVisualizer"
   # height = 768
 
   # Basic visualizer: shows obstacles (euclidean) and surfaces
-  [[observers.visualizer]]
-  type = "ObsSurfVisualizer"
-  name = "Obs_Surf_Detector"
-  width = 1024
-  height = 768
-  show_obstacles = true
-  show_surfaces = true
-  #
-  # # This visualizer shows a debug GUI for the GMM obstacle detction
   # [[observers.visualizer]]
-  # type = "GMMTrackingVisualizer"
-  # name = "GMM Obstacle Tracker Data"
-  # debug_gui = true
+  # type = "ObsSurfVisualizer"
+  # name = "Obs_Surf_Detector"
   # width = 1024
   # height = 768
-  #
-  #  [observers.visualizer.debug_gui_params]
-  #   draw_gaussians = true
-  #   draw_velocities = true
-  #   draw_ssv = true
-  #   draw_trajectories = true
-  #   draw_debug_values = true
-  #   draw_voxels = true
-  #   downsample_res = 0.01 # downsampling leaf size in meters
-  #   enable_tracker = true
-  #   enable_tight_fit = true # use pc-based fitting instead of gaussian-based fitting
-  #   trajectory_length = 128
-  #   voxel_grid_resolution = 0.1 # voxel grid used for clustering, leaf size in meters
-  #   color_mode = "NONE"
+  # show_obstacles = true
+  # show_surfaces = true
+
+  # This visualizer shows a debug GUI for the GMM obstacle detction
+  [[observers.visualizer]]
+  type = "GMMTrackingVisualizer"
+  name = "GMM Obstacle Tracker Data"
+  debug_gui = true
+  width = 1024
+  height = 768
+
+   [observers.visualizer.debug_gui_params]
+    # Just an example: set "some" of the values here. The rest will be set to
+    #  default by `DebugGUIParams`s ctor.
+    draw_gaussians = true
+    draw_velocities = true
+    draw_ssv = true
+    draw_trajectories = true
+    draw_debug_values = true
+    draw_voxels = true
+    downsample_res = 0.01 # downsampling leaf size in meters
+    enable_tracker = true
+    enable_tight_fit = true # use pc-based fitting instead of gaussian-based fitting
+    trajectory_length = 128
+    voxel_grid_resolution = 0.1 # voxel grid used for clustering, leaf size in meters
+    color_mode = "NONE"
 
 # This enables the surface detector
 [[observers]]
@@ -158,34 +165,46 @@ type = "ObstacleDetector"
   minDistToPlane = 0.04
 
   # Segmentation Method
-  # [ObstacleDetection.Segmenter]
-  # # Available methods:
-  # #   - "Euclidean
-  # #   - "GMM" (see below)
-  # method = "Euclidean"
-  # # The percentage of the original cloud that should be kept for the clusterization
-  # min_filter_percentage = 0.9
+#  [ObstacleDetection.Segmenter]
+  # Available methods:
+  #   - "Euclidean
+  #   - "GMM" (see below)
+#  method = "Euclidean"
+  # The percentage of the original cloud that should be kept for the clusterization
+#  min_filter_percentage = 0.9
 
-  [ObstacleDetection.Segmenter]
-  method = "GMM"
-  # voxel grid used for clustering, leaf size in meters
-  voxel_grid_resolution = 0.1
-  hard_assignment_state_resp = 0.9999
-  state_pi_removal_threshold = 0.5
-  min_vcluster_points = 25
-  new_state_prior_covar_size = 0.01
-  new_state_prior_covar_mix = 0.5
-  num_split_life_time_frames = 10
-  num_split_points = 15
-  num_split_frames = 3
-  split_max_other_states_percentage = 0.5
-  obs_covar_regularization = 0.95
-  min_persistent_frames = 15
-  obstacle_density = 1500.0
-  enable_kalman_filter = true
-  kalman_noise_position = 0.01
-  kalman_noise_velocity = 0.15
-  kalman_noise_measurement = 0.1
+   [ObstacleDetection.Segmenter]
+   method = "GMM"
+  # # voxel grid used for clustering, leaf size in meters
+   voxel_grid_resolution = 0.1
+  # # this much state-responsibility is needed for a point to be "hard" assigned to a state
+   hard_assignment_state_resp = 0.9
+  # # states with GMM mixing coefficients (pi) lower than this will be removed
+   state_pi_removal_threshold = 0.01
+  # # minimum number of points in a vcluster needed for a new state to be added
+   min_vcluster_points = 10
+  # # prior identity covariance scale for new states
+   new_state_prior_covar_size = 0.01
+   # mixing of prior identity covariance for new states
+   new_state_prior_covar_mix = 0.5
+  # # number of frames a state has be be alive for splitting to be enabled
+   num_split_life_time_frames = 20
+  # # number of points a state has to have in its second largest vcluster for it to be split
+   num_split_points = 15
+  # # number of consecutive frames a state has to have points in two different vclusters until it is split
+   num_split_frames = 2
+  # # only split when the other vcluster has less than this percentage of points assigned to other states
+   split_max_other_states_percentage = 0.2
+  # # how much of the observation covariance is taken from the previous frame
+   obs_covar_regularization = 0.95
+  # # minimum number of consecutive frames an obstacle must be observed in to be treated as real
+   min_persistent_frames = 10
+  # whether to enable a kalman filter for estimating object positions & velocities
+   enable_kalman_filter = true
+  # # noise parameters for the kalman filter
+   kalman_noise_position = 0.01
+   kalman_noise_velocity = 0.15
+   kalman_noise_measurement = 0.1
 
   [ObstacleDetection.SplitStrategy]
   # Defines the split axis.
@@ -205,26 +224,45 @@ type = "ObstacleDetector"
     [[ObstacleDetection.SplitStrategy.conditions]]
     type = "SizeLimit" # After this volume is reached, a sub point cloud is not splitted any more
     # size is a volume in [cm^3]
-    size = 3000.
+    size = 2000.
 
-    # [[ObstacleDetection.SplitStrategy.conditions]]
-    # type = "ShapeCondition"
-    # # The threshold values to consider something "very much" a sphere
-    # sphere1 = 0.8
-    # sphere2 = 0.1
-    # # The threshold value to consider something "very much" a cylinder
-    # cylinder = 0.25
+    [[ObstacleDetection.SplitStrategy.conditions]]
+    type = "ShapeCondition"
+    # The threshold values to consider something "very much" a sphere
+    sphere1 = 0.8
+    sphere2 = 0.1
+    # The threshold value to consider something "very much" a cylinder
+    cylinder = 0.25
 
     [[SplitStrategy.conditions]]
     type = "DistanceThreshold"
     # Distance is in [cm]
     distance_threshold = 150
 
-###########################################################################
- # Aggregators is an array
- # this will list all aggregators and options belonging to them
+  # (Optional) This sets the method used to track objects across frames
+  # NOTE: The GMM Segmenter performs its own tracking.
+  #       When using the GMM Segmenter, this block should be omitted to
+  #       avoid any of the tracked data being overwritten.
+  # [ObstacleDetection.Tracker]
+  # type = "LowPassFilter"
 
- # This aggregator sends data to listeners (Path planning, Lab Visualizer, ...)
+  # # (Optional) This adds an additional filter to the end of the obstacle
+  # #            detection pipeline.
+  # # NOTE: The GMM Segmenter supports an internal kalman filter which can
+  # #       take advantage of state information not available this far down
+  # #       the pipeline. When using GMM, it is recommended to use the
+  # #       enable_kalman_filter flag above instead of using this filter here.
+  # [ObstacleDetection.Filter]
+  # type = "KalmanFilter"
+  # noise_position = 0.02
+  # noise_velocity = 0.1
+  # noise_measurement = 0.1
+
+###########################################################################
+# # Aggregators is an array
+# # this will list all aggregators and options belonging to them
+#
+#  # This aggregator sends data to listeners (Path planning, Lab Visualizer, ...)
 #  [[aggregators]]
 #  type = "RobotAggregator"
 #  # Number of frames to wait before sending new data
@@ -247,20 +285,20 @@ type = "ObstacleDetector"
 #  [[aggregators]]
 #  type = "RobotAggregator"
 #  # Number of frames to wait before sending new data
-#  update_frequency = 1
+#  update_frequency = 5
 #  # Data to send
 #  data = [ "obstacles", "surfaces"]
 #  # Human readable target name, just for terminal/log output
-#  target="lola-listener"
+#  target="QNX"
 #  # Target IP
-#  ip = "127.0.0.1"  # Control computer IP
-#  port = 9091
+#  ip = "192.168.0.7"  # Control computer IP
+#  port = 61448
 #  # Delay to wait after sending a message
-#  delay = 2
+#  delay = 10
 #  # minimum height (m) above the ground plane a surface must match in order to be sent
 # min_surface_height = 0.05
-#  # For surfaces failing min_surface_height test, if their normal deviates from the vertical
-#  # axis by more than this amount (in radians) the surface will still be sent
+#   # For surfaces failing min_surface_height test, if their normal deviates from the vertical
+#   # axis by more than this amount (in radians) the surface will still be sent
 # surface_normal_tolerance = 0.523 # ~30 degrees
 
 ###########################################################################
@@ -273,11 +311,14 @@ type = "ObstacleDetector"
   #max number of ransac iterations
   maxIterations = 200
   # How close a point must be to the model [in meters] in order to be considered an inlier
-  distanceThreshold = 0.03
+  distanceThreshold = 0.04
   #How small the left (extracted) pointcloud should be for termination of the plane segmentation
   minFilterPercentage = 0.08
 
-  # experimental_enableSurfaceReuse = true
+  # If enabled, will allow the reuse of old surface coefficients to trim the point cloud down
+  # before trying to detect new surfaces. Increases performance, but may allow additional noisy
+  # points to propagate further down the pipeline (i.e. may make obstacle detection worse).
+  experimental_enableSurfaceReuse = true
 
   [BasicSurfaceDetection.Classification]
   # The function to classify segmented planes according to deviation in their normals

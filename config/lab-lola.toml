@@ -1,4 +1,4 @@
-# This is the playback config file.
+# This is the real experiments config file.
 # The config file is in the [toml](https://github.com/toml-lang/toml) format
 
 # All IPs and ports given in here are the defaults for a lab setup.
@@ -6,6 +6,11 @@
 # Mandatory options are given, optional options are commented out
 # and listed with the default values
 
+# This defines the pose service to use.
+# Requirements: None
+[PoseService]
+ip = "192.168.0.8"
+port = 53249        # default value is hexadecimal 0xd001
 
 # This defines the specifics for the robot
 # Requirements: PoseService
@@ -22,11 +27,12 @@ bubble_size = 1.2
 #   - `type`: "stream", "oni", "pcd", "am_offline"
 # `oni` and `pcd` types require an additional parameter: file_path
 # `am_offline` type requires an additional parameters: dir_path
-type = "am_offline"
-#file_path = "path/to/file"
-dir_path = "/path/to/recorded/data"
-enable_rgb = true  # Capture RGB images
-enable_pose = true  # Replay pose data (only am_offline, [PoseService] must be disabled)
+type = "stream"
+# type = "am_offline"
+# #file_path = "path/to/file"
+# dir_path = "recordings/rec1error"
+# enable_rgb = false  # Capture RGB images
+# enable_pose = true  # Replay pose data (only am_offline, [PoseService] must be disabled)
 
 # This sets up the filtered source, which will be passed to all
 # steps requiring a video
@@ -70,19 +76,13 @@ pre_filter = "downsample"
   # Requirements: PoseService
   type = "RobotOdoTransformer"
 
-  #[[FilteredVideoSource.filters]]
-  ## The ground filter erases all points near z=0 in the world coordinate system.
-  ## This is used to remove the ground, which is already assumed by the motion planner
-  #type = "GroundFilter"
-  ## Unit in meters
-  #threshold = 0.03
 
   [[FilteredVideoSource.filters]]
   # The crop filter erases all points out of an xy rectangle with the given boundaries respect to world's origin.
   # This is used to ignore everything outside of the experimental area
   type = "CropFilter"
   # Unit in meters
-  xmax = 4.0
+  xmax = 5.0
   xmin = -1.5
   ymax = 1.5
   ymin = -1.5
@@ -90,6 +90,21 @@ pre_filter = "downsample"
 ###########################################################################
 # Observers is an array
 # this will list all observers and options belonging to them
+
+# This observer saves the input data. The saved data can be replayed later
+# with the "am_offline" video source
+[[observers]]
+type = "Recorder"
+
+  [ObserverOptions.Recorder]
+  # Output directory. The final output will end up in a subfolder named
+  # "rec_{datetime}"
+  output_folder= "recordings"
+  # Defines which data to record
+  cloud = true
+  rgb = true
+  pose = true
+
 
 # This defines all available visualizers, there can be more than one
 [[observers]]
@@ -103,11 +118,11 @@ type = "ARVisualizer"
 # - height: the window dimensions
 
   # Image Visualizer: shows the camera's rgb data
-  [[observers.visualizer]]
-  type = "ImageVisualizer"
-  name = "RGBImage"
-  width = 1024
-  height = 768
+  # [[observers.visualizer]]
+  # type = "ImageVisualizer"
+  # name = "RGBImage"
+  # width = 1024
+  # height = 768
 
   # Basic visualizer: shows obstacles (euclidean) and surfaces
   [[observers.visualizer]]
@@ -157,46 +172,47 @@ type = "ObstacleDetector"
   minDistToPlane = 0.04
 
   # Segmentation Method
-#  [ObstacleDetection.Segmenter]
+  [ObstacleDetection.Segmenter]
   # Available methods:
   #   - "Euclidean
   #   - "GMM" (see below)
-#  method = "Euclidean"
+  method = "Euclidean"
   # The percentage of the original cloud that should be kept for the clusterization
-#  min_filter_percentage = 0.9
+  min_filter_percentage = 0.9
 
-   [ObstacleDetection.Segmenter]
-   method = "GMM"
+  # [ObstacleDetection.Segmenter]
+  # method = "GMM"
   # # voxel grid used for clustering, leaf size in meters
-   voxel_grid_resolution = 0.1
+  # voxel_grid_resolution = 0.1
+  #
   # # this much state-responsibility is needed for a point to be "hard" assigned to a state
-   hard_assignment_state_resp = 0.9
+  # hard_assignment_state_resp = 0.9
   # # states with GMM mixing coefficients (pi) lower than this will be removed
-   state_pi_removal_threshold = 0.01
+  # state_pi_removal_threshold = 0.01
   # # minimum number of points in a vcluster needed for a new state to be added
-   min_vcluster_points = 10
+  # min_vcluster_points = 10
   # # prior identity covariance scale for new states
-   new_state_prior_covar_size = 0.01
-   # mixing of prior identity covariance for new states
-   new_state_prior_covar_mix = 0.5
+  # new_state_prior_covar_size = 0.01
+  # # mixing of prior identity covariance for new states
+  # new_state_prior_covar_mix = 0.5
   # # number of frames a state has be be alive for splitting to be enabled
-   num_split_life_time_frames = 20
+  # num_split_life_time_frames = 20
   # # number of points a state has to have in its second largest vcluster for it to be split
-   num_split_points = 15
+  # num_split_points = 15
   # # number of consecutive frames a state has to have points in two different vclusters until it is split
-   num_split_frames = 2
+  # num_split_frames = 2
   # # only split when the other vcluster has less than this percentage of points assigned to other states
-   split_max_other_states_percentage = 0.2
+  # split_max_other_states_percentage = 0.2
   # # how much of the observation covariance is taken from the previous frame
-   obs_covar_regularization = 0.95
+  # obs_covar_regularization = 0.95
   # # minimum number of consecutive frames an obstacle must be observed in to be treated as real
-   min_persistent_frames = 10
-  # whether to enable a kalman filter for estimating object positions & velocities
-   enable_kalman_filter = true
+  # min_persistent_frames = 1
+  # # whether to enable a kalman filter for estimating object positions & velocities
+  # enable_kalman_filter = true
   # # noise parameters for the kalman filter
-   kalman_noise_position = 0.01
-   kalman_noise_velocity = 0.15
-   kalman_noise_measurement = 0.1
+  # kalman_noise_position = 0.01
+  # kalman_noise_velocity = 0.15
+  # kalman_noise_measurement = 0.1
 
   [ObstacleDetection.SplitStrategy]
   # Defines the split axis.
@@ -211,7 +227,7 @@ type = "ObstacleDetector"
   # If no split conditions are provided, the objects will never be split.
     [[ObstacleDetection.SplitStrategy.conditions]]
     type = "DepthLimit" # How many 'splitting steps' are performed. Max number of SSV's per obstacle = 2 ^ DepthLimit
-    depth = 0
+    depth = 1
 
     [[ObstacleDetection.SplitStrategy.conditions]]
     type = "SizeLimit" # After this volume is reached, a sub point cloud is not splitted any more
@@ -235,63 +251,63 @@ type = "ObstacleDetector"
   # NOTE: The GMM Segmenter performs its own tracking.
   #       When using the GMM Segmenter, this block should be omitted to
   #       avoid any of the tracked data being overwritten.
-  # [ObstacleDetection.Tracker]
-  # type = "LowPassFilter"
+  [ObstacleDetection.Tracker]
+  type = "LowPassFilter"
 
-  # # (Optional) This adds an additional filter to the end of the obstacle
-  # #            detection pipeline.
-  # # NOTE: The GMM Segmenter supports an internal kalman filter which can
-  # #       take advantage of state information not available this far down
-  # #       the pipeline. When using GMM, it is recommended to use the
-  # #       enable_kalman_filter flag above instead of using this filter here.
-  # [ObstacleDetection.Filter]
-  # type = "KalmanFilter"
-  # noise_position = 0.02
-  # noise_velocity = 0.1
-  # noise_measurement = 0.1
+  # (Optional) This adds an additional filter to the end of the obstacle
+  #            detection pipeline.
+  # NOTE: The GMM Segmenter supports an internal kalman filter which can
+  #       take advantage of state information not available this far down
+  #       the pipeline. When using GMM, it is recommended to use the
+  #       enable_kalman_filter flag above instead of using this filter here.
+  [ObstacleDetection.Filter]
+  type = "KalmanFilter"
+  noise_position = 0.02
+  noise_velocity = 0.1
+  noise_measurement = 0.1
 
 ###########################################################################
-# # Aggregators is an array
-# # this will list all aggregators and options belonging to them
-#
-#  # This aggregator sends data to listeners (Path planning, Lab Visualizer, ...)
-#  [[aggregators]]
-#  type = "RobotAggregator"
-#  # Number of frames to wait before sending new data
-#  update_frequency = 1
-#  # Data to send
-#  data = [ "obstacles", "surfaces"]
-#  # Human readable target name, just for terminal/log output
-#  target="Hololens"
-#  # Target IP
-#  ip = "192.168.0.100"  # Control computer IP
-#  port = 9090
-#  # Delay to wait after sending a message
-#  delay = 2
-#  # minimum height (m) above the ground plane a surface must match in order to be sent
-# min_surface_height = 0.05
-#  # For surfaces failing min_surface_height test, if their normal deviates from the vertical
-#  # axis by more than this amount (in radians) the surface will still be sent
-# surface_normal_tolerance = 0.523 # ~30 degrees
-#
-#  [[aggregators]]
-#  type = "RobotAggregator"
-#  # Number of frames to wait before sending new data
-#  update_frequency = 5
-#  # Data to send
-#  data = [ "obstacles", "surfaces"]
-#  # Human readable target name, just for terminal/log output
-#  target="QNX"
-#  # Target IP
-#  ip = "192.168.0.7"  # Control computer IP
-#  port = 61448
-#  # Delay to wait after sending a message
-#  delay = 10
-#  # minimum height (m) above the ground plane a surface must match in order to be sent
-# min_surface_height = 0.05
-#   # For surfaces failing min_surface_height test, if their normal deviates from the vertical
-#   # axis by more than this amount (in radians) the surface will still be sent
-# surface_normal_tolerance = 0.523 # ~30 degrees
+# Aggregators is an array
+# this will list all aggregators and options belonging to them
+
+ # This aggregator sends data to listeners (Path planning, Lab Visualizer, ...)
+ [[aggregators]]
+ type = "RobotAggregator"
+ # Number of frames to wait before sending new data
+ update_frequency = 1
+ # Data to send
+ data = [ "obstacles", "surfaces"]
+ # Human readable target name, just for terminal/log output
+ target="Hololens"
+ # Target IP
+ ip = "192.168.0.100"  # Control computer IP
+ port = 9090
+ # Delay to wait after sending a message
+ delay = 2
+ # minimum height (m) above the ground plane a surface must match in order to be sent
+min_surface_height = 0.05
+ # For surfaces failing min_surface_height test, if their normal deviates from the vertical
+ # axis by more than this amount (in radians) the surface will still be sent
+surface_normal_tolerance = 0.523 # ~30 degrees
+
+ [[aggregators]]
+ type = "RobotAggregator"
+ # Number of frames to wait before sending new data
+ update_frequency = 5
+ # Data to send
+ data = [ "obstacles", "surfaces"]
+ # Human readable target name, just for terminal/log output
+ target="QNX"
+ # Target IP
+ ip = "192.168.0.7"  # Control computer IP
+ port = 61448
+ # Delay to wait after sending a message
+ delay = 10
+ # minimum height (m) above the ground plane a surface must match in order to be sent
+min_surface_height = 0.05
+  # For surfaces failing min_surface_height test, if their normal deviates from the vertical
+  # axis by more than this amount (in radians) the surface will still be sent
+surface_normal_tolerance = 0.523 # ~30 degrees
 
 ###########################################################################
 # Miscellaneous settings
@@ -307,10 +323,10 @@ type = "ObstacleDetector"
   #How small the left (extracted) pointcloud should be for termination of the plane segmentation
   minFilterPercentage = 0.08
 
-  ## If enabled, will allow the reuse of old surface coefficients to trim the point cloud down
-  ## before trying to detect new surfaces. Increases performance, but may allow additional noisy
-  ## points to propagate further down the pipeline (i.e. may make obstacle detection worse).
-  #experimental_enableSurfaceReuse = true
+  # If enabled, will allow the reuse of old surface coefficients to trim the point cloud down
+  # before trying to detect new surfaces. Increases performance, but may allow additional noisy
+  # points to propagate further down the pipeline (i.e. may make obstacle detection worse).
+  experimental_enableSurfaceReuse = true
 
   [BasicSurfaceDetection.Classification]
   # The function to classify segmented planes according to deviation in their normals

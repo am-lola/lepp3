@@ -260,6 +260,20 @@ void lepp::ObsSurfVisualizer::drawObstacles(std::vector<ObjectModelPtr> obstacle
   // draw obstacles
   for (size_t i = 0; i < obstacles.size(); i++)
     obstacles[i]->accept(md);
+
+  // remove visualization data for any existing obstacles not seen in this frame
+  auto seen = md.get_seenIDs();
+  for (size_t i = 0; i < oldObstacleIDs.size(); i++) {
+    if (std::find(seen.begin(), seen.end(), oldObstacleIDs[i]) == seen.end())
+    {
+      arvis_->Remove(obsVisData[oldObstacleIDs[i]].mh);
+      arvis_->Remove(obsVisData[oldObstacleIDs[i]].vh);
+      arvis_->Remove(obsVisData[oldObstacleIDs[i]].th);
+      delete(obsVisData[oldObstacleIDs[i]].lp);
+      obsVisData.erase(oldObstacleIDs[i]);
+    }
+  }
+  oldObstacleIDs = seen;
 }
 
 void lepp::ObsSurfVisualizer::outputFrameNum(FrameDataPtr frameData) {
@@ -279,7 +293,7 @@ void lepp::ObsSurfVisualizer::outputFrameNum(FrameDataPtr frameData) {
   }*/
 }
 
-void lepp::ObsSurfVisualizer::removeOldSurfObst(std::vector<mesh_handle_t> &visHandles) {
+void lepp::ObsSurfVisualizer::removeOldSurfaces(std::vector<mesh_handle_t> &visHandles) {
   // compare the newly visualized handles with the old ones. Remove all handles that appear
   // in the old handle list but not in the new one.
   std::sort(visHandles.begin(), visHandles.end());
@@ -313,8 +327,8 @@ void lepp::ObsSurfVisualizer::updateFrame(FrameDataPtr frameData) {
     arvis_->SetVisibility(h, show_surfaces);
   }
 
-  // Remove old obstacles and surfaces that are no longer visualized
-  removeOldSurfObst(visHandlesSurfaces);
+  // Remove old surfaces that are no longer visualized
+  removeOldSurfaces(visHandlesSurfaces);
 
   // output frame num and surface frame num
   outputFrameNum(frameData);
@@ -382,7 +396,7 @@ void lepp::ObsSurfVisualizer::drawObstacleClouds(std::vector<ObjectModelParams> 
       // We derive the color from the HSV color space (in 30° steps)
       // This should lead to easily distinguishable colors
       float h = (idx * 30) % 360;
-      ar::Color color = HsvToRgbColor(h, 0.7f, 0.5f);
+      ar::Color color = HsvToRgbColor(h, 0.7f, 0.8f);
 
       obstacleCloudData.emplace_back(new ar::PointCloudData(ar::PCL_PointXYZ, color));
       obstacleCloudHandles.push_back(arvis_->Add(*obstacleCloudData.back()));
