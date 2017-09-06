@@ -652,7 +652,7 @@ private:
     params.splitMaxOtherStatesPercentage = getOptionalTomlValue(v, "split_max_other_states_percentage", 0.2);
     params.obsCovarRegularization = getOptionalTomlValue(v, "obs_covar_regularization", 0.95);
     params.minPersistentFrames = getOptionalTomlValue(v, "min_persistent_frames", 1);
-    params.obstacleDensity = getOptionalTomlValue(v, "obstacle_density", 30.0);
+    params.obstacleDensity = getOptionalTomlValue(v, "obstacle_density", 0.0);
     params.enableKalmanFilter = getOptionalTomlValue(v, "enable_kalman_filter", false);
     params.kalman_PositionNoise = getOptionalTomlValue(v, "kalman_noise_position", 0.01);
     params.kalman_VelocityNoise = getOptionalTomlValue(v, "kalman_noise_velocity", 0.15);
