@@ -123,13 +123,17 @@ type = "ObstacleDetector"
   # # how much of the observation covariance is taken from the previous frame
   # obs_covar_regularization = 0.95
   # # minimum number of consecutive frames an obstacle must be observed in to be treated as real
-  # min_persistent_frames = 1
+  # min_persistent_frames = 10
+  # # approx. density of obstacles to consider them good enough to use (in points / meter,
+  # # with length defined as diagonal of bounding box enclosing the obstacle's points)
+  # # Values between 500 and 1000 seem to make sense for clouds downsampled to 0.01
+  # obstacle_density = 500.0
   # # whether to enable a kalman filter for estimating object positions & velocities
   # enable_kalman_filter = true
   # # noise parameters for the kalman filter
-  # kalman_noise_position = 0.01
-  # kalman_noise_velocity = 0.15
-  # kalman_noise_measurement = 0.1
+   kalman_noise_position = 0.04
+   kalman_noise_velocity = 0.5
+   kalman_noise_measurement = 0.2
 
   [ObstacleDetection.SplitStrategy]
   # Defines the split axis.

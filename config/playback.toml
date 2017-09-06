@@ -24,7 +24,7 @@ bubble_size = 1.2
 # `am_offline` type requires an additional parameters: dir_path
 type = "am_offline"
 #file_path = "path/to/file"
-dir_path = "/path/to/recorded/data"
+dir_path = "/home/lola/git/exp_data/walkingobstsurf2"
 enable_rgb = true  # Capture RGB images
 enable_pose = true  # Replay pose data (only am_offline, [PoseService] must be disabled)
 
@@ -82,7 +82,7 @@ pre_filter = "downsample"
   # This is used to ignore everything outside of the experimental area
   type = "CropFilter"
   # Unit in meters
-  xmax = 4.0
+  xmax = 5.5
   xmin = -1.5
   ymax = 1.5
   ymin = -1.5
@@ -103,11 +103,11 @@ type = "ARVisualizer"
 # - height: the window dimensions
 
   # Image Visualizer: shows the camera's rgb data
-  [[observers.visualizer]]
-  type = "ImageVisualizer"
-  name = "RGBImage"
-  width = 1024
-  height = 768
+  # [[observers.visualizer]]
+  # type = "ImageVisualizer"
+  # name = "RGBImage"
+  # width = 1024
+  # height = 768
 
   # Basic visualizer: shows obstacles (euclidean) and surfaces
   [[observers.visualizer]]
@@ -154,7 +154,7 @@ type = "ObstacleDetector"
   [ObstacleDetection.PlaneRemover]
   # minimum distance a point must have to its projection onto a
   # plane in order to be considered an inlier on this plane
-  minDistToPlane = 0.04
+  minDistToPlane = 0.07
 
   # Segmentation Method
 #  [ObstacleDetection.Segmenter]
@@ -191,12 +191,16 @@ type = "ObstacleDetector"
    obs_covar_regularization = 0.95
   # # minimum number of consecutive frames an obstacle must be observed in to be treated as real
    min_persistent_frames = 10
+   # approx. density of obstacles to consider them good enough to use (in points / meter,
+   #  with length defined as diagonal of bounding box enclosing the obstacle's points)
+   # Values between 500 and 1000 seem to make sense for clouds downsampled to 0.01
+   obstacle_density = 700.0
   # whether to enable a kalman filter for estimating object positions & velocities
-   enable_kalman_filter = true
+   enable_kalman_filter = false
   # # noise parameters for the kalman filter
-   kalman_noise_position = 0.01
-   kalman_noise_velocity = 0.15
-   kalman_noise_measurement = 0.1
+   kalman_noise_position = 0.04
+   kalman_noise_velocity = 0.5
+   kalman_noise_measurement = 0.2
 
   [ObstacleDetection.SplitStrategy]
   # Defines the split axis.
