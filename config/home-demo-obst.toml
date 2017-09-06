@@ -117,7 +117,7 @@ type = "ObstacleDetector"
   # # number of points a state has to have in its second largest vcluster for it to be split
   # num_split_points = 15
   # # number of consecutive frames a state has to have points in two different vclusters until it is split
-  # num_split_frames = 6
+  # num_split_frames = 2
   # # only split when the other vcluster has less than this percentage of points assigned to other states
   # split_max_other_states_percentage = 0.2
   # # how much of the observation covariance is taken from the previous frame
