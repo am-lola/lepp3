@@ -55,6 +55,7 @@ public:
   */
   virtual void visitCapsule(lepp::CapsuleModel& capsule) override;
 
+  std::vector<int> get_seenIDs() { return seenObstacles; }
 private:
   /**
   * The instance to which the drawer will draw all models.
@@ -166,7 +167,7 @@ private:
   /**
   * Remove old obstacles and surfaces that are no longer visualized.
   */
-  void removeOldSurfObst(std::vector<mesh_handle_t> &visHandles);
+  void removeOldSurfaces(std::vector<mesh_handle_t> &visHandles);
 
   /**
    * Visualize obstacles in given vector with ARVisualizer.
@@ -178,6 +179,7 @@ private:
 
   // vector that holds the handles to all obstacles and surfaces that were visualized in the previous frame
   std::vector<mesh_handle_t> oldHandles;
+  std::vector<int> oldObstacleIDs;
   std::map<int, ObstacleVisualizationData> obsVisData;
 
   ar::mesh_handle pointCloudHandle;
