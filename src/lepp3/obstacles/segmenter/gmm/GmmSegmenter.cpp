@@ -124,7 +124,7 @@ std::vector<lepp::ObjectModelParams> lepp::GmmSegmenter::extractObstacleParams(P
     SelfAdjointEigenSolver<Matrix3f> eigensolver(states_[i].obsCovar);
     const Matrix3f evecs = eigensolver.eigenvectors();
     ret.back().inertial_values = eigensolver.eigenvalues().reverse(); // reversed b/c approximators expect these to be in descending order
-    ret.back().inertial_axes = {evecs.col(0), evecs.col(1), evecs.col(2)};
+    ret.back().inertial_axes = {evecs.col(2), evecs.col(1), evecs.col(0)};
   }
 
   for (size_t i = 0; i < N; i++) {
@@ -132,8 +132,9 @@ std::vector<lepp::ObjectModelParams> lepp::GmmSegmenter::extractObstacleParams(P
       if (states_[k].lifeTime < parameters_.minPersistentFrames)
           continue;
       else if (R(i, k) > parameters_.hardAssignmentStateResp
-          && vcluster_point_table[i] != state_main_vcluster[k]
-          && C(vcluster_point_table[i], k) < parameters_.numSplitPoints) {
+              && (vcluster_point_table[i] == state_main_vcluster[k]
+              || C(vcluster_point_table[i], k) > parameters_.numSplitPoints))
+      {
         ret[k].obstacleCloud->push_back((*cloud)[i]);
         break;
       }
