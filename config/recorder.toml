@@ -1,5 +1,4 @@
-# This is the master config. It is most likely not runnable but lists all
-# available options
+# This is the recorder config file.
 # The config file is in the [toml](https://github.com/toml-lang/toml) format
 
 # All IPs and ports given in here are the defaults for a lab setup.

@@ -1,5 +1,4 @@
-# This is a sample of a config file for the vision subsystem (when running
-# it with the `--cfg` flag).
+# This is a sample of a config file for lola's camera calibration.
 # The config file is in the [toml](https://github.com/toml-lang/toml) format,
 
 # All IPs and ports given in here are the defaults for a lab setup.

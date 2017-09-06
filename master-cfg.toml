@@ -196,41 +196,41 @@ type = "ObstacleDetector"
   #   - "GMM" (see below)
   method = "Euclidean"
   # The percentage of the original cloud that should be kept for the clusterization
-  #min_filter_percentage = 0.9
+  min_filter_percentage = 0.9
 
   [ObstacleDetection.Segmenter]
   method = "GMM"
   # voxel grid used for clustering, leaf size in meters
-  voxel_grid_resolution = 0.1  
+  voxel_grid_resolution = 0.1
 
   # this much state-responsibility is needed for a point to be "hard" assigned to a state
-  #hard_assignment_state_resp = 0.9
+  hard_assignment_state_resp = 0.9
   # states with GMM mixing coefficients (pi) lower than this will be removed
-  #state_pi_removal_threshold = 0.01
+  state_pi_removal_threshold = 0.01
   # minimum number of points in a vcluster needed for a new state to be added
-  #min_vcluster_points = 10
+  min_vcluster_points = 10
   # prior identity covariance scale for new states
-  #new_state_prior_covar_size = 0.01
+  new_state_prior_covar_size = 0.01
   # mixing of prior identity covariance for new states
-  #new_state_prior_covar_mix = 0.5
+  new_state_prior_covar_mix = 0.5
   # number of frames a state has be be alive for splitting to be enabled
-  #num_split_life_time_frames = 20
+  num_split_life_time_frames = 20
   # number of points a state has to have in its second largest vcluster for it to be split
-  #num_split_points = 15
+  num_split_points = 15
   # number of consecutive frames a state has to have points in two different vclusters until it is split
-  #num_split_frames = 6
+  num_split_frames = 6
   # only split when the other vcluster has less than this percentage of points assigned to other states
-  #split_max_other_states_percentage = 0.2
+  split_max_other_states_percentage = 0.2
   # how much of the observation covariance is taken from the previous frame
-  #obs_covar_regularization = 0.95
+  obs_covar_regularization = 0.95
   # minimum number of consecutive frames an obstacle must be observed in to be treated as real
-  #min_persistent_frames = 1
+  min_persistent_frames = 1
   # whether to enable a kalman filter for estimating object positions & velocities
-  #enable_kalman_filter = true
+  enable_kalman_filter = true
   # noise parameters for the kalman filter
-  #kalman_noise_position = 0.01
-  #kalman_noise_velocity = 0.15
-  #kalman_noise_measurement = 0.1
+  kalman_noise_position = 0.01
+  kalman_noise_velocity = 0.15
+  kalman_noise_measurement = 0.1
 
   [ObstacleDetection.SplitStrategy]
   # Defines the split axis.
@@ -246,12 +246,12 @@ type = "ObstacleDetector"
     [[ObstacleDetection.SplitStrategy.conditions]]
     type = "DepthLimit" # How many 'splitting steps' are performed. Max number of SSV's per obstacle = 2 ^ DepthLimit
     depth = 1
-    
+
     [[ObstacleDetection.SplitStrategy.conditions]]
     type = "SizeLimit" # After this volume is reached, a sub point cloud is not splitted any more
     # size is a volume in [cm^3]
     size = 3000.
-    
+
     [[ObstacleDetection.SplitStrategy.conditions]]
     type = "ShapeCondition"
     # The threshold values to consider something "very much" a sphere
@@ -259,7 +259,7 @@ type = "ObstacleDetector"
     sphere2 = 0.1
     # The threshold value to consider something "very much" a cylinder
     cylinder = 0.25
-    
+
     [[SplitStrategy.conditions]]
     type = "DistanceThreshold"
     # Distance is in [cm]
@@ -276,7 +276,7 @@ type = "ObstacleDetector"
   #            detection pipeline.
   # NOTE: The GMM Segmenter supports an internal kalman filter which can
   #       take advantage of state information not available this far down
-  #       the pipeline. When using GMM, it is recommended to use the 
+  #       the pipeline. When using GMM, it is recommended to use the
   #       enable_kalman_filter flag above instead of using this filter here.
   [ObstacleDetection.Filter]
   type = "KalmanFilter"
@@ -299,6 +299,7 @@ data = [ "obstacles", "surfaces", "images", "pointclouds"]
 target="Vision"
 # Target IP
 # ip = "192.168.0.3"  # Control computer IP
+# ip = "192.168.0.100"  # Hololens IP
 ip = "192.168.0.7"  # QNX computer IP
 # Target Port, default is hexadecimal 0xF008
 port = 61448
@@ -325,7 +326,7 @@ surface_normal_tolerance = 0.523 # ~30 degrees
   #How small the left (extracted) pointcloud should be for termination of the plane segmentation
   minFilterPercentage = 0.08
 
-  # If enabled, will allow the reuse of old surface coefficients to trim the point cloud down 
+  # If enabled, will allow the reuse of old surface coefficients to trim the point cloud down
   # before trying to detect new surfaces. Increases performance, but may allow additional noisy
   # points to propagate further down the pipeline (i.e. may make obstacle detection worse).
 #  experimental_enableSurfaceReuse = true

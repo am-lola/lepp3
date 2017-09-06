@@ -135,6 +135,13 @@ void RobotAggregator::new_obstacle_cb_(ObjectModel& model, long frame_num) {
   }
 }
 void RobotAggregator::new_surface_cb_(SurfaceModel& model, long frame_num) {
+  auto hull_pts = model.get_hull();
+  std::cout << "New Surface (" << model.id() << "): [ " << std::endl;
+  for (auto& p : *hull_pts)
+  {
+    std::cout << "  " << p.x << ", " << p.y << ", " << p.z << std::endl;
+  }
+  std::cout << "]" << std::endl;
   if (shouldSendSurface(model))
   {
     sendNew(model, frame_num);
@@ -233,6 +240,13 @@ void RobotAggregator::mod_obstacle_cb_(ObjectModel& model, long frame_num) {
 void RobotAggregator::mod_surface_cb_(SurfaceModel& model, long frame_num) {
 // Disable any modifications to models that are too close to the
 // robot.
+auto hull_pts = model.get_hull();
+std::cout << "Modify Surface (" << model.id() << "): [ " << std::endl;
+for (auto& p : *hull_pts)
+{
+  std::cout << "  " << p.x << ", " << p.y << ", " << p.z << std::endl;
+}
+std::cout << "]" << std::endl;
 
  if (robot_.isInRobotBoundary(model)) {
    return;
