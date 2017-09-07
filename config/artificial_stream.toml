@@ -5,18 +5,18 @@
 # All IPs and ports given in here are the defaults for a lab setup.
 
 # Mandatory options are given, optional options are commented out
-# and listed with the default values 
+# and listed with the default values
 
 
-# Video source 
+# Video source
 [VideoSource]
 # Common options:
 #   - `type`: "stream", "oni", "pcd", "am_offline"
 # `oni` and `pcd` types require an additional parameter: file_path
 # `am_offline` type requires an additional parameters: dir_path
 type = "am_offline"
-file_path = "../../../am2b/etc/model/pcd_creation/pcd_stream/"
-dir_path = "../../../am2b/etc/model/pcd_creation/pcd_stream/"
+file_path = "${AM2B_ROOT}/etc/model/pcd_creation/pcd_stream/"
+dir_path = "${AM2B_ROOT}/etc/model/pcd_creation/pcd_stream/"
 enable_rgb = false  # Capture RGB images
 enable_pose = false  # Replay pose data (only am_offline, [PoseService] must be disabled)
 
@@ -173,7 +173,7 @@ type = "ObstacleEvaluator"
 ref_volume = 0
 
 ###########################################################################
-# Miscellaneous settings 
+# Miscellaneous settings
 
 # These settings define basic parameters for detecting the ground plane
 # They are mandatory if any kind of surface or obstacle detection is enabled
@@ -183,7 +183,7 @@ ref_volume = 0
   maxIterations = 200
   # How close a point must be to the model [in meters] in order to be considered an inlier
   distanceThreshold = 0.03
-  #How small the left (extracted) pointcloud should be for termination of the plane segmentation 
+  #How small the left (extracted) pointcloud should be for termination of the plane segmentation
   minFilterPercentage = 0.08
 
   [BasicSurfaceDetection.Classification]
