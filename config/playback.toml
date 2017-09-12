@@ -24,7 +24,7 @@ bubble_size = 1.2
 # `am_offline` type requires an additional parameters: dir_path
 type = "am_offline"
 #file_path = "path/to/file"
-dir_path = "/home/lola/git/exp_data/walkingobstsurf2"
+dir_path = "/home/lola/git/lepp3/build/recordings/rec_2017-09-11_20-54-18"
 enable_rgb = true  # Capture RGB images
 enable_pose = true  # Replay pose data (only am_offline, [PoseService] must be disabled)
 
@@ -83,9 +83,9 @@ pre_filter = "downsample"
   type = "CropFilter"
   # Unit in meters
   xmax = 5.5
-  xmin = -1.5
-  ymax = 1.5
-  ymin = -1.5
+  xmin = -1.0
+  ymax = 1.0
+  ymin = -1.0
 
 ###########################################################################
 # Observers is an array
@@ -154,7 +154,7 @@ type = "ObstacleDetector"
   [ObstacleDetection.PlaneRemover]
   # minimum distance a point must have to its projection onto a
   # plane in order to be considered an inlier on this plane
-  minDistToPlane = 0.07
+  minDistToPlane = 0.04
 
   # Segmentation Method
 #  [ObstacleDetection.Segmenter]
@@ -170,7 +170,7 @@ type = "ObstacleDetector"
   # # voxel grid used for clustering, leaf size in meters
    voxel_grid_resolution = 0.1
   # # this much state-responsibility is needed for a point to be "hard" assigned to a state
-   hard_assignment_state_resp = 0.9
+   hard_assignment_state_resp = 0.999
   # # states with GMM mixing coefficients (pi) lower than this will be removed
    state_pi_removal_threshold = 0.01
   # # minimum number of points in a vcluster needed for a new state to be added
@@ -196,7 +196,7 @@ type = "ObstacleDetector"
    # Values between 500 and 1000 seem to make sense for clouds downsampled to 0.01
    obstacle_density = 700.0
   # whether to enable a kalman filter for estimating object positions & velocities
-   enable_kalman_filter = false
+   enable_kalman_filter = true
   # # noise parameters for the kalman filter
    kalman_noise_position = 0.04
    kalman_noise_velocity = 0.5
@@ -215,7 +215,7 @@ type = "ObstacleDetector"
   # If no split conditions are provided, the objects will never be split.
     [[ObstacleDetection.SplitStrategy.conditions]]
     type = "DepthLimit" # How many 'splitting steps' are performed. Max number of SSV's per obstacle = 2 ^ DepthLimit
-    depth = 0
+    depth = 1
 
     [[ObstacleDetection.SplitStrategy.conditions]]
     type = "SizeLimit" # After this volume is reached, a sub point cloud is not splitted any more
@@ -314,7 +314,7 @@ type = "ObstacleDetector"
   ## If enabled, will allow the reuse of old surface coefficients to trim the point cloud down
   ## before trying to detect new surfaces. Increases performance, but may allow additional noisy
   ## points to propagate further down the pipeline (i.e. may make obstacle detection worse).
-  #experimental_enableSurfaceReuse = true
+  experimental_enableSurfaceReuse = true
 
   [BasicSurfaceDetection.Classification]
   # The function to classify segmented planes according to deviation in their normals
