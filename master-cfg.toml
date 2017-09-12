@@ -189,6 +189,12 @@ type = "ObstacleDetector"
   # plane in order to be considered an inlier on this plane
   minDistToPlane = 0.04
 
+  # Removes points that are too far away to reduce noise for obstacle segmentation
+  [ObstacleDetection.PointFilter]
+  # points that are too far away from lola's coordinate center are removed
+  # works similar to the bubble, only in the obstacle thread
+  radius = 2.0
+
   # Segmentation Method
   [ObstacleDetection.Segmenter]
   # Available methods:

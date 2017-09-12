@@ -422,7 +422,20 @@ protected:
    */
   virtual void initObstacleDetector() {
     double min_distance_to_plane = getTomlValue<double>(toml_tree_, "ObstacleDetection.PlaneRemover.minDistToPlane");
-    inlier_finder_.reset(new PlaneInlierFinder<PointT>(min_distance_to_plane));
+
+    double point_filter_radius = getOptionalTomlValue<double>(toml_tree_, "ObstacleDetection.PointFilter.radius", -1.0);
+    if (point_filter_radius != -1.0)
+    {
+      if (!this->pose_service()) {
+        throw std::runtime_error("[ObstacleDetection.PointFilter] requires a PoseService!");
+      }
+
+      inlier_finder_.reset(new PlaneInlierFinder<PointT>(min_distance_to_plane, point_filter_radius));
+    }
+    else
+    {
+      inlier_finder_.reset(new PlaneInlierFinder<PointT>(min_distance_to_plane));
+    }
 
     assert(surface_detector_);
     surface_detector_->FrameDataSubject::attachObserver(inlier_finder_);
