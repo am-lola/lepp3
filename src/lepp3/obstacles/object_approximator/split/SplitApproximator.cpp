@@ -33,7 +33,7 @@ lepp::ObjectModelPtr lepp::SplitObjectApproximator::approximate(const ObjectMode
     if (!first)
     {
         current_params.inertial_axes.clear();
-            current_params.center = Coordinate(std::nan(""), std::nan(""), std::nan(""));
+        current_params.center = Coordinate(std::nan(""), std::nan(""), std::nan(""));
     }
     else
     {
