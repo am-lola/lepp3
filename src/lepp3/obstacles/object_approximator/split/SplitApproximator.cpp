@@ -14,6 +14,7 @@ lepp::ObjectModelPtr lepp::SplitObjectApproximator::approximate(const ObjectMode
   std::deque<std::pair<int, PointCloudPtr> > queue;
   queue.push_back(std::make_pair(0, object_params.obstacleCloud));
 
+  bool first = true;
   while (!queue.empty()) {
     int const depth = queue[0].first;
     PointCloudPtr const current_cloud = queue[0].second;
@@ -26,6 +27,19 @@ lepp::ObjectModelPtr lepp::SplitObjectApproximator::approximate(const ObjectMode
     ObjectModelParams current_params = object_params;
     current_params.obstacleCloud = nullptr; current_params.obstacleCloud = current_cloud;
     current_params.id = 100000 + approx->id() * 1000 + (approx->count()+1);
+
+    // in case we were given inertial params for the root object, remove them before approximating component
+    // objects (which each have their own inertial parameters that the approximator should estimate)
+    if (!first)
+    {
+        current_params.inertial_axes.clear();
+            current_params.center = Coordinate(std::nan(""), std::nan(""), std::nan(""));
+    }
+    else
+    {
+        first = false;
+    }
+
     // Delegates to the wrapped approximator for each part's approximation.
     ObjectModelPtr model = approximator_->approximate(current_params);
 
