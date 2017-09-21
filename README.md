@@ -7,11 +7,11 @@ Previous version: [lepp2](https://github.com/am-lola/lepp2)
 # Goals
 
 The goal of the project is to approximate arbitrary objects in the video feed
-of a Kinect-like sensor, using a number of basic geometric shapes, such as
+of a 3D sensor, using a number of basic geometric shapes, such as polygons,
 spheres and cylinders, *in real time*.
 
 The approximations can then be used as a basis for a robot control system,
-providing it with precise information on the positions of obstacles.
+providing it with precise information on the positions of surfaces and obstacles.
 
 As such, in order to meet the real-time requirement, precision in the
 generated approximations is sometimes sacrificed, but with the goal of
@@ -40,54 +40,65 @@ improving the object approximation algorithms, implementing some new approaches
 for obtaining the best possible approximations, as well as optimizing and improving
 the efficiency and modularity of the previously existing codebase.
 
-It also extracts the purely vision-related components of the subsystem --
-the obstacle detection and approximation -- into an **independent** and
-reusable C++ library. The library is found in the
+It is divided into different sections, where the
 [`src/lepp3`](https://github.com/am-lola/lepp3/tree/master/src/lepp3)
-directory.
+directory contains the purely vision-related components, which are sepparated 
+from the humanoid communication files and external dependencies. This 
+facilitates better code organization and modularity of the humanoid robot system.
 
-This not only facilitates better code organization and modularity
-of the humanoid robot system, but also contributes back to the open source
-community, by openly sharing the exact implementation of the object/obstacle
-detection and approximation used by the Institute in its humanoid robot
-systems.
-
-The implementation of the vision subsystem is also found within this
+The implementation of the robot communication subsystem is also found within this
 repository, in the
 [`src/lola`](https://github.com/am-lola/lepp3/tree/master/src/lola) tree.
 Most of the code there represents communication logic between the robot
 control and the vision subsystems, such as obtaining the robot's kinematic
-parameters and sending the detected obstacles' descriptions back to the control,
-according to previously specified communication protocols. This can be
-considered as a good example how the `lepp3` library can be used within the
+parameters and sending the detected surfaces and obstacles' descriptions back to 
+the control, according to previously specified communication protocols. This can 
+be considered as a good example how the `lepp3` library can be used within the
 context of a larger system.
 
-Whether the vision subsystem executable gets built is controlled by the
-`LEPP_BUILD_LOLA` option passed to `cmake` when generating the build
-configuration (on by default).
+# Dependencies
 
-The `detector` executable, on the other hand, built when
-`LEPP_BUILD_DETECTOR` is set (on by default), is independent from any robot
-specifics and displays the detected obstacles' approximations by overlaying
-them over a point cloud displayed in PCL's `PCLVisualizer`.
-
+* [PCL](http://pointclouds.org/) (compiled from source with C++11 support)
+  * [Instructions to build PCL with C++11 and OpenNI Support]()
+* [kalman](https://github.com/mherb/kalman) (a compatible version is provided under [src/deps](./src/deps))
+* [ARVisualizer]()
+* [am2b-iface]() submodule
+  * Either clone this project with `--recursive` or run `git submodule update --init` after cloning to obtain a compatible version
 
 # Compiling
 
-The project depends on the [PCL](http://pointclouds.org/) library. You should
-first install it following PCL's directions.
+Once the necessary dependencies have been obtained and installed, building is just:
 
-Then, you can compile the `detector` using `cmake`. In order to compile the
-project with only the default options set, use the `build.sh` script.
+```bash
+mkdir build && cd build
+cmake ..
+make
+```
 
 # Usage
 
-The `detector` executable is built by default and has a number of flags
-that can be passed to it from the CLI. Check its usage by running it with
-no flags.
+The `lola` executable requires only one argument, a config file to load. The config
+file contains settings for the specific components to be enabled and their parameters.
+The [config](./config) directory contains several configuration files to get started.
 
-For some examples of how to use the library itself, you may check the
-`examples` directory.
+```bash
+./lola <config_file_path>
+```
+
+By adding or removing components in the config file, the executable can be made to
+run anything from a simple view from a connected camera, playback or recording of
+data obtained from a 3D sensor, or even the complete system involving communication
+with a robot and/or other networked components (e.g. to perform AR visualization on a [Hololens]()).
+
+See [master-cfg.toml](./master-cfg.toml) for an example of every available component
+and all the possible parameters which can be set. Note, however, that some components
+are incompatible, so the master-cfg file cannot be used as-is.
+
+To aid with testing and development, the [am2b-iface]() project includes several
+tools to send and receive data for the various components involved when using a
+real robot (e.g. artifical kinematic data can be sent to lepp3 and lepp3's results
+can be broadcast to a mock receiver).
+
 
 # License
 
