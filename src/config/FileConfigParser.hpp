@@ -18,6 +18,7 @@
 #include "deps/toml.h"
 
 #include "lepp3/ObstacleEvaluator.hpp"
+#include "lepp3/SurfaceEvaluator.hpp"
 #include "lepp3/util/FileManager.hpp"
 #include "lepp3/util/OfflineVideoSource.hpp"
 
@@ -149,7 +150,7 @@ protected:
     } else if (type == "pcd") {
       const std::string file_path = getTomlValue<std::string>(toml_tree_, "VideoSource.file_path");
       boost::shared_ptr<pcl::Grabber> interface(new pcl::PCDGrabber<PointT>(
-          file_path,
+          FileManager::expandEnvironmentVars(file_path),
           20.f,
           true));
       this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(
@@ -159,7 +160,7 @@ protected:
       const std::string file_path = getTomlValue<std::string>(toml_tree_, "VideoSource.file_path");
       std::cout << "oni file path: " << file_path << std::endl;
       boost::shared_ptr<pcl::Grabber> interface(new pcl::io::OpenNI2Grabber(
-          file_path,
+          FileManager::expandEnvironmentVars(file_path),
           pcl::io::OpenNI2Grabber::OpenNI_Default_Mode,
           pcl::io::OpenNI2Grabber::OpenNI_Default_Mode));
       this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(
@@ -882,6 +883,9 @@ private:
       int const ref_volume = v.find("ref_volume")->as<int>();
       return boost::shared_ptr<ObstacleEvaluator>(
           new ObstacleEvaluator(ref_volume));
+
+    } else if (type == "SurfaceEvaluator") {
+      return boost::shared_ptr<SurfaceEvaluator>(new SurfaceEvaluator());
 
     } else {
       std::ostringstream ss;

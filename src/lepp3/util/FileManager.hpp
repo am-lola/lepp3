@@ -38,14 +38,22 @@ namespace lepp {
 class FileManager {
 public:
   FileManager(const std::string& directory)
-    : path_(directory),
-      current_file_counter_(0) {}
+    : path_(expandEnvironmentVars(directory)),
+      current_file_counter_(0)
+      {
+      }
   /**
    * This function receives the extension of the files we are looking for in
    * the current path_ and returns the name of all corresponding files in that
    * directory. The relative path is sent back to whoever requested.
    */
   std::vector<std::string> getFileNames(const std::string& extension);
+
+  // Searches s for substrings of the form ${VAR} and returns a string in which
+  // these have been replaced by values from the corresponding environment variables
+  // e.g.  "${HOME}/my/subdir" --> "/home/user/my/subdir"
+  // If an environment variable of the name given is not defined, an exception is thrown
+  static std::string expandEnvironmentVars(const std::string& s);
 private:
   fs::path path_;
   int current_file_counter_;
@@ -75,6 +83,37 @@ std::vector<std::string> FileManager::getFileNames(const std::string& ext) {
     file_names[i] = ss.str();
   }
 	return file_names;
+}
+
+// Searches s for substrings of the form ${VAR} and returns a string in which
+// these have been replaced by values from the corresponding environment variables
+// e.g.  "${HOME}/my/subdir" --> "/home/user/my/subdir"
+std::string FileManager::expandEnvironmentVars(const std::string& s) {
+  auto open_pos = s.find("${");
+
+  // if there are no env vars, return the original string
+  if (open_pos == std::string::npos)
+    return s;
+
+  std::string pre  = s.substr(0, open_pos);
+  std::string post = s.substr( open_pos + 2 );
+  auto close_pos = post.find('}');
+
+  // if no terminating brace is found, just return the original string
+  if (close_pos == std::string::npos)
+    return s;
+
+  std::string variable = post.substr(0, close_pos);
+  std::string value    = "";
+
+  post = post.substr(close_pos + 1);
+
+  if (getenv(variable.c_str()) != NULL)
+    value = std::string(getenv(variable.c_str()));
+  else
+    throw std::runtime_error("The environment variable '" + variable + "' could not be found when expanding path: '" + s + "'");
+
+  return expandEnvironmentVars( pre + value + post );
 }
 
 } // namespace lepp
