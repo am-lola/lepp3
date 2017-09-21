@@ -24,15 +24,10 @@ include_directories("src/lola/iface/include")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build")
 
-option(LEPP_BUILD_EXAMPLES "Build LEPP examples" FALSE)
 option(LEPP_BUILD_LOLA "Build an obstacle detector for LOLA" TRUE)
 option(LEPP_INCLUDE_HEADERS "Includes an header project to add files in IDEs" FALSE)
 
 include_directories("src")
-
-if(LEPP_BUILD_EXAMPLES)
-    include(examples/Examples.txt)
-endif()
 
 if(LEPP_BUILD_LOLA)
     file(GLOB_RECURSE lepp_src src/lepp3/*.cpp)
