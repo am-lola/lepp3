@@ -42,6 +42,6 @@ protected:
   std::shared_ptr<ar::ARVisualizer> arvis_;
 };
 
-}
+} // namespace lepp
 
 #endif // LEPP3_VISUALIZATION_BASE_VISUALIZER_H__

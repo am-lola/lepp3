@@ -22,6 +22,7 @@
 #include "lepp3/visualization/BaseVisualizer.hpp"
 #include "lepp3/visualization/Visualizer.hpp"
 #include "lepp3/visualization/ObsSurfVisualizer.hpp"
+#include "lepp3/visualization/ObstacleTrackerVisualizer.hpp"
 #include "lepp3/visualization/LegacyVisualizer.hpp"
 #include "lepp3/visualization/CalibratorVisualizer.hpp"
 #include "lepp3/visualization/ImageVisualizer.hpp"

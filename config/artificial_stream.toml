@@ -95,13 +95,15 @@ type = "ARVisualizer"
     voxel_grid_resolution = 0.1 # voxel grid used for clustering, leaf size in meters
     #color_mode = "NONE"
 
+# This enables the surface detector
+[[observers]]
+type = "SurfaceDetector"
+
 # This enables the obstacle detector
 [[observers]]
 type = "ObstacleDetector"
-# Available methods accepted by ObstacleDetector:
-#   - "EuclideanClustering"
-#   - "GMM" (see below)
-# Removes points belonging to surfaces from the cloud
+
+  # Removes points belonging to surfaces from the cloud
   [ObstacleDetection.PlaneRemover]
   # minimum distance a point must have to its projection onto a
   # plane in order to be considered an inlier on this plane
@@ -112,31 +114,47 @@ type = "ObstacleDetector"
   # Available methods:
   #   - "Euclidean
   #   - "GMM" (see below)
-  method = "GMM"
+  method = "Euclidean"
   # The percentage of the original cloud that should be kept for the clusterization
-  #min_filter_percentage = 0.9
+  min_filter_percentage = 0.9
+
+  [ObstacleDetection.Segmenter]
+  method = "GMM"
+  # voxel grid used for clustering, leaf size in meters
   voxel_grid_resolution = 0.1
 
-   # this much state-responsibility is needed for a point to be "hard" assigned to a state
-    #hard_assignment_state_resp = 0.9
-    # states with GMM mixing coefficients (pi) lower than this will be removed
-    #state_pi_removal_threshold = 0.01
-    # minimum number of points in a vcluster needed for a new state to be added
-    #min_vcluster_points = 10
-    # prior identity covariance scale for new states
-    #new_state_prior_covar_size = 0.01
-    # mixing of prior identity covariance for new states
-    #new_state_prior_covar_mix = 0.5
-    # number of frames a state has be be alive for splitting to be enabled
-    #num_split_life_time_frames = 20
-    # number of points a state has to have in its second largest vcluster for it to be split
-    #num_split_points = 15
-    # number of consecutive frames a state has to have points in two different vclusters until it is split
-    #num_split_frames = 6
-    # only split when the other vcluster has less than this percentage of points assigned to other states
-    #split_max_other_states_percentage = 0.2
-    # how much of the observation covariance is taken from the previous frame
-    #obs_covar_regularization = 0.95
+  # this much state-responsibility is needed for a point to be "hard" assigned to a state
+  hard_assignment_state_resp = 0.9
+  # states with GMM mixing coefficients (pi) lower than this will be removed
+  state_pi_removal_threshold = 0.01
+  # minimum number of points in a vcluster needed for a new state to be added
+  min_vcluster_points = 10
+  # prior identity covariance scale for new states
+  new_state_prior_covar_size = 0.01
+  # mixing of prior identity covariance for new states
+  new_state_prior_covar_mix = 0.5
+  # number of frames a state has be be alive for splitting to be enabled
+  num_split_life_time_frames = 20
+  # number of points a state has to have in its second largest vcluster for it to be split
+  num_split_points = 15
+  # number of consecutive frames a state has to have points in two different vclusters until it is split
+  num_split_frames = 2
+  # only split when the other vcluster has less than this percentage of points assigned to other states
+  split_max_other_states_percentage = 0.2
+  # how much of the observation covariance is taken from the previous frame
+  obs_covar_regularization = 0.95
+  # minimum number of consecutive frames an obstacle must be observed in to be treated as real
+  min_persistent_frames = 10
+  # approx. density of obstacles to consider them good enough to use (in points / meter,
+  #  with length defined as diagonal of bounding box enclosing the obstacle's points)
+  # Values between 500 and 1000 seem to make sense for clouds downsampled to 0.01
+  obstacle_density = 500.0
+  # whether to enable a kalman filter for estimating object positions & velocities
+   enable_kalman_filter = false
+  # # noise parameters for the kalman filter
+   kalman_noise_position = 0.04
+   kalman_noise_velocity = 0.5
+   kalman_noise_measurement = 0.2
 
   [ObstacleDetection.SplitStrategy]
   # Defines the split axis.
@@ -149,25 +167,52 @@ type = "ObstacleDetector"
   # splitting eventually stops for each object (possibly the easiest way is to
   # always include the DepthLimit condition with a fairly high depth limit).
   # If no split conditions are provided, the objects will never be split.
-    [[ObstacleDetetction.SplitStrategy.conditions]]
-      type = "DepthLimit" # How many 'splitting steps' are performed. Max number of SSV's per obstacle = 2 ^ DepthLimit
-      depth = 1
-    [[ObstacleDetetction.SplitStrategy.conditions]]
-      type = "SizeLimit" # After this volume is reached, a sub point cloud is not splitted any more
-      # size is a volume in [cm^3]
-      size = 3000.
-    [[ObstacleDetetction.SplitStrategy.conditions]]
-      type = "ShapeCondition"
-      # The threshold values to consider something "very much" a sphere
-      sphere1 = 0.8
-      sphere2 = 0.1
-      # The threshold value to consider something "very much" a cylinder
-      cylinder = 0.25
-    #[[SplitStrategy.conditions]]
-    #  type = "DistanceThreshold"
-    #  # Distance is in [cm]
-    #  distance_threshold = 150
+    [[ObstacleDetection.SplitStrategy.conditions]]
+    type = "DepthLimit" # How many 'splitting steps' are performed. Max number of SSV's per obstacle = 2 ^ DepthLimit
+    depth = 1
 
+    [[ObstacleDetection.SplitStrategy.conditions]]
+    type = "SizeLimit" # After this volume is reached, a sub point cloud is not splitted any more
+    # size is a volume in [cm^3]
+    size = 3000.
+
+    [[ObstacleDetection.SplitStrategy.conditions]]
+    type = "ShapeCondition"
+    # The threshold values to consider something "very much" a sphere
+    sphere1 = 0.8
+    sphere2 = 0.1
+    # The threshold value to consider something "very much" a cylinder
+    cylinder = 0.25
+
+    [[SplitStrategy.conditions]]
+    type = "DistanceThreshold"
+    # Distance is in [cm]
+    distance_threshold = 150
+
+  # (Optional) This sets the method used to track objects across frames
+  # NOTE: The GMM Segmenter performs its own tracking.
+  #       When using the GMM Segmenter, this block should be omitted to
+  #       avoid any of the tracked data being overwritten.
+  [ObstacleDetection.Tracker]
+  type = "LowPassFilter"
+
+  # (Optional) This adds an additional filter to the end of the obstacle
+  #            detection pipeline.
+  # NOTE: The GMM Segmenter supports an internal kalman filter which can
+  #       take advantage of state information not available this far down
+  #       the pipeline. When using GMM, it is recommended to use the
+  #       enable_kalman_filter flag above instead of using this filter here.
+  [ObstacleDetection.Filter]
+  type = "KalmanFilter"
+  noise_position = 0.02
+  noise_velocity = 0.1
+  noise_measurement = 0.1
+
+###########################################################################
+# Aggregators is an array
+# this will list all aggregators and options belonging to them
+
+# This aggregator sends data to listeners (Path planning, Lab Visualizer, ...)
 [[aggregators]]
 type = "ObstacleEvaluator"
 ref_volume = 0
@@ -192,16 +237,6 @@ ref_volume = 0
   # The angle values represent how much deviation is allowed
   # Given in degrees.
   deviationAngle = 4.0
-
-  [BasicSurfaceDetection.Downsampling]
-  #Voxel grid for reducing the number of points before passing them to the clustering step.
-  coarseVoxelSize_X = 0.01
-  coarseVoxelSize_Y = 0.01
-  coarseVoxelSize_Z = 0.01
-  fineVoxelSize_X = 0.007
-  fineVoxelSize_Y = 0.007
-  fineVoxelSize_Z = 0.007
-  coarseFineLimit = 11000
 
   [BasicSurfaceDetection.Clustering]
   #Euclidean clustering to cluster (separate) detected surfaces
@@ -228,10 +263,3 @@ ref_volume = 0
   # along the vector pointing to the closest boundary point of the new convex hull.
   mergeUpdatePercentage = 0.2
 
-# These settings define basic parameters for detecting obstacles
-# They are mandatory if any kind of bstacle detection is enabled
-[BasicObstacleDetection]
-  [BasicObstacleDetection.InlierFinder]
-  # minimum distance a point must have to its projection onto a
-  # plane in order to be considered an inlier on this plane
-  minDistToPlane = 0.04

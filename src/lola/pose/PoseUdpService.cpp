@@ -10,10 +10,10 @@ PoseUdpService::~PoseUdpService() {
 void PoseUdpService::read_handler(
     boost::system::error_code const& ec,
     std::size_t bytes_transferred) {
-  LINFO << "Pose Service: Received " << bytes_transferred << " bytes";
   if (bytes_transferred != sizeof(HR_Pose_Red)) {
     LERROR << "Pose Service: Error: Invalid datagram size."
-           << "Expected " << sizeof(HR_Pose_Red);
+           << "Expected " << sizeof(HR_Pose_Red) << "bytes. "
+           << "Received " << bytes_transferred;
     // If this one fails, we still queue another receive...
     queue_recv();
     return;
@@ -26,11 +26,10 @@ void PoseUdpService::read_handler(
   // This performs an atomic update of the pointer, making it a lock-free,
   // thread-safe operation
   received_pose_ = new_pose;
-  LINFO << "Pose Service: Updated current pose";
   // notify any TFObserver of the new pose
 
   // Print parameters received
-  LTRACE << "Received pose"
+/*  LTRACE << "Received pose"
          << "  Phi_Z_ODO = " << new_pose->phi_z_odo
          << "  Stamp = " << new_pose->stamp
          << "  T_Stance_ODO.X = " << new_pose->t_stance_odo[0]
@@ -53,7 +52,7 @@ void PoseUdpService::read_handler(
          << "  Rotation[2 0]= " << new_pose->R_wr_cl[6]
          << "  Rotation[2 1]= " << new_pose->R_wr_cl[7]
          << "  Rotation[2 2]= " << new_pose->R_wr_cl[8];
-
+*/
   queue_recv();
 }
 

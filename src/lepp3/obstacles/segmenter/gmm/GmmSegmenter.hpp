@@ -2,6 +2,7 @@
 #define LEPP_OBSTACLES_SEGMENTER_GMM_SEGMENTER_H
 
 #include "lepp3/Typedefs.hpp"
+#include "lepp3/KalmanObstacleTracker.hpp"
 #include "lepp3/obstacles/segmenter/Segmenter.hpp"
 #include "lepp3/util/VoxelGrid3D.h"
 
@@ -16,15 +17,31 @@
 
 namespace lepp {
 
-class GmmSegmenter : public ObstacleSegmenter {
+class GmmSegmenter : public ObstacleSegmenter, public GMM::GMMDataSubject {
   using VisualizerPCMapT = Eigen::Map<Eigen::MatrixXf, Eigen::Aligned, Eigen::OuterStride<
       sizeof(pcl::PointXYZRGBA) / sizeof(float)>>;
 
 public:
   GmmSegmenter(GMM::SegmenterParameters const& params);
+  void updateFrame(FrameDataPtr frameData)
+  {
+    // wait until we have a few ground removal iterations
+    if (frameData->planeCoeffsIteration <= 20 ||
+        frameData->cloudMinusSurfaces->size() == 0)
+    {
+      std::cout << "Waiting for surface iteration count (" << frameData->planeCoeffsIteration << ")" << std::endl;
+      notifyObservers(frameData);
+      return;
+    }
 
+    frameData->obstacleParams = extractObstacleParams(frameData->cloudMinusSurfaces);
+    notifyObservers(frameData);
+//    ObstacleSegmenter::updateFrame(frameData);
+  }
 private:
-  virtual std::vector<PointCloudPtr> extractObstacleClouds(PointCloudConstPtr cloud) override;
+  void fitSSVs(int k, const PointCloudT* pc, const Eigen::MatrixXf& R, const Eigen::MatrixXi& C);
+  void generateSSVs(GMM::State& state, ObjectModelParams& params, FrameDataPtr frameData);
+  virtual std::vector<ObjectModelParams> extractObstacleParams(PointCloudConstPtr cloud) override;
 
   void initialize(PointCloudT const* pc);
 
@@ -52,7 +69,7 @@ private:
 
   std::vector<GMM::State> states_;
   lepp::util::VoxelGrid3D voxel_grid_;
-
+  KalmanObstacleTracker kalmanFilter_;
   // cached vclusters for points
   std::vector<int> vcluster_point_table;
   std::vector<int> state_main_vcluster;
@@ -60,13 +77,6 @@ private:
   bool initialized_;
 };
 
-}
+} // namespace lepp
 
-#endif
-
-/*std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-    std::cout << "Hello World\n";
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::cout << "Printing took "
-              << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()
-              << "us.\n";*/
+#endif // LEPP_OBSTACLES_SEGMENTER_GMM_SEGMENTER_H

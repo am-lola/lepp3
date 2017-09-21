@@ -14,7 +14,7 @@ namespace lepp {
 class MomentOfInertiaObjectApproximator : public ObjectApproximator {
 public:
   ObjectModelPtr approximate(
-      const PointCloudConstPtr& point_cloud);
+      const ObjectModelParams& object_params);
 
 private:
   // Private helper member functions for fitting individual models.

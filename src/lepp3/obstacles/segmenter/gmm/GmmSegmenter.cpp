@@ -23,10 +23,14 @@ float probability_density_function(const lepp::GMM::State& state, const Eigen::V
 
 lepp::GmmSegmenter::GmmSegmenter(const GMM::SegmenterParameters& params) : parameters_(params),
                                                                            voxel_grid_(params.voxelGridResolution),
-                                                                           initialized_(false) {
+                                                                           initialized_(false),
+                                                                           kalmanFilter_(params.kalman_PositionNoise,
+                                                                                         params.kalman_VelocityNoise,
+                                                                                         params.kalman_MeasurementNoise)
+{
 }
 
-std::vector<lepp::PointCloudPtr> lepp::GmmSegmenter::extractObstacleClouds(PointCloudConstPtr cloud) {
+std::vector<lepp::ObjectModelParams> lepp::GmmSegmenter::extractObstacleParams(PointCloudConstPtr cloud) {
   using namespace Eigen;
 
   if (!initialized_) {
@@ -110,17 +114,49 @@ std::vector<lepp::PointCloudPtr> lepp::GmmSegmenter::extractObstacleClouds(Point
   m_step(cloud.get(), R, C, rks, cks, newStates, removedStates);
 
   // Prepare results
-  std::vector<PointCloudPtr> ret;
+  std::vector<ObjectModelParams> ret;
   for (size_t i = 0; i < states_.size(); ++i) {
-    ret.emplace_back(new PointCloudT);
+    ret.emplace_back(boost::make_shared<PointCloudT>());
+    ret.back().id = i+1; // obstacle ids start at 1
+    ret.back().center = states_[i].pos;
+
+    // provide moment of inertia data for later SSV approximation
+    SelfAdjointEigenSolver<Matrix3f> eigensolver(states_[i].obsCovar);
+    const Matrix3f evecs = eigensolver.eigenvectors();
+    ret.back().inertial_values = eigensolver.eigenvalues().reverse(); // reversed b/c approximators expect these to be in descending order
+    ret.back().inertial_axes = {evecs.col(2), evecs.col(1), evecs.col(0)};
   }
 
   for (size_t i = 0; i < N; i++) {
     for (size_t k = 0; k < states_.size(); ++k) {
-      if (R(i, k) > parameters_.hardAssignmentStateResp) {
-        ret[k]->push_back((*cloud)[i]);
+      if (states_[k].lifeTime < parameters_.minPersistentFrames)
+          continue;
+      else if (R(i, k) > parameters_.hardAssignmentStateResp
+              && (vcluster_point_table[i] == state_main_vcluster[k]
+              || C(vcluster_point_table[i], k) > parameters_.numSplitPoints))
+      {
+        ret[k].obstacleCloud->push_back((*cloud)[i]);
         break;
       }
+    }
+  }
+
+  // remove obstacle clouds that have too low a density
+  for (size_t i = 0; i < ret.size(); i++)
+  {
+    PointT min_pt;
+    PointT max_pt;
+    pcl::getMinMax3D(*ret[i].obstacleCloud, min_pt, max_pt);
+    auto diagonal_len = (Eigen::Vector3d(max_pt.x, max_pt.y, max_pt.z) - Eigen::Vector3d(min_pt.x, min_pt.y, min_pt.z)).norm();
+    auto density = (double)ret[i].obstacleCloud->size() / diagonal_len;
+    if (density > 0) {
+        std::cout << "Density of state " << i << ": " << density << std::endl;
+        std::cout << "\tDiagonal: " << diagonal_len << std::endl;
+    }
+    if (density < parameters_.obstacleDensity)
+    {
+      std::cout << "Clearing cloud " << i << std::endl;
+      ret[i].obstacleCloud->clear();
     }
   }
 
@@ -128,7 +164,7 @@ std::vector<lepp::PointCloudPtr> lepp::GmmSegmenter::extractObstacleClouds(Point
       std::remove_if(
           std::begin(ret),
           std::end(ret),
-          [](const PointCloudPtr& p) { return p->size() == 0; }),
+          [](const ObjectModelParams& p) { return p.obstacleCloud->size() == 0; }),
       std::end(ret));
 
   // Add new  / remove old states
@@ -142,6 +178,14 @@ std::vector<lepp::PointCloudPtr> lepp::GmmSegmenter::extractObstacleClouds(Point
   for (GMM::State& state : newStates) {
     addState(state);
   }
+
+  for (size_t i = 0; i < states_.size(); i++)
+  {
+    GMM::GMMDataSubject::notifyObservers_Update(states_[i], i);
+  }
+
+  if (parameters_.enableKalmanFilter)
+    kalmanFilter_.update(ret);
 
   return ret;
 }
@@ -229,7 +273,8 @@ void lepp::GmmSegmenter::e_step(PointCloudT const* pc, Eigen::MatrixXf& R, Eigen
 
 void lepp::GmmSegmenter::m_step(PointCloudT const* pc, Eigen::MatrixXf const& R, Eigen::MatrixXi const& C,
                                 Eigen::VectorXf const& rks,
-                                Eigen::VectorXi const& cks, std::vector<GMM::State>& newStates,
+                                Eigen::VectorXi const& cks,
+                                std::vector<GMM::State>& newStates,
                                 std::vector<int>& removedStates) {
 
   using namespace Eigen;
@@ -291,10 +336,13 @@ void lepp::GmmSegmenter::m_step(PointCloudT const* pc, Eigen::MatrixXf const& R,
           states_[k].lifeTime = 0;
           states_[k].splitCounter = 0;
           states_[k].resetNonSplitCounter++;
+          if (parameters_.enableKalmanFilter) // clear kalman tracking state if we had one
+            kalmanFilter_.reset(k+1); // IDs tracked by kalman start at 1
         }
       }
     } else {
       state_main_vcluster[k] = 0;
+      states_[k].splitCounter = 0;
     }
     // == end splitting ==
 
@@ -371,6 +419,8 @@ void lepp::GmmSegmenter::addState(const Eigen::Vector3f& mean, const Eigen::Matr
 }
 
 void lepp::GmmSegmenter::removeState(size_t index) {
+  GMM::GMMDataSubject::notifyObservers_Delete(states_[index], index);
+
   std::swap(states_[index], states_.back());
   states_.pop_back();
 }

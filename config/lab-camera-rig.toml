@@ -1,5 +1,4 @@
-# This is the master config. It is most likely not runnable but lists all
-# available options
+# This is the real experiments config file.
 # The config file is in the [toml](https://github.com/toml-lang/toml) format
 
 # All IPs and ports given in here are the defaults for a lab setup.
@@ -9,9 +8,9 @@
 
 # This defines the pose service to use.
 # Requirements: None
-[PoseService]
-ip = "192.168.0.8"
-port = 53249        # default value is hexadecimal 0xd001
+# [PoseService]
+# ip = "127.0.0.1"
+# port = 55555
 
 # This defines the specifics for the robot
 # Requirements: PoseService
@@ -29,10 +28,11 @@ bubble_size = 1.2
 # `oni` and `pcd` types require an additional parameter: file_path
 # `am_offline` type requires an additional parameters: dir_path
 type = "stream"
-#file_path = "path/to/file"
-#dir_path = "path/to/folder"
-#enable_rgb = false  # Capture RGB images
-#enable_pose = false  # Replay pose data (only am_offline, [PoseService] must be disabled)
+# type = "am_offline"
+# #file_path = "path/to/file"
+# dir_path = "recordings/rec1error"
+ enable_rgb = true  # Capture RGB images
+# enable_pose = true  # Replay pose data (only am_offline, [PoseService] must be disabled)
 
 # This sets up the filtered source, which will be passed to all
 # steps requiring a video
@@ -57,6 +57,14 @@ pre_filter = "downsample"
   # The order of the filters themselves IS NOT SIGNIFICANT.
   # each filter requires a "type" and may need additional options
 
+
+  [[FilteredVideoSource.filters]]
+  # The background filter erases all points far away from the camera (below z=threshold in the camera coordinate system).
+  # This is used to remove points that are noisy anyway and simplify further processing
+  type = "BackgroundFilter"
+  # Unit in meters
+  threshold = 2.8
+
   [[FilteredVideoSource.filters]]
   # Calibration filters. Sets the calibration parameters of the used camera
   type = "SensorCalibrationFilter" # Makes a linear correction of the sensor's z value
@@ -77,44 +85,19 @@ pre_filter = "downsample"
   type = "RobotOdoTransformer"
 
   [[FilteredVideoSource.filters]]
-  # The ground filter erases all points near z=0 in the world coordinate system.
-  # This is used to remove the ground, which is already assumed by the motion planner
-  type = "GroundFilter"
-  # Unit in meters
-  threshold = 0.03
-
-  [[FilteredVideoSource.filters]]
   # The crop filter erases all points out of an xy rectangle with the given boundaries respect to world's origin.
   # This is used to ignore everything outside of the experimental area
   type = "CropFilter"
   # Unit in meters
-  xmax = 4.0
+  xmax = 5.5
   xmin = -1.5
-  ymax = 1.5
-  ymin = -1.5
+  ymax = 1.2
+  ymin = -1.2
+
 
 ###########################################################################
 # Observers is an array
 # this will list all observers and options belonging to them
-
-# This observer saves the input data. The saved data can be replayed later
-# with the "am_offline" video source
-[[observers]]
-type = "Recorder"
-
-  [ObserverOptions.Recorder]
-  # Output directory. The final output will end up in a subfolder named
-  # "rec_{datetime}"
-  output_folder= "recordings"
-  # Defines which data to record
-  #cloud = true
-  #rgb = false
-  #pose = false
-
-# This helps calibrating the camera
-# It requires a corresponding visualizer, as well as an obstacle detector
-[[observers]]
-type = "CameraCalibrator"
 
 # This defines all available visualizers, there can be more than one
 [[observers]]
@@ -128,28 +111,20 @@ type = "ARVisualizer"
 # - height: the window dimensions
 
   # Image Visualizer: shows the camera's rgb data
-  [[observers.visualizer]]
-  type = "ImageVisualizer"
-  name = "RGBImage"
-  width = 1024
-  height = 768
+  # [[observers.visualizer]]
+  # type = "ImageVisualizer"
+  # name = "RGBImage"
+  # width = 1024
+  # height = 768
 
   # Basic visualizer: shows obstacles (euclidean) and surfaces
-  [[observers.visualizer]]
-  type = "ObsSurfVisualizer"
-  name = "Obs_Surf_Detector"
-  width = 1024
-  height = 768
-  show_obstacles = true
-  show_surfaces = false
-
-  # This visualizer belongs to the CameraCalibrator. It shows the calibartion parameters
-  [[observers.visualizer]]
-  type = "CameraCalibrator"
-  name = "Camera Calibration"
-  width = 1024
-  height = 768
-  show_obstacles = true
+  # [[observers.visualizer]]
+  # type = "ObsSurfVisualizer"
+  # name = "Obs_Surf_Detector"
+  # width = 1024
+  # height = 768
+  # show_obstacles = true
+  # show_surfaces = true
 
   # This visualizer shows a debug GUI for the GMM obstacle detction
   [[observers.visualizer]]
@@ -159,21 +134,21 @@ type = "ARVisualizer"
   width = 1024
   height = 768
 
-    [observers.visualizer.debug_gui_params]
+   [observers.visualizer.debug_gui_params]
     # Just an example: set "some" of the values here. The rest will be set to
-    # default by `DebugGUIParams`s ctor.
+    #  default by `DebugGUIParams`s ctor.
     draw_gaussians = true
     draw_velocities = true
     draw_ssv = true
-    draw_trajectories = false
+    draw_trajectories = true
     draw_debug_values = true
-    draw_voxels = false
-    downsample_res = 0.03 # downsampling leaf size in meters
+    draw_voxels = true
+    downsample_res = 0.01 # downsampling leaf size in meters
     enable_tracker = true
     enable_tight_fit = true # use pc-based fitting instead of gaussian-based fitting
     trajectory_length = 128
     voxel_grid_resolution = 0.1 # voxel grid used for clustering, leaf size in meters
-    #color_mode = "NONE"
+    color_mode = "NONE"
 
 # This enables the surface detector
 [[observers]]
@@ -189,54 +164,47 @@ type = "ObstacleDetector"
   # plane in order to be considered an inlier on this plane
   minDistToPlane = 0.04
 
-  # Removes points that are too far away to reduce noise for obstacle segmentation
-  [ObstacleDetection.PointFilter]
-  # points that are too far away from lola's coordinate center are removed
-  # works similar to the bubble, only in the obstacle thread
-  radius = 2.0
-
   # Segmentation Method
-  [ObstacleDetection.Segmenter]
+#  [ObstacleDetection.Segmenter]
   # Available methods:
   #   - "Euclidean
   #   - "GMM" (see below)
-  method = "Euclidean"
+#  method = "Euclidean"
   # The percentage of the original cloud that should be kept for the clusterization
-  min_filter_percentage = 0.9
+#  min_filter_percentage = 0.9
 
-  [ObstacleDetection.Segmenter]
-  method = "GMM"
-  # voxel grid used for clustering, leaf size in meters
-  voxel_grid_resolution = 0.1
-
-  # this much state-responsibility is needed for a point to be "hard" assigned to a state
-  hard_assignment_state_resp = 0.9
-  # states with GMM mixing coefficients (pi) lower than this will be removed
-  state_pi_removal_threshold = 0.01
-  # minimum number of points in a vcluster needed for a new state to be added
-  min_vcluster_points = 10
-  # prior identity covariance scale for new states
-  new_state_prior_covar_size = 0.01
-  # mixing of prior identity covariance for new states
-  new_state_prior_covar_mix = 0.5
-  # number of frames a state has be be alive for splitting to be enabled
-  num_split_life_time_frames = 20
-  # number of points a state has to have in its second largest vcluster for it to be split
-  num_split_points = 15
-  # number of consecutive frames a state has to have points in two different vclusters until it is split
-  num_split_frames = 2
-  # only split when the other vcluster has less than this percentage of points assigned to other states
-  split_max_other_states_percentage = 0.2
-  # how much of the observation covariance is taken from the previous frame
-  obs_covar_regularization = 0.95
-  # minimum number of consecutive frames an obstacle must be observed in to be treated as real
-  min_persistent_frames = 10
-  # approx. density of obstacles to consider them good enough to use (in points / meter,
-  #  with length defined as diagonal of bounding box enclosing the obstacle's points)
-  # Values between 500 and 1000 seem to make sense for clouds downsampled to 0.01
-  obstacle_density = 500.0
+   [ObstacleDetection.Segmenter]
+   method = "GMM"
+  # # voxel grid used for clustering, leaf size in meters
+   voxel_grid_resolution = 0.1
+  # # this much state-responsibility is needed for a point to be "hard" assigned to a state
+   hard_assignment_state_resp = 0.9
+  # # states with GMM mixing coefficients (pi) lower than this will be removed
+   state_pi_removal_threshold = 0.01
+  # # minimum number of points in a vcluster needed for a new state to be added
+   min_vcluster_points = 10
+  # # prior identity covariance scale for new states
+   new_state_prior_covar_size = 0.01
+   # mixing of prior identity covariance for new states
+   new_state_prior_covar_mix = 0.5
+  # # number of frames a state has be be alive for splitting to be enabled
+   num_split_life_time_frames = 20
+  # # number of points a state has to have in its second largest vcluster for it to be split
+   num_split_points = 15
+  # # number of consecutive frames a state has to have points in two different vclusters until it is split
+   num_split_frames = 2
+  # # only split when the other vcluster has less than this percentage of points assigned to other states
+   split_max_other_states_percentage = 0.2
+  # # how much of the observation covariance is taken from the previous frame
+   obs_covar_regularization = 0.95
+  # # minimum number of consecutive frames an obstacle must be observed in to be treated as real
+   min_persistent_frames = 10
+   # approx. density of obstacles to consider them good enough to use (in points / meter,
+   #  with length defined as diagonal of bounding box enclosing the obstacle's points)
+   # Values between 500 and 1000 seem to make sense for clouds downsampled to 0.01
+   obstacle_density = 700.0
   # whether to enable a kalman filter for estimating object positions & velocities
-   enable_kalman_filter = false
+   enable_kalman_filter = true
   # # noise parameters for the kalman filter
    kalman_noise_position = 0.04
    kalman_noise_velocity = 0.5
@@ -255,12 +223,12 @@ type = "ObstacleDetector"
   # If no split conditions are provided, the objects will never be split.
     [[ObstacleDetection.SplitStrategy.conditions]]
     type = "DepthLimit" # How many 'splitting steps' are performed. Max number of SSV's per obstacle = 2 ^ DepthLimit
-    depth = 1
+    depth = 0
 
     [[ObstacleDetection.SplitStrategy.conditions]]
     type = "SizeLimit" # After this volume is reached, a sub point cloud is not splitted any more
     # size is a volume in [cm^3]
-    size = 3000.
+    size = 2000.
 
     [[ObstacleDetection.SplitStrategy.conditions]]
     type = "ShapeCondition"
@@ -279,48 +247,63 @@ type = "ObstacleDetector"
   # NOTE: The GMM Segmenter performs its own tracking.
   #       When using the GMM Segmenter, this block should be omitted to
   #       avoid any of the tracked data being overwritten.
-  [ObstacleDetection.Tracker]
-  type = "LowPassFilter"
+  # [ObstacleDetection.Tracker]
+  # type = "LowPassFilter"
 
-  # (Optional) This adds an additional filter to the end of the obstacle
-  #            detection pipeline.
-  # NOTE: The GMM Segmenter supports an internal kalman filter which can
-  #       take advantage of state information not available this far down
-  #       the pipeline. When using GMM, it is recommended to use the
-  #       enable_kalman_filter flag above instead of using this filter here.
-  [ObstacleDetection.Filter]
-  type = "KalmanFilter"
-  noise_position = 0.02
-  noise_velocity = 0.1
-  noise_measurement = 0.1
+  # # (Optional) This adds an additional filter to the end of the obstacle
+  # #            detection pipeline.
+  # # NOTE: The GMM Segmenter supports an internal kalman filter which can
+  # #       take advantage of state information not available this far down
+  # #       the pipeline. When using GMM, it is recommended to use the
+  # #       enable_kalman_filter flag above instead of using this filter here.
+  # [ObstacleDetection.Filter]
+  # type = "KalmanFilter"
+  # noise_position = 0.02
+  # noise_velocity = 0.1
+  # noise_measurement = 0.1
 
 ###########################################################################
-# Aggregators is an array
-# this will list all aggregators and options belonging to them
-
-# This aggregator sends data to listeners (Path planning, Lab Visualizer, ...)
-[[aggregators]]
-type = "RobotAggregator"
-# Number of frames to wait before sending new data
-update_frequency = 3
-# Data to send
-data = [ "obstacles", "surfaces", "images", "pointclouds"]
-# Human readable target name, just for terminal/log output
-target="Vision"
-# Target IP
-# ip = "192.168.0.3"  # Control computer IP
-# ip = "192.168.0.100"  # Hololens IP
-ip = "192.168.0.7"  # QNX computer IP
-# Target Port, default is hexadecimal 0xF008
-port = 61448
-# Delay to wait after sending a message
-#delay = 10
-
- # minimum height (m) above the ground plane a surface must match in order to be sent
-min_surface_height = 0.05
-  # For surfaces failing min_surface_height test, if their normal deviates from the vertical
-  # axis by more than this amount (in radians) the surface will still be sent
-surface_normal_tolerance = 0.523 # ~30 degrees
+# # Aggregators is an array
+# # this will list all aggregators and options belonging to them
+#
+#  # This aggregator sends data to listeners (Path planning, Lab Visualizer, ...)
+#  [[aggregators]]
+#  type = "RobotAggregator"
+#  # Number of frames to wait before sending new data
+#  update_frequency = 1
+#  # Data to send
+#  data = [ "obstacles", "surfaces"]
+#  # Human readable target name, just for terminal/log output
+#  target="Hololens"
+#  # Target IP
+#  ip = "192.168.0.100"  # Control computer IP
+#  port = 9090
+#  # Delay to wait after sending a message
+#  delay = 2
+#  # minimum height (m) above the ground plane a surface must match in order to be sent
+# min_surface_height = 0.05
+#  # For surfaces failing min_surface_height test, if their normal deviates from the vertical
+#  # axis by more than this amount (in radians) the surface will still be sent
+# surface_normal_tolerance = 0.523 # ~30 degrees
+#
+#  [[aggregators]]
+#  type = "RobotAggregator"
+#  # Number of frames to wait before sending new data
+#  update_frequency = 5
+#  # Data to send
+#  data = [ "obstacles", "surfaces"]
+#  # Human readable target name, just for terminal/log output
+#  target="QNX"
+#  # Target IP
+#  ip = "192.168.0.7"  # Control computer IP
+#  port = 61448
+#  # Delay to wait after sending a message
+#  delay = 10
+#  # minimum height (m) above the ground plane a surface must match in order to be sent
+# min_surface_height = 0.05
+#   # For surfaces failing min_surface_height test, if their normal deviates from the vertical
+#   # axis by more than this amount (in radians) the surface will still be sent
+# surface_normal_tolerance = 0.523 # ~30 degrees
 
 ###########################################################################
 # Miscellaneous settings
@@ -332,14 +315,14 @@ surface_normal_tolerance = 0.523 # ~30 degrees
   #max number of ransac iterations
   maxIterations = 200
   # How close a point must be to the model [in meters] in order to be considered an inlier
-  distanceThreshold = 0.03
+  distanceThreshold = 0.04
   #How small the left (extracted) pointcloud should be for termination of the plane segmentation
   minFilterPercentage = 0.08
 
   # If enabled, will allow the reuse of old surface coefficients to trim the point cloud down
   # before trying to detect new surfaces. Increases performance, but may allow additional noisy
   # points to propagate further down the pipeline (i.e. may make obstacle detection worse).
-#  experimental_enableSurfaceReuse = true
+  experimental_enableSurfaceReuse = true
 
   [BasicSurfaceDetection.Classification]
   # The function to classify segmented planes according to deviation in their normals

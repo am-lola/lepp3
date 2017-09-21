@@ -239,7 +239,9 @@ LowPassObstacleTracker::matchToPrevious(
   // being tracked or give it a brand new model ID, if we are unable to find a
   // match.
   for (size_t i = 0; i < new_obstacles.size(); ++i) {
-    model_id_t const model_id = getMatchByDistance(new_obstacles[i]);
+    model_id_t model_id = new_obstacles[i]->id();
+    model_id = getMatchByDistance(new_obstacles[i]);
+
     correspondence[model_id] = i;
     // If this one wasn't in the tracked models before, add it!
     if (tracked_models_.find(model_id) == tracked_models_.end()) {

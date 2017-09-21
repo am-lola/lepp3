@@ -8,23 +8,41 @@ lepp::SplitObjectApproximator::SplitObjectApproximator(boost::shared_ptr<ObjectA
       splitter_(splitter) {
 }
 
-lepp::ObjectModelPtr lepp::SplitObjectApproximator::approximate(const PointCloudConstPtr& point_cloud) {
+lepp::ObjectModelPtr lepp::SplitObjectApproximator::approximate(const ObjectModelParams& object_params) {
   boost::shared_ptr<CompositeModel> approx(new CompositeModel);
-  std::deque<std::pair<int, PointCloudConstPtr> > queue;
-  queue.push_back(std::make_pair(0, point_cloud));
+  approx->set_id(object_params.id);
+  std::deque<std::pair<int, PointCloudPtr> > queue;
+  queue.push_back(std::make_pair(0, object_params.obstacleCloud));
 
+  bool first = true;
   while (!queue.empty()) {
     int const depth = queue[0].first;
-    PointCloudConstPtr const current_cloud = queue[0].second;
+    PointCloudPtr const current_cloud = queue[0].second;
     queue.pop_front();
 
     if (current_cloud->size() < 3) {
       continue;
     }
 
+    ObjectModelParams current_params = object_params;
+    current_params.obstacleCloud = nullptr; current_params.obstacleCloud = current_cloud;
+    current_params.id = 100000 + approx->id() * 1000 + (approx->count()+1);
+
+    // in case we were given inertial params for the root object, remove them before approximating component
+    // objects (which each have their own inertial parameters that the approximator should estimate)
+    if (!first)
+    {
+        current_params.inertial_axes.clear();
+        current_params.center = Coordinate(std::nan(""), std::nan(""), std::nan(""));
+    }
+    else
+    {
+        first = false;
+    }
 
     // Delegates to the wrapped approximator for each part's approximation.
-    ObjectModelPtr model = approximator_->approximate(current_cloud);
+    ObjectModelPtr model = approximator_->approximate(current_params);
+
     // TODO Decide whether the model fits well enough for the current cloud.
     // For now we fix the number of split iterations.
     // The approximation should be improved. Try doing it for the split clouds
@@ -38,6 +56,7 @@ lepp::ObjectModelPtr lepp::SplitObjectApproximator::approximate(const PointCloud
     } else {
       // Keep the approximation
       approx->addModel(model);
+      approx->set_velocity(object_params.velocity);
     }
   }
 

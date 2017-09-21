@@ -14,6 +14,17 @@
 
 namespace lepp
 {
+
+// holds the visualization-specific information
+// for a specific obstacle
+struct ObstacleVisualizationData
+{
+  ar::mesh_handle mh = -1; // model
+  ar::mesh_handle vh = -1; // velocity
+  ar::mesh_handle th = -1; // trajectory
+  ar::BufferedLinePath* lp; // trajectory points
+};
+
 /**
 * Visitor class for obstacles.
 */
@@ -22,9 +33,9 @@ class ModelDrawer : public ModelVisitor
 public:
   ModelDrawer(
       std::shared_ptr<ar::ARVisualizer> v,
-      std::vector<mesh_handle_t> &visHandles)
+      std::map<int, ObstacleVisualizationData>& visData)
     : vis_(v),
-      visHandles(visHandles) { }
+      visData(visData) { }
 
   double model_radius() const { return model_radius_; }
   double model_ax() const { return model_ax_; }
@@ -44,6 +55,7 @@ public:
   */
   virtual void visitCapsule(lepp::CapsuleModel& capsule) override;
 
+  std::vector<int> get_seenIDs() { return seenObstacles; }
 private:
   /**
   * The instance to which the drawer will draw all models.
@@ -51,10 +63,10 @@ private:
   std::shared_ptr<ar::ARVisualizer> vis_;
 
   /**
-  * Vector of all handles that are visualized in this frame.
+  * Map of known objects to their visualization data
   */
-  std::vector<mesh_handle_t>& visHandles;
-
+  std::map<int, ObstacleVisualizationData>& visData;
+  std::vector<int> seenObstacles;
   double model_radius_;
   double model_ax_;
   double model_ay_;
@@ -111,6 +123,8 @@ struct ObsSurfVisualizerParameters {
   bool show_surfaces = true;
   bool show_grid = true;
   bool show_obstacle_clouds = false;
+  bool show_obstacle_velocities = false;
+  bool show_obstacle_trajectories = false;
   int width = 1024;
   int height = 768;
 };
@@ -143,7 +157,7 @@ private:
   /**
    * Visualize obstacles in given vector with ARVisualizer.
    */
-  void drawObstacles(std::vector<ObjectModelPtr> obstacles, std::vector<mesh_handle_t> &visHandles);
+  void drawObstacles(std::vector<ObjectModelPtr> obstacles, std::map<int, ObstacleVisualizationData> &visHandles);
 
   /**
    * Output the number of the frame.
@@ -153,18 +167,20 @@ private:
   /**
   * Remove old obstacles and surfaces that are no longer visualized.
   */
-  void removeOldSurfObst(std::vector<mesh_handle_t> &visHandles);
+  void removeOldSurfaces(std::vector<mesh_handle_t> &visHandles);
 
   /**
    * Visualize obstacles in given vector with ARVisualizer.
    */
-  void drawObstacleClouds(std::vector<PointCloudPtr> const& clouds);
+  void drawObstacleClouds(std::vector<ObjectModelParams> const& clouds);
 
 
   ObsSurfVisualizerParameters params_;
 
   // vector that holds the handles to all obstacles and surfaces that were visualized in the previous frame
   std::vector<mesh_handle_t> oldHandles;
+  std::vector<int> oldObstacleIDs;
+  std::map<int, ObstacleVisualizationData> obsVisData;
 
   ar::mesh_handle pointCloudHandle;
   ar::PointCloudData pointCloudData;
@@ -213,6 +229,8 @@ private:
   ar::ui_element_handle gridCheckBox;
   ar::ui_element_handle surfacesCheckBox;
   ar::ui_element_handle obstaclesCheckBox;
+  ar::ui_element_handle velocitiesCheckBox;
+  ar::ui_element_handle trajectoriesCheckBox;
   ar::ui_element_handle obstacleCloudsCheckBox;
   ar::IUIWindow* pccolorWindow;
   ar::ui_element_handle editPCColor;

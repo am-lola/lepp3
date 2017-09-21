@@ -24,7 +24,7 @@ struct FrameData {
   PointCloudPtr cloudMinusSurfaces;
   std::vector<SurfaceModelPtr> surfaces;
   std::vector<ObjectModelPtr> obstacles;
-  std::vector<PointCloudPtr> obstacleClouds;
+  std::vector<ObjectModelParams> obstacleParams;
   std::vector<pcl::ModelCoefficients> planeCoefficients;
   std::shared_ptr<lepp::LolaKinematicsParams> lolaKinematics;
 };
