@@ -1,0 +1,349 @@
+# This is the playback config file.
+# The config file is in the [toml](https://github.com/toml-lang/toml) format
+
+# All IPs and ports given in here are the defaults for a lab setup.
+
+# Mandatory options are given, optional options are commented out
+# and listed with the default values
+
+
+# This defines the specifics for the robot
+# Requirements: PoseService
+[Robot]
+# The size of the "bubble" in which no modifications or deletions of objects
+# are sent to the robot. **In meters**
+# This is required because the camera angle prevents the robot from seeing
+# the environment directly below its feet
+bubble_size = 1.2
+
+# Video source
+[VideoSource]
+# Common options:
+#   - `type`: "stream", "oni", "pcd", "am_offline"
+# `oni` and `pcd` types require an additional parameter: file_path
+# `am_offline` type requires an additional parameters: dir_path
+type = "am_offline"
+#file_path = "path/to/file"
+dir_path = "/home/lola/git/lepp3/build/recordings/rec_2017-09-11_20-54-18"
+enable_rgb = true  # Capture RGB images
+enable_pose = true  # Replay pose data (only am_offline, [PoseService] must be disabled)
+
+# This sets up the filtered source, which will be passed to all
+# steps requiring a video
+[FilteredVideoSource]
+# Pre-filters are applied before pointfilters take effect
+# * downsample: reduces the size of the pointcloud by merging neighboring voxels
+pre_filter = "downsample"
+
+# Post-filters are applied after the point filters
+# options: "prob", "pt1"; These options activate 'source' or 'raw-data' filters.
+# For the two options, a voxel grid (or environment map) in world coordinates is created,
+# consisting of a big 3D matrix, which is used as a filtered point cloud source
+# * prob - each voxel has a probabilistic filter, i.e. is active if it was occupied most times in the last frames
+# * pt1 - each voxel has a pt1 filter, i.e. is active if (f*actualframe+(1-f)*previousframe > 0.5)
+#post_filter = "prob"
+
+  [FilteredVideoSource.downsample]
+  # Size in meters for the "downsample" pre-filter
+  cube_size = 0.01
+
+  # The following list of filters is optional
+  # The order of the filters themselves IS NOT SIGNIFICANT.
+  # each filter requires a "type" and may need additional options
+
+  [[FilteredVideoSource.filters]]
+  # Calibration filters. Sets the calibration parameters of the used camera
+  type = "SensorCalibrationFilter" # Makes a linear correction of the sensor's z value
+  a = 1.0117
+  b = -0.0100851
+
+  [[FilteredVideoSource.filters]]
+  # The background filter erases all points far away from the camera (below z=threshold in the camera coordinate system).
+  # This is used to remove points that are noisy anyway and simplify further processing
+  type = "BackgroundFilter"
+  # Unit in meters
+  threshold = 2.8
+
+  [[FilteredVideoSource.filters]]
+  # The RobotOdoTransformer transforms coordinates from the local coordinate
+  # sytem to the global one referenced in Lola's right foot sole
+  # Requirements: PoseService
+  type = "RobotOdoTransformer"
+
+  #[[FilteredVideoSource.filters]]
+  ## The ground filter erases all points near z=0 in the world coordinate system.
+  ## This is used to remove the ground, which is already assumed by the motion planner
+  #type = "GroundFilter"
+  ## Unit in meters
+  #threshold = 0.03
+
+  [[FilteredVideoSource.filters]]
+  # The crop filter erases all points out of an xy rectangle with the given boundaries respect to world's origin.
+  # This is used to ignore everything outside of the experimental area
+  type = "CropFilter"
+  # Unit in meters
+  xmax = 5.5
+  xmin = -1.0
+  ymax = 1.0
+  ymin = -1.0
+
+###########################################################################
+# Observers is an array
+# this will list all observers and options belonging to them
+
+# This defines all available visualizers, there can be more than one
+[[observers]]
+type = "ARVisualizer"
+
+# Every instance has 4 mandatory options:
+# - type: the type of the visualizer
+# - name: its name
+# - width
+# and
+# - height: the window dimensions
+
+  # Image Visualizer: shows the camera's rgb data
+  # [[observers.visualizer]]
+  # type = "ImageVisualizer"
+  # name = "RGBImage"
+  # width = 1024
+  # height = 768
+
+  # Basic visualizer: shows obstacles (euclidean) and surfaces
+  [[observers.visualizer]]
+  type = "ObsSurfVisualizer"
+  name = "Obs_Surf_Detector"
+  width = 1024
+  height = 768
+  show_obstacles = true
+  show_surfaces = true
+
+  # This visualizer shows a debug GUI for the GMM obstacle detction
+#   [[observers.visualizer]]
+#   type = "GMMTrackingVisualizer"
+#   name = "GMM Obstacle Tracker Data"
+#   debug_gui = true
+#   width = 1024
+#   height = 768
+
+#    [observers.visualizer.debug_gui_params]
+    # Just an example: set "some" of the values here. The rest will be set to
+     # default by `DebugGUIParams`s ctor.
+#     draw_gaussians = true
+#     draw_velocities = true
+#     draw_ssv = true
+#     draw_trajectories = true
+#     draw_debug_values = true
+#     draw_voxels = true
+#     downsample_res = 0.01 # downsampling leaf size in meters
+#     enable_tracker = true
+#     enable_tight_fit = true # use pc-based fitting instead of gaussian-based fitting
+#     trajectory_length = 128
+#     voxel_grid_resolution = 0.1 # voxel grid used for clustering, leaf size in meters
+#     color_mode = "NONE"
+
+# This enables the surface detector
+[[observers]]
+type = "SurfaceDetector"
+
+# This enables the obstacle detector
+[[observers]]
+type = "ObstacleDetector"
+
+  # Removes points belonging to surfaces from the cloud
+  [ObstacleDetection.PlaneRemover]
+  # minimum distance a point must have to its projection onto a
+  # plane in order to be considered an inlier on this plane
+  minDistToPlane = 0.04
+
+  # Segmentation Method
+#  [ObstacleDetection.Segmenter]
+  # Available methods:
+  #   - "Euclidean
+  #   - "GMM" (see below)
+#  method = "Euclidean"
+  # The percentage of the original cloud that should be kept for the clusterization
+#  min_filter_percentage = 0.9
+
+   [ObstacleDetection.Segmenter]
+   method = "GMM"
+  # # voxel grid used for clustering, leaf size in meters
+   voxel_grid_resolution = 0.1
+  # # this much state-responsibility is needed for a point to be "hard" assigned to a state
+   hard_assignment_state_resp = 0.999
+  # # states with GMM mixing coefficients (pi) lower than this will be removed
+   state_pi_removal_threshold = 0.01
+  # # minimum number of points in a vcluster needed for a new state to be added
+   min_vcluster_points = 10
+  # # prior identity covariance scale for new states
+   new_state_prior_covar_size = 0.01
+   # mixing of prior identity covariance for new states
+   new_state_prior_covar_mix = 0.5
+  # # number of frames a state has be be alive for splitting to be enabled
+   num_split_life_time_frames = 20
+  # # number of points a state has to have in its second largest vcluster for it to be split
+   num_split_points = 15
+  # # number of consecutive frames a state has to have points in two different vclusters until it is split
+   num_split_frames = 2
+  # # only split when the other vcluster has less than this percentage of points assigned to other states
+   split_max_other_states_percentage = 0.2
+  # # how much of the observation covariance is taken from the previous frame
+   obs_covar_regularization = 0.95
+  # # minimum number of consecutive frames an obstacle must be observed in to be treated as real
+   min_persistent_frames = 10
+   # approx. density of obstacles to consider them good enough to use (in points / meter,
+   #  with length defined as diagonal of bounding box enclosing the obstacle's points)
+   # Values between 500 and 1000 seem to make sense for clouds downsampled to 0.01
+   obstacle_density = 700.0
+  # whether to enable a kalman filter for estimating object positions & velocities
+   enable_kalman_filter = true
+  # # noise parameters for the kalman filter
+   kalman_noise_position = 0.04
+   kalman_noise_velocity = 0.5
+   kalman_noise_measurement = 0.2
+
+  [ObstacleDetection.SplitStrategy]
+  # Defines the split axis.
+  # The point cloud is splitted with a plane through the centroid and perpendicular to the chosen axis.
+  # Values: largest|middle|smallest
+  split_axis = "middle"
+  # A number of split conditions that need to be satisfied in order for an object
+  # split to occur.
+  # Care should be taken to define the conditions in a way that guarantees that
+  # splitting eventually stops for each object (possibly the easiest way is to
+  # always include the DepthLimit condition with a fairly high depth limit).
+  # If no split conditions are provided, the objects will never be split.
+    [[ObstacleDetection.SplitStrategy.conditions]]
+    type = "DepthLimit" # How many 'splitting steps' are performed. Max number of SSV's per obstacle = 2 ^ DepthLimit
+    depth = 1
+
+    [[ObstacleDetection.SplitStrategy.conditions]]
+    type = "SizeLimit" # After this volume is reached, a sub point cloud is not splitted any more
+    # size is a volume in [cm^3]
+    size = 2000.
+
+    [[ObstacleDetection.SplitStrategy.conditions]]
+    type = "ShapeCondition"
+    # The threshold values to consider something "very much" a sphere
+    sphere1 = 0.8
+    sphere2 = 0.1
+    # The threshold value to consider something "very much" a cylinder
+    cylinder = 0.25
+
+    [[SplitStrategy.conditions]]
+    type = "DistanceThreshold"
+    # Distance is in [cm]
+    distance_threshold = 150
+
+  # (Optional) This sets the method used to track objects across frames
+  # NOTE: The GMM Segmenter performs its own tracking.
+  #       When using the GMM Segmenter, this block should be omitted to
+  #       avoid any of the tracked data being overwritten.
+  # [ObstacleDetection.Tracker]
+  # type = "LowPassFilter"
+
+  # # (Optional) This adds an additional filter to the end of the obstacle
+  # #            detection pipeline.
+  # # NOTE: The GMM Segmenter supports an internal kalman filter which can
+  # #       take advantage of state information not available this far down
+  # #       the pipeline. When using GMM, it is recommended to use the
+  # #       enable_kalman_filter flag above instead of using this filter here.
+  # [ObstacleDetection.Filter]
+  # type = "KalmanFilter"
+  # noise_position = 0.02
+  # noise_velocity = 0.1
+  # noise_measurement = 0.1
+
+###########################################################################
+# # Aggregators is an array
+# # this will list all aggregators and options belonging to them
+#
+#  # This aggregator sends data to listeners (Path planning, Lab Visualizer, ...)
+#  [[aggregators]]
+#  type = "RobotAggregator"
+#  # Number of frames to wait before sending new data
+#  update_frequency = 1
+#  # Data to send
+#  data = [ "obstacles", "surfaces"]
+#  # Human readable target name, just for terminal/log output
+#  target="Hololens"
+#  # Target IP
+#  ip = "192.168.0.100"  # Control computer IP
+#  port = 9090
+#  # Delay to wait after sending a message
+#  delay = 2
+#  # minimum height (m) above the ground plane a surface must match in order to be sent
+# min_surface_height = 0.05
+#  # For surfaces failing min_surface_height test, if their normal deviates from the vertical
+#  # axis by more than this amount (in radians) the surface will still be sent
+# surface_normal_tolerance = 0.523 # ~30 degrees
+#
+#  [[aggregators]]
+#  type = "RobotAggregator"
+#  # Number of frames to wait before sending new data
+#  update_frequency = 5
+#  # Data to send
+#  data = [ "obstacles", "surfaces"]
+#  # Human readable target name, just for terminal/log output
+#  target="QNX"
+#  # Target IP
+#  ip = "192.168.0.7"  # Control computer IP
+#  port = 61448
+#  # Delay to wait after sending a message
+#  delay = 10
+#  # minimum height (m) above the ground plane a surface must match in order to be sent
+# min_surface_height = 0.05
+#   # For surfaces failing min_surface_height test, if their normal deviates from the vertical
+#   # axis by more than this amount (in radians) the surface will still be sent
+# surface_normal_tolerance = 0.523 # ~30 degrees
+
+###########################################################################
+# Miscellaneous settings
+
+# These settings define basic parameters for detecting the ground plane
+# They are mandatory if any kind of surface or obstacle detection is enabled
+[BasicSurfaceDetection]
+  [BasicSurfaceDetection.RANSAC]
+  #max number of ransac iterations
+  maxIterations = 200
+  # How close a point must be to the model [in meters] in order to be considered an inlier
+  distanceThreshold = 0.04
+  #How small the left (extracted) pointcloud should be for termination of the plane segmentation
+  minFilterPercentage = 0.08
+
+  ## If enabled, will allow the reuse of old surface coefficients to trim the point cloud down
+  ## before trying to detect new surfaces. Increases performance, but may allow additional noisy
+  ## points to propagate further down the pipeline (i.e. may make obstacle detection worse).
+  experimental_enableSurfaceReuse = true
+
+  [BasicSurfaceDetection.Classification]
+  # The function to classify segmented planes according to deviation in their normals
+  # This step is only for Surface Segmentation
+  # The angle values represent how much deviation is allowed
+  # Given in degrees.
+  deviationAngle = 4.0
+
+  [BasicSurfaceDetection.Clustering]
+  #Euclidean clustering to cluster (separate) detected surfaces
+  clusterTolerance = 0.05 # distance between clusters, in meters
+  minClusterSize = 750 # in number of points
+
+  [BasicSurfaceDetection.SurfaceTracking]
+  #How many times an unmaterialized surface should be lost to be completely removed from tracking
+  lostLimit = 5
+  #How many consecutive times a surface should be detected to be materialized
+  foundLimit = 5
+  # Allowed deviation for the position of the center point of a surface at the matching for identification
+  maxCenterDistance = 0.05
+  # Maximum deviation percentage of surface radius such that surfaces can still be mapped to each other
+  maxRadiusDeviationPercentage = 0.5
+
+  [BasicSurfaceDetection.ConvexHullApproximation]
+  #ConvexHull Method for surface point reduction
+  #The number of vertice points of a surface, that is sent to the robot and to the visualizer
+  numHullPoints = 8
+  # When a new convex hull is merged with an old convex hull, all points of the new convex hull are
+  # moved mergeUpdatePercentage percent along the vector pointing to the closest boundary point of
+  # the old convex hull. All points of the old convex hull are moved 1-mergeUpdatePercentage percent
+  # along the vector pointing to the closest boundary point of the new convex hull.
+  mergeUpdatePercentage = 0.2

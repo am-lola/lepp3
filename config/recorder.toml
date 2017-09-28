@@ -1,0 +1,69 @@
+# This is the recorder config file.
+# The config file is in the [toml](https://github.com/toml-lang/toml) format
+
+# All IPs and ports given in here are the defaults for a lab setup.
+
+# Mandatory options are given, optional options are commented out
+# and listed with the default values
+
+# This defines the pose service to use.
+# Requirements: None
+[PoseService]
+ip = "192.168.0.8"
+port = 53249        # default value is hexadecimal 0xd001
+
+# This defines the specifics for the robot
+# Requirements: PoseService
+[Robot]
+# The size of the "bubble" in which no modifications or deletions of objects
+# are sent to the robot. **In meters**
+# This is required because the camera angle prevents the robot from seeing
+# the environment directly below its feet
+bubble_size = 1.2
+
+# Video source
+[VideoSource]
+# Common options:
+#   - `type`: "stream", "oni", "pcd", "am_offline"
+# `oni` and `pcd` types require an additional parameter: file_path
+# `am_offline` type requires an additional parameters: dir_path
+type = "stream"
+#file_path = "path/to/file"
+#dir_path = "path/to/folder"
+enable_rgb = true  # Capture RGB images
+# enable_pose = false  # Replay pose data (only am_offline, [PoseService] must be disabled)
+
+# This sets up the filtered source, which will be passed to all
+# steps requiring a video
+[FilteredVideoSource]
+# Pre-filters are applied before pointfilters take effect
+# * downsample: reduces the size of the pointcloud by merging neighboring voxels
+#pre_filter = "downsample"
+
+# Post-filters are applied after the point filters
+# options: "prob", "pt1"; These options activate 'source' or 'raw-data' filters.
+# For the two options, a voxel grid (or environment map) in world coordinates is created,
+# consisting of a big 3D matrix, which is used as a filtered point cloud source
+# * prob - each voxel has a probabilistic filter, i.e. is active if it was occupied most times in the last frames
+# * pt1 - each voxel has a pt1 filter, i.e. is active if (f*actualframe+(1-f)*previousframe > 0.5)
+#post_filter = "prob"
+
+
+
+###########################################################################
+# Observers is an array
+# this will list all observers and options belonging to them
+
+# This observer saves the input data. The saved data can be replayed later
+# with the "am_offline" video source
+[[observers]]
+type = "Recorder"
+
+  [ObserverOptions.Recorder]
+  # Output directory. The final output will end up in a subfolder named
+  # "rec_{datetime}"
+  output_folder= "recordings"
+  # Defines which data to record
+  cloud = true
+  rgb = true
+  pose = true

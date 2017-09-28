@@ -4,158 +4,65 @@
  */
 #include <iostream>
 
-#include <pcl/io/openni2_grabber.h>
-#include <pcl/io/pcd_grabber.h>
+#include "lepp3/Typedefs.hpp"
+#include "config/FileConfigParser.hpp"
 
-#include "lepp3/BaseObstacleDetector.hpp"
-#include "lepp3/GrabberVideoSource.hpp"
-#include "lepp3/BaseVideoSource.hpp"
-#include "lepp3/VideoObserver.hpp"
-#include "lepp3/FilteredVideoSource.hpp"
-#include "lepp3/SmoothObstacleAggregator.hpp"
-
-#include "lepp3/visualization/EchoObserver.hpp"
-#include "lepp3/visualization/ObstacleVisualizer.hpp"
-
-#include "lepp3/filter/TruncateFilter.hpp"
-#include "lepp3/filter/SensorCalibrationFilter.hpp"
-
-#include "lepp3/models/ObjectModel.h"
+#include "deps/toml.h"
 #include "deps/easylogging++.h"
+
 _INITIALIZE_EASYLOGGINGPP
 
-
 using namespace lepp;
-
-namespace {
-  typedef SimplePoint PointT;
-}
 
 /**
  * Prints out the expected CLI usage of the program.
  */
 void PrintUsage() {
-  std::cout << "usage: detector [--pcd file | --oni file | --stream]"
-      << std::endl;
-  std::cout << "--pcd    : " << "read the input from a .pcd file" << std::endl;
-  std::cout << "--oni    : " << "read the input from an .oni file" << std::endl;
-  std::cout << "--stream : " << "read the input from a live stream based on a"
-      << " sensor attached to the computer" << std::endl;
-}
-
-/**
- * Builds a `FilteredVideoSource` instance that wraps the given raw source.
- */
-template<class PointT>
-boost::shared_ptr<FilteredVideoSource<PointT> >
-buildFilteredSource(boost::shared_ptr<VideoSource<PointT> > raw) {
-  // Wrap the given raw source.
-  boost::shared_ptr<FilteredVideoSource<PointT> > source(
-      new SimpleFilteredVideoSource<PointT>(raw));
-  // Now set the point filters that should be used.
-  {
-    double const a = 1.0117;
-    double const b = -0.0100851;
-    boost::shared_ptr<PointFilter<PointT> > filter(
-        new SensorCalibrationFilter<PointT>(a, b));
-    source->addFilter(filter);
-  }
-  {
-    boost::shared_ptr<PointFilter<PointT> > filter(
-        new TruncateFilter<PointT>(2));
-    source->addFilter(filter);
-  }
-
-  return source;
-}
-
-/**
- * Parses the command line arguments received by the program and chooses
- * the appropriate video source based on those.
- */
-boost::shared_ptr<VideoSource<PointT> > GetVideoSource(int argc, char* argv[]) {
-  if (argc < 2) {
-    return boost::shared_ptr<VideoSource<PointT> >();
-  }
-
-  std::string const option = argv[1];
-  if (option == "--stream") {
-    return boost::shared_ptr<VideoSource<PointT> >(
-        new LiveStreamSource<PointT>());
-  } else if (option == "--pcd" && argc >= 3) {
-    std::string const file_path = argv[2];
-    boost::shared_ptr<pcl::Grabber> interface(new pcl::PCDGrabber<PointT>(
-      file_path,
-      20.,
-      true));
-    return boost::shared_ptr<VideoSource<PointT> >(
-        new GeneralGrabberVideoSource<PointT>(interface));
-  } else if (option == "--oni" && argc >= 3) {
-    std::string const file_path = argv[2];
-    boost::shared_ptr<pcl::Grabber> interface(new pcl::io::OpenNI2Grabber(
-      file_path,
-      pcl::io::OpenNI2Grabber::OpenNI_Default_Mode,
-      pcl::io::OpenNI2Grabber::OpenNI_Default_Mode));
-    return boost::shared_ptr<VideoSource<PointT> >(
-        new GeneralGrabberVideoSource<PointT>(interface));
-  }
-
-  // Unknown option: return a "null" pointer.
-  return boost::shared_ptr<VideoSource<PointT> >();
+  std::cout << std::endl << "Usage:" << std::endl << "\tlola <cfg-file>" << std::endl;
+  std::cout << "\t\t<cfg-file> : configuration file to use (REQUIRED)" << std::endl;
 }
 
 int main(int argc, char* argv[]) {
-  // Obtain a video source based on the command line arguments received
-  boost::shared_ptr<VideoSource<PointT> > raw_source(GetVideoSource(argc, argv));
-  if (!raw_source) {
+  _START_EASYLOGGINGPP(argc, argv);
+
+  easyloggingpp::Loggers::reconfigureAllLoggers(easyloggingpp::ConfigurationType::Filename, "lola.log");
+
+  // ensure we were given at least one argument
+  if (argc < 2)
+  {
+    std::cerr << "ERROR: You must provide a config file!" << std::endl;
+    PrintUsage();
+    return 0;
+  }
+
+  // Initialize the context container
+  boost::shared_ptr<Parser<PointT> > parser;
+  try {
+      parser.reset(new FileConfigParser<PointT>(argv[1]));
+  } catch (const std::exception& e) {
+    std::cerr << "Configuration Error: \n\t" << e.what() << std::endl;
+    PrintUsage();
+    return 1;
+  } catch (char const* exc) {
+    std::cerr << "Configuration Error: \n\t" << exc << std::endl;
     PrintUsage();
     return 1;
   }
-  // Wrap the raw source in a filter
-  boost::shared_ptr<FilteredVideoSource<PointT> > source(
-      buildFilteredSource(raw_source));
 
-  // Prepare the approximator that the detector is to use.
-  // First, the simple approximator...
-  boost::shared_ptr<ObjectApproximator<PointT> > simple_approx(
-      boost::shared_ptr<ObjectApproximator<PointT> >(
-        new MomentOfInertiaObjectApproximator<PointT>));
-  // ...then the split strategy
-  boost::shared_ptr<CompositeSplitStrategy<PointT> > splitter(
-      new CompositeSplitStrategy<PointT>);
-  splitter->addSplitCondition(boost::shared_ptr<SplitCondition<PointT> >(
-      new DepthLimitSplitCondition<PointT>(1)));
-  // ...finally, wrap those into a `SplitObjectApproximator` that is given
-  // to the detector.
-  boost::shared_ptr<ObjectApproximator<PointT> > approx(
-      new SplitObjectApproximator<PointT>(simple_approx, splitter));
-  // Prepare the detector
-  boost::shared_ptr<BaseObstacleDetector<PointT> > detector(
-      new BaseObstacleDetector<PointT>(approx));
-  // Attaching the detector to the source: process the point clouds obtained
-  // by the source.
-  source->attachObserver(detector);
+  try {
+    // Get the video source and start it up
+    if (parser->source())
+      parser->source()->open();
 
-  // Prepare the result visualizer...
-  boost::shared_ptr<ObstacleVisualizer<PointT> > visualizer(
-      new ObstacleVisualizer<PointT>());
-  // Attaching the visualizer to the source: allow it to display the original
-  // point cloud.
-  source->attachObserver(visualizer);
-  // The visualizer is additionally decorated by the "smoothener" to smooth out
-  // the output...
-  boost::shared_ptr<SmoothObstacleAggregator> smooth_decorator(
-      new SmoothObstacleAggregator);
-  detector->attachObstacleAggregator(smooth_decorator);
-  smooth_decorator->attachObstacleAggregator(visualizer);
-
-  // Starts capturing new frames and forwarding them to attached observers.
-  source->open();
-
-  std::cout << "Waiting forever..." << std::endl;
-  std::cout << "(^C to exit)" << std::endl;
-  while (true)
-    boost::this_thread::sleep(boost::posix_time::milliseconds(8000));
-
-  return 0;
+    std::cout << "Waiting forever..." << std::endl;
+    std::cout << "(^C to exit)" << std::endl;
+    while (true)
+      boost::this_thread::sleep(boost::posix_time::milliseconds(8000));
+  } catch (const std::exception& e) {
+    std::cerr << "Fatal error: \n\t" << e.what() << std::endl;
+    return 1;
+  } catch (char const* exc) {
+    std::cerr << "Fatal error: \n\t" << exc << std::endl;
+    return 1;
+  }
 }

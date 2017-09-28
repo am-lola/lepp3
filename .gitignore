@@ -1,5 +1,12 @@
 build
+recordings
+oni
+evaluation
 *~
+*.swp
 *.oni
-*.txt.user
+*.pcd
+*.txt.user*
 .idea/*
+cmake-build-*
+

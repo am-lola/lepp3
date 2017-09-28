@@ -1,8 +1,8 @@
 #ifndef LEPP3_LOLA_ODO_COORDINATE_TRANSFORMER_H_
 #define LEPP3_LOLA_ODO_COORDINATE_TRANSFORMER_H_
-#include "lepp3/filter/PointFilter.hpp"
 
-#include "lola/PoseService.h"
+#include "lepp3/filter/point/PointFilter.hpp"
+#include "lepp3/pose/PoseService.hpp"
 
 #include <fstream>
 #include <sstream>
@@ -13,7 +13,7 @@
 
 namespace {
 
-std::ostream& operator<<(std::ostream& out, LolaKinematicsParams const& param) {
+std::ostream& operator<<(std::ostream& out, lepp::LolaKinematicsParams const& param) {
   out << "stamp #" << param.stamp << std::endl
       << "phi_z_odo = " << param.phi_z_odo << std::endl
       << "stance = " << param.stance << std::endl;
@@ -60,6 +60,7 @@ std::ostream& operator<<(std::ostream& out, OdoTransformParameters const& param)
 
 }
 
+namespace lepp {
 /**
  * A `PointFilter` implementation that performs a transformation from the camera
  * coordinate system to the LOLA world coordinate system based on the currently
@@ -73,15 +74,18 @@ std::ostream& operator<<(std::ostream& out, OdoTransformParameters const& param)
 template<class PointT>
 class OdoCoordinateTransformer : public lepp::PointFilter<PointT> {
 public:
-  OdoCoordinateTransformer() : current_frame_(0) {}
+  OdoCoordinateTransformer() : current_frame_(-1) {}
+
   /**
    * `PointFilter` interface method.
    */
   void prepareNext();
+
   /**
    * `PointFilter` interface method.
    */
   bool apply(PointT& original);
+
 protected:
   /**
    * Gets the kinematics parameters that should be used for constructing the
@@ -91,7 +95,7 @@ protected:
    *
    * Concrete implementations need to provide the implementation of this method.
    */
-  virtual LolaKinematicsParams getNextParams() = 0;
+  virtual lepp::LolaKinematicsParams getNextParams() = 0;
 
   /**
    * Tracks the current frame number. Exposed to concrete implementations.
@@ -104,7 +108,7 @@ private:
    * based on the kinematics data given as a parameter.
    * These parameters will be considered valid until the next `setNext` call.
    */
-  void setNext(LolaKinematicsParams const& params);
+  void setNext(lepp::LolaKinematicsParams const& params);
 
   /**
    * Parameters currently used for point transformations (i.e. by the `apply`
@@ -114,47 +118,50 @@ private:
 };
 
 namespace {
-  /**
-   * Puts a rotation matrix (around the z-axis) for the given angle in the given
-   * matrix `matrix`.
-   * It is assumed that the given matrix points to a matrix of dimensions 3x3.
-   */
-  void rotationmatrix(double angle, double matrix[][3]) {
-    double s = sin(angle);
-    double c = cos(angle);
+/**
+ * Puts a rotation matrix (around the z-axis) for the given angle in the given
+ * matrix `matrix`.
+ * It is assumed that the given matrix points to a matrix of dimensions 3x3.
+ */
+void rotationmatrix(double angle, double matrix[][3]) {
+  double s = sin(angle);
+  double c = cos(angle);
 
-    matrix[0][0] = c; matrix[0][1] = -s; matrix[0][2] = 0;
-    matrix[1][0] = s; matrix[1][1] = c; matrix[1][2] = 0;
-    matrix[2][0] = 0; matrix[2][1] = 0; matrix[2][2] = 1;
-  }
+  matrix[0][0] = c;
+  matrix[0][1] = -s;
+  matrix[0][2] = 0;
+  matrix[1][0] = s;
+  matrix[1][1] = c;
+  matrix[1][2] = 0;
+  matrix[2][0] = 0;
+  matrix[2][1] = 0;
+  matrix[2][2] = 1;
+}
 
-  /**
-   * Transposes the given matrix `matrix` and puts the transpose result into the
-   * given `transpose` matrix.
-   *
-   * The matrices are assumed to be 3x3.
-   */
-  void transpose(double matrix[][3], double transpose[][3]) {
-    for (int i = 0; i < 3; ++i) {
-      for (int j = 0; j < 3; ++j) {
-        transpose[j][i] = matrix[i][j];
-      }
+/**
+ * Transposes the given matrix `matrix` and puts the transpose result into the
+ * given `transpose` matrix.
+ *
+ * The matrices are assumed to be 3x3.
+ */
+void transpose(double matrix[][3], double transpose[][3]) {
+  for (int i = 0; i < 3; ++i) {
+    for (int j = 0; j < 3; ++j) {
+      transpose[j][i] = matrix[i][j];
     }
   }
+}
 }
 
 template<class PointT>
 void OdoCoordinateTransformer<PointT>::prepareNext() {
   ++current_frame_;
-  LolaKinematicsParams new_params = this->getNextParams();
+  lepp::LolaKinematicsParams new_params = this->getNextParams();
   this->setNext(new_params);
 }
 
 template<class PointT>
-void OdoCoordinateTransformer<PointT>::setNext(LolaKinematicsParams const& params) {
-  LTRACE << "Setting new transformation for frame " << current_frame_
-         << " based on parameters: "
-         << params;
+void OdoCoordinateTransformer<PointT>::setNext(lepp::LolaKinematicsParams const& params) {
   double rotation_matrix[3][3];
   rotationmatrix(params.phi_z_odo, rotation_matrix);
 
@@ -183,8 +190,8 @@ void OdoCoordinateTransformer<PointT>::setNext(LolaKinematicsParams const& param
   }
   transpose(A_odo_cam_no_trans, transform_params_.A_odo_cam);
 
-  LTRACE << "New transformaion matrices calculated: "
-         << transform_params_;
+//  LTRACE << "New transformaion matrices calculated: "
+//         << transform_params_;
 }
 
 template<class PointT>
@@ -205,17 +212,17 @@ bool OdoCoordinateTransformer<PointT>::apply(PointT& original) {
   // world_point = r_odo_cam + (A_odo_cam * original)
   PointT odo_point = original;
   odo_point.x = (transform_params_.r_odo_cam[0])
-                               + transform_params_.A_odo_cam[0][0] * original.x
-                               + transform_params_.A_odo_cam[0][1] * original.y
-                               + transform_params_.A_odo_cam[0][2] * original.z;
+                + transform_params_.A_odo_cam[0][0] * original.x
+                + transform_params_.A_odo_cam[0][1] * original.y
+                + transform_params_.A_odo_cam[0][2] * original.z;
   odo_point.y = (transform_params_.r_odo_cam[1])
-                               + transform_params_.A_odo_cam[1][0] * original.x
-                               + transform_params_.A_odo_cam[1][1] * original.y
-                               + transform_params_.A_odo_cam[1][2] * original.z;
+                + transform_params_.A_odo_cam[1][0] * original.x
+                + transform_params_.A_odo_cam[1][1] * original.y
+                + transform_params_.A_odo_cam[1][2] * original.z;
   odo_point.z = (transform_params_.r_odo_cam[2])
-                               + transform_params_.A_odo_cam[2][0] * original.x
-                               + transform_params_.A_odo_cam[2][1] * original.y
-                               + transform_params_.A_odo_cam[2][2] * original.z;
+                + transform_params_.A_odo_cam[2][0] * original.x
+                + transform_params_.A_odo_cam[2][1] * original.y
+                + transform_params_.A_odo_cam[2][2] * original.z;
 
   // Now replace the original with only the x, y, z components modified.
   original = odo_point;
@@ -230,32 +237,21 @@ bool OdoCoordinateTransformer<PointT>::apply(PointT& original) {
 template<class PointT>
 class RobotOdoTransformer : public OdoCoordinateTransformer<PointT> {
 public:
-  RobotOdoTransformer(boost::shared_ptr<PoseService> service)
+  RobotOdoTransformer(std::shared_ptr<PoseService> service)
       : service_(service) {}
+
+  virtual const char* name() const override { return "RobotOdoTransformer"; }
+
 protected:
-  LolaKinematicsParams getNextParams();
+  lepp::LolaKinematicsParams getNextParams();
+
 private:
-  boost::shared_ptr<PoseService> service_;
+  std::shared_ptr<PoseService> service_;
 };
 
 template<class PointT>
-LolaKinematicsParams RobotOdoTransformer<PointT>::getNextParams() {
-  HR_Pose_Red pose = service_->getCurrentPose();
-  // Now convert the current raw pose to parameters that are of relevance to the
-  // transformation.
-  LolaKinematicsParams params;
-  for (int i = 0; i < 3; ++i) {
-    params.t_wr_cl[i] = pose.t_wr_cl[i];
-    params.t_stance_odo[i] = pose.t_stance_odo[i];
-    for (int j = 0; j < 3; ++j) {
-      params.R_wr_cl[i][j] = pose.R_wr_cl[3*i + j];
-    }
-  }
-  params.phi_z_odo = pose.phi_z_odo;
-  params.stance = pose.stance;
-  params.stamp = pose.stamp;
-
-  return params;
+lepp::LolaKinematicsParams RobotOdoTransformer<PointT>::getNextParams() {
+  return service_->getParams();
 }
-
+}
 #endif

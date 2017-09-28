@@ -26,6 +26,11 @@ struct Coordinate {
    * Returns the squared norm of the vector.
    */
   double square_norm() const { return x*x + y*y + z*z; }
+
+  /*
+   * Allow implicit conversion to Eigen::Vector3f for convenience
+   */
+  operator Eigen::Vector3f() const { return Eigen::Vector3f(x, y, z); }
 };
 
 inline Coordinate operator*(int scalar, Coordinate const& obj) {

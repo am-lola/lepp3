@@ -1,7 +1,10 @@
 #ifndef LEPP3_MODELS_OBJECT_MODEL_H__
 #define LEPP3_MODELS_OBJECT_MODEL_H__
 
+#include <cmath>
+
 #include "lepp3/models/Coordinate.h"
+#include "lepp3/Typedefs.hpp"
 
 namespace lepp {
 
@@ -16,10 +19,12 @@ class CapsuleModel;
  */
 class ObjectModel {
 public:
-  ObjectModel() : id_(0) {}
+  ObjectModel() : id_(0), mh_(-1), velocity_(0,0,0) {}
 
   virtual void accept(ModelVisitor& visitor) = 0;
   virtual Coordinate center_point() const = 0;
+  Coordinate velocity() const { return velocity_; }
+  void set_velocity(const Coordinate& velocity) { velocity_ = velocity; }
 
   virtual ~ObjectModel() {}
   /**
@@ -29,23 +34,49 @@ public:
    * Therefore, 0 is the default value returned, unless `set_id` is called.
    */
   int id() const { return id_; }
+
+  /**
+  * Getter and setter for the mesh handle of the current object model (needed for visualizer)
+  */
+  int get_meshHandle() const {return mh_;}
+  void set_meshHandle(mesh_handle_t mh) {mh_ = mh;}
+
   /**
    * Sets the object's ID.
    */
   void set_id(int id) { id_ = id; }
 
   friend std::ostream& operator<<(std::ostream& out, ObjectModel const& model);
+
 private:
   int id_;
+  mesh_handle_t mh_;
+  Coordinate velocity_;
+};
+
+/**
+ * Set of parameters to hint at the final ObjectModel
+ * created by an Approximator
+ */
+struct ObjectModelParams {
+  PointCloudPtr obstacleCloud = nullptr;
+  int id = -1;
+  Coordinate center = Coordinate(std::nan(""), std::nan(""), std::nan(""));
+  Coordinate velocity = Coordinate(std::nan(""), std::nan(""), std::nan(""));
+  Eigen::Vector3f inertial_values;
+  std::vector<Eigen::Vector3f> inertial_axes;
+
+  ObjectModelParams() {}
+  ObjectModelParams(PointCloudPtr p) : obstacleCloud(p) {}
 };
 
 typedef boost::shared_ptr<ObjectModel> ObjectModelPtr;
 
 class ModelVisitor {
 public:
+  virtual ~ModelVisitor() {}
   virtual void visitSphere(SphereModel& sphere) = 0;
   virtual void visitCapsule(CapsuleModel& capsule) = 0;
-  virtual ~ModelVisitor() {}
 };
 
 /**
@@ -59,7 +90,7 @@ public:
    * an std::vector.
    */
   void accept(ModelVisitor& visitor) { visitor.visitSphere(*this); }
-  Coordinate center_point() const { return center_; }
+  virtual Coordinate center_point() const { return center_; }
 
   double radius() const { return radius_; }
   Coordinate const& center() const { return center_; }
@@ -97,7 +128,7 @@ public:
       : radius_(radius), first_(first), second_(second) {}
 
   void accept(ModelVisitor& visitor) { visitor.visitCapsule(*this); }
-  Coordinate center_point() const { return (second_ + first_) / 2; }
+  virtual Coordinate center_point() const { return (second_ + first_) / 2; }
 
   double radius() const { return radius_; }
   Coordinate const& first() const { return first_; }
@@ -153,6 +184,11 @@ public:
 
   void set_models(std::vector<boost::shared_ptr<ObjectModel> > const& models) { models_ = models; }
   std::vector<boost::shared_ptr<ObjectModel> > const& models() { return models_; }
+
+  /**
+   * Returns a count of the number of models contained in this CompositeModel
+   */
+  size_t count() { return models_.size(); }
 
   void accept(ModelVisitor& visitor) {
     // We visit each individual part of the composite.
