@@ -24,12 +24,10 @@ public:
   BlendVisitor(Coordinate translation_vec) : translation_vec_(translation_vec) {}
   void visitSphere(SphereModel& sphere) {
     sphere.set_center(sphere.center() + translation_vec_);
-    cout << sphere << endl;
   }
   void visitCapsule(CapsuleModel& capsule) {
     capsule.set_first(capsule.first() + translation_vec_);
     capsule.set_second(capsule.second() + translation_vec_);
-    cout << capsule << endl;
   }
 private:
   Coordinate const translation_vec_;
