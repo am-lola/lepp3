@@ -29,6 +29,7 @@ option(LEPP_INCLUDE_HEADERS "Includes an header project to add files in IDEs" FA
 option(LEPP_ENABLE_TRACING "Enable LTTng-UST Traces" FALSE)
 
 if(LEPP_ENABLE_TRACING)
+  add_definitions(-DLEPP3_ENABLE_TRACING)
   list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
   include(FindLTTngUST REQUIRED)
 endif()

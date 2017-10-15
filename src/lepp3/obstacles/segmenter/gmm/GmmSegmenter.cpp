@@ -5,6 +5,10 @@
 
 #include "deps/easylogging++.h"
 
+#ifdef LEPP3_ENABLE_TRACING
+#include "lepp3/util/lepp3_tracepoint_provider.hpp"
+#endif
+
 namespace {
 
 float log_probability_density_function(const lepp::GMM::State& state, const Eigen::Vector4f& point) {
@@ -32,6 +36,10 @@ lepp::GmmSegmenter::GmmSegmenter(const GMM::SegmenterParameters& params) : param
 
 std::vector<lepp::ObjectModelParams> lepp::GmmSegmenter::extractObstacleParams(PointCloudConstPtr cloud) {
   using namespace Eigen;
+
+#ifdef LEPP3_ENABLE_TRACING
+  tracepoint(lepp3_trace_provider, gmm_frame_start);
+#endif
 
   if (!initialized_) {
     initialize(cloud.get());
@@ -186,6 +194,10 @@ std::vector<lepp::ObjectModelParams> lepp::GmmSegmenter::extractObstacleParams(P
 
   if (parameters_.enableKalmanFilter)
     kalmanFilter_.update(ret);
+
+#ifdef LEPP3_ENABLE_TRACING
+  tracepoint(lepp3_trace_provider, gmm_frame_end);
+#endif
 
   return ret;
 }

@@ -8,6 +8,10 @@
 
 #include <pcl/io/openni2_grabber.h>
 
+#ifdef LEPP3_ENABLE_TRACING
+#include "lepp3/util/lepp3_tracepoint_provider.hpp"
+#endif
+
 namespace lepp {
 
 /**
@@ -87,6 +91,10 @@ GeneralGrabberVideoSource<PointT>::~GeneralGrabberVideoSource() {
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::cloud_cb_(
     const PointCloudConstPtr& cloud) {
+#ifdef LEPP3_ENABLE_TRACING
+  tracepoint(lepp3_trace_provider, new_depth_frame);
+#endif
+
   FrameDataPtr frameData(new FrameData(++frameCount));
   frameData->cloud = cloud;
   this->setNextFrame(frameData);
@@ -95,6 +103,10 @@ void GeneralGrabberVideoSource<PointT>::cloud_cb_(
 template<class PointT>
 void GeneralGrabberVideoSource<PointT>::image_cb_(
     const typename boost::shared_ptr<pcl::io::Image>& rgb) {
+#ifdef LEPP3_ENABLE_TRACING
+  tracepoint(lepp3_trace_provider, new_rgb_frame);
+#endif
+
   cv::Mat frameRGB = cv::Mat(rgb->getHeight(), rgb->getWidth(), CV_8UC3);
   rgb->fillRGB(frameRGB.cols, frameRGB.rows, frameRGB.data, frameRGB.step);
 
