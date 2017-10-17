@@ -117,7 +117,7 @@ Then, you need to run LTTng in another terminal before running lepp:
 lttng create
 lttng enable-events -u -a
 lttng start
-<Run lepp for a while>
+<Run lepp>
 lttnh stop
 lttng destroy
 ```
