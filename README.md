@@ -100,6 +100,29 @@ real robot (e.g. artifical kinematic data can be sent to lepp3 and lepp3's resul
 can be broadcast to a mock receiver).
 
 
+# Benchmarks
+
+The program contains a few tracepoints for tracelogging. It uses the [LTTng](http://lttng.org/)
+tool ([version 2.9](http://lttng.org/docs/v2.9/#doc-ubuntu) or higher). In order 
+to activate tracelogging, you need to enable the corresponding flag when running 
+cmake:
+
+```bash
+cmake -DLEPP_ENABLE_TRACING=TRUE ..
+```
+
+Then, you need to run LTTng in another terminal before running lepp:
+
+```bash
+lttng create
+lttng enable-events -u -a
+lttng start
+<Run lepp for a while>
+lttnh stop
+lttng destroy
+```
+
+
 # License
 
 The project is published under the terms of the
