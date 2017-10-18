@@ -1,5 +1,3 @@
-//#ifndef LEPP3_TRACEPOINT_PROVIDER
-//#define LEPP3_TRACEPOINT_PROVIDER
 
 #undef TRACEPOINT_PROVIDER
 #define TRACEPOINT_PROVIDER lepp3_trace_provider
@@ -12,9 +10,6 @@
 
 #include <lttng/tracepoint.h>
 
-#endif
-
-#include <lttng/tracepoint-event.h>
 
 
 /************************************************************************************
@@ -52,6 +47,7 @@ TRACEPOINT_EVENT_INSTANCE(
   new_depth_frame,
   TP_ARGS()
 )
+
 TRACEPOINT_EVENT_INSTANCE(
   lepp3_trace_provider,
   lepp3_event_start,
@@ -59,6 +55,19 @@ TRACEPOINT_EVENT_INSTANCE(
   TP_ARGS()
 )
 
+TRACEPOINT_EVENT_INSTANCE(
+  lepp3_trace_provider,
+  lepp3_event_start,
+  obstacle_segmenter_start,
+  TP_ARGS()
+)
+
+TRACEPOINT_EVENT_INSTANCE(
+  lepp3_trace_provider,
+  lepp3_event_end,
+  obstacle_segmenter_end,
+  TP_ARGS()
+)
 
 /***********************
  * GMM Segmenter Events
@@ -122,6 +131,37 @@ TRACEPOINT_EVENT_INSTANCE(
   )
 )
 
+TRACEPOINT_EVENT_INSTANCE(
+  lepp3_trace_provider,
+  lepp3_event_start,
+  surface_tracker_update_start,
+  TP_ARGS(
+  )
+)
+
+TRACEPOINT_EVENT_INSTANCE(
+  lepp3_trace_provider,
+  lepp3_event_end,
+  surface_tracker_update_end,
+  TP_ARGS(
+  )
+)
+
+TRACEPOINT_EVENT_INSTANCE(
+  lepp3_trace_provider,
+  lepp3_event_start,
+  plane_inlier_update_start,
+  TP_ARGS(
+  )
+)
+
+TRACEPOINT_EVENT_INSTANCE(
+  lepp3_trace_provider,
+  lepp3_event_end,
+  plane_inlier_update_end,
+  TP_ARGS(
+  )
+)
 
 /******************************
  * Object Approximation Events
@@ -143,4 +183,6 @@ TRACEPOINT_EVENT_INSTANCE(
   )
 )
 
-//#endif
+#endif
+
+#include <lttng/tracepoint-event.h>

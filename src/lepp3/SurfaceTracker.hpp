@@ -11,6 +11,10 @@
 #include <map>
 #include <limits>
 
+#ifdef LEPP3_ENABLE_TRACING
+#include "lepp3/util/lepp3_tracepoint_provider.hpp"
+#endif
+
 namespace lepp {
 
 /**
@@ -500,6 +504,9 @@ void SurfaceTracker<PointT>::materializeFoundSurfaces() {
 template<class PointT>
 void SurfaceTracker<PointT>::updateSurfaces(SurfaceDataPtr surfaceData)
 {
+#ifdef LEPP3_ENABLE_TRACING
+    tracepoint(lepp3_trace_provider, surface_tracker_update_start);
+#endif
 	std::map<int, size_t> correspondence = matchToPrevious(surfaceData->surfaces);
     updateLostAndFound(correspondence);
 	adaptTracked(correspondence, surfaceData->surfaces);
@@ -511,6 +518,9 @@ void SurfaceTracker<PointT>::updateSurfaces(SurfaceDataPtr surfaceData)
     surfaceData->surfaces = materializedModelsCopy;
 
 	notifyObservers(surfaceData);
+#ifdef LEPP3_ENABLE_TRACING
+    tracepoint(lepp3_trace_provider, surface_tracker_update_end);
+#endif
 }
 
 }// namespace lepp

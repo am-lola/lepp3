@@ -11,6 +11,10 @@
 #include <cmath>
 #include <limits>
 
+#ifdef LEPP3_ENABLE_TRACING
+#include "lepp3/util/lepp3_tracepoint_provider.hpp"
+#endif
+
 namespace lepp {
 
 template<class PointT>

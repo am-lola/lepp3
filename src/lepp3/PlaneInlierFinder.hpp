@@ -11,6 +11,10 @@
 #include <vector>
 #include <omp.h>
 
+#ifdef LEPP3_ENABLE_TRACING
+#include "lepp3/util/lepp3_tracepoint_provider.hpp"
+#endif
+
 namespace lepp {
 
 template<class PointT>
@@ -125,9 +129,17 @@ void PlaneInlierFinder<PointT>::filterInliers(PointCloudConstPtr cloud,
 template<class PointT>
 void PlaneInlierFinder<PointT>::updateFrame(FrameDataPtr frameData)
 {
+#ifdef LEPP3_ENABLE_TRACING
+    tracepoint(lepp3_trace_provider, plane_inlier_update_start);
+#endif
+
 	if (frameData->cloud->size() > 0)
 		filterInliers(frameData->cloud, frameData->planeCoefficients, frameData->cloudMinusSurfaces, frameData->lolaKinematics);
 	notifyObservers(frameData);
+
+#ifdef LEPP3_ENABLE_TRACING
+    tracepoint(lepp3_trace_provider, plane_inlier_update_end);
+#endif
 }
 
 
