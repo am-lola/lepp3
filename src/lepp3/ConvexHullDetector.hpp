@@ -11,6 +11,10 @@
 #include <limits>
 #include <vector>
 
+#ifdef LEPP3_ENABLE_TRACING
+#include "lepp3/util/lepp3_tracepoint_provider.hpp"
+#endif
+
 namespace lepp {
 
 /*
@@ -363,6 +367,10 @@ inline void ConvexHullDetector::mergeConvexHulls(PointCloudConstPtr oldHull, Poi
 
 inline void ConvexHullDetector::updateSurfaces(SurfaceDataPtr surfaceData)
 {
+#ifdef LEPP3_ENABLE_TRACING
+	tracepoint(lepp3_trace_provider, convex_hull_detection_start);
+#endif
+
 	for (int i = 0; i < surfaceData->surfaces.size(); i++)
 	{
 		// detect new convex hull
@@ -387,6 +395,10 @@ inline void ConvexHullDetector::updateSurfaces(SurfaceDataPtr surfaceData)
 		//GnuplotWriter::writeHulls(surfaceData->frameNum, i, PointCloudConstPtr(projOldHull), 
 		//	PointCloudConstPtr(projNewHull), surfaceData->surfaces[i]->get_hull());		
 	}
+
+#ifdef LEPP3_ENABLE_TRACING
+	tracepoint(lepp3_trace_provider, convex_hull_detection_end);
+#endif
 	notifyObservers(surfaceData);
 }
 

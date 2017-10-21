@@ -165,6 +165,22 @@ TRACEPOINT_EVENT_INSTANCE(
 TRACEPOINT_EVENT_INSTANCE(
   lepp3_trace_provider,
   lepp3_event_start,
+  surface_cluster_start,
+  TP_ARGS(
+  )
+)
+
+TRACEPOINT_EVENT_INSTANCE(
+  lepp3_trace_provider,
+  lepp3_event_end,
+  surface_cluster_end,
+  TP_ARGS(
+  )
+)
+
+TRACEPOINT_EVENT_INSTANCE(
+  lepp3_trace_provider,
+  lepp3_event_start,
   surface_tracker_update_start,
   TP_ARGS(
   )
@@ -174,6 +190,22 @@ TRACEPOINT_EVENT_INSTANCE(
   lepp3_trace_provider,
   lepp3_event_end,
   surface_tracker_update_end,
+  TP_ARGS(
+  )
+)
+
+TRACEPOINT_EVENT_INSTANCE(
+  lepp3_trace_provider,
+  lepp3_event_start,
+  convex_hull_detection_start,
+  TP_ARGS(
+  )
+)
+
+TRACEPOINT_EVENT_INSTANCE(
+  lepp3_trace_provider,
+  lepp3_event_end,
+  convex_hull_detection_end,
   TP_ARGS(
   )
 )

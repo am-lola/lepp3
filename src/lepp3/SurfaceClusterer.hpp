@@ -98,6 +98,11 @@ void SurfaceClusterer<PointT>::cluster(
     PointCloudPtr plane,
     pcl::ModelCoefficients& planeCoefficients,
     std::vector<SurfaceModelPtr>& surfaces) {
+
+#ifdef LEPP3_ENABLE_TRACING
+  tracepoint(lepp3_trace_provider, surface_cluster_start);
+#endif
+
   lepp::util::Projection proj(planeCoefficients.values);
   auto plane_2d = project_to_2d_plane(*plane, proj);
 
@@ -134,25 +139,20 @@ void SurfaceClusterer<PointT>::cluster(
   //add clusetered surfaces to shared frameData variable
 #pragma omp critical
   surfaces.insert(std::end(surfaces), std::begin(clusteredSurfaces), std::end(clusteredSurfaces));
+
+#ifdef LEPP3_ENABLE_TRACING
+  tracepoint(lepp3_trace_provider, surface_cluster_end);
+#endif
 }
 
 template<class PointT>
 void SurfaceClusterer<PointT>::updateSurfaces(SurfaceDataPtr surfaceData) {
-
-#ifdef LEPP3_ENABLE_TRACING
-  tracepoint(lepp3_trace_provider, surface_pipeline_start);
-#endif
-
 #pragma omp parallel for schedule(dynamic, 1)
   for (size_t i = 0; i < surfaceData->planes.size(); i++) {
     // cluster planes into seperate surfaces and create SurfaceModels
     cluster(surfaceData->planes[i], surfaceData->planeCoefficients[i], surfaceData->surfaces);
   }
   notifyObservers(surfaceData);
-
-#ifdef LEPP3_ENABLE_TRACING
-  tracepoint(lepp3_trace_provider, surface_pipeline_end);
-#endif
 }
 
 } // namespace lepp
