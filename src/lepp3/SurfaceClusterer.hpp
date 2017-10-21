@@ -12,6 +12,10 @@
 
 #include <omp.h>
 
+#ifdef LEPP3_ENABLE_TRACING
+#include "lepp3/util/lepp3_tracepoint_provider.hpp"
+#endif
+
 namespace lepp {
 
 template<class PointT>
@@ -134,12 +138,21 @@ void SurfaceClusterer<PointT>::cluster(
 
 template<class PointT>
 void SurfaceClusterer<PointT>::updateSurfaces(SurfaceDataPtr surfaceData) {
+
+#ifdef LEPP3_ENABLE_TRACING
+  tracepoint(lepp3_trace_provider, surface_pipeline_start);
+#endif
+
 #pragma omp parallel for schedule(dynamic, 1)
   for (size_t i = 0; i < surfaceData->planes.size(); i++) {
     // cluster planes into seperate surfaces and create SurfaceModels
     cluster(surfaceData->planes[i], surfaceData->planeCoefficients[i], surfaceData->surfaces);
   }
   notifyObservers(surfaceData);
+
+#ifdef LEPP3_ENABLE_TRACING
+  tracepoint(lepp3_trace_provider, surface_pipeline_end);
+#endif
 }
 
 } // namespace lepp

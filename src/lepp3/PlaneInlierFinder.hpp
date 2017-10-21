@@ -130,15 +130,21 @@ template<class PointT>
 void PlaneInlierFinder<PointT>::updateFrame(FrameDataPtr frameData)
 {
 #ifdef LEPP3_ENABLE_TRACING
-    tracepoint(lepp3_trace_provider, plane_inlier_update_start);
+        tracepoint(lepp3_trace_provider, obstacle_pipeline_start);
+        tracepoint(lepp3_trace_provider, plane_inlier_update_start);
 #endif
 
 	if (frameData->cloud->size() > 0)
 		filterInliers(frameData->cloud, frameData->planeCoefficients, frameData->cloudMinusSurfaces, frameData->lolaKinematics);
+
+#ifdef LEPP3_ENABLE_TRACING
+        tracepoint(lepp3_trace_provider, plane_inlier_update_end);
+#endif
+
 	notifyObservers(frameData);
 
 #ifdef LEPP3_ENABLE_TRACING
-    tracepoint(lepp3_trace_provider, plane_inlier_update_end);
+        tracepoint(lepp3_trace_provider, obstacle_pipeline_end);
 #endif
 }
 

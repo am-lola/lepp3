@@ -69,6 +69,22 @@ TRACEPOINT_EVENT_INSTANCE(
   TP_ARGS()
 )
 
+TRACEPOINT_EVENT_INSTANCE(
+  lepp3_trace_provider,
+  lepp3_event_start,
+  obstacle_pipeline_start,
+  TP_ARGS(
+  )
+)
+
+TRACEPOINT_EVENT_INSTANCE(
+  lepp3_trace_provider,
+  lepp3_event_end,
+  obstacle_pipeline_end,
+  TP_ARGS(
+  )
+)
+
 /***********************
  * GMM Segmenter Events
  ***********************/
@@ -114,6 +130,21 @@ TRACEPOINT_EVENT_INSTANCE(
 /*****************************
  * Surface Detection Events
  *****************************/
+TRACEPOINT_EVENT_INSTANCE(
+  lepp3_trace_provider,
+  lepp3_event_start,
+  surface_pipeline_start,
+  TP_ARGS(
+  )
+)
+
+TRACEPOINT_EVENT_INSTANCE(
+  lepp3_trace_provider,
+  lepp3_event_end,
+  surface_pipeline_end,
+  TP_ARGS(
+  )
+)
 
 TRACEPOINT_EVENT_INSTANCE(
   lepp3_trace_provider,
