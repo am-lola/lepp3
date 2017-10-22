@@ -104,7 +104,8 @@ can be broadcast to a mock receiver).
 
 The `lepp3` library is inherently modular and flexible. To get started in its 
 different components, it helps to look at the structure used for environment 
-modeling during [experiments](./config/lab-lola.toml) with the robot LOLA:
+modeling during [experiments](./config/lab-lola.toml) with the robot LOLA (the 
+different components can be activated/deactivated at will through the config file):
 
 ![Alt text](https://g.gravizo.com/svg?
   digraph G {
