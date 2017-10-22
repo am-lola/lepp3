@@ -100,6 +100,50 @@ real robot (e.g. artifical kinematic data can be sent to lepp3 and lepp3's resul
 can be broadcast to a mock receiver).
 
 
+# Structure
+
+The `lepp3` library is inherently modular and flexible. To get started in its 
+different components, it helps to look at the structure used for environment 
+modeling during [experiments](./config/lab-lola.toml) with the robot LOLA:
+
+![Alt text](https://g.gravizo.com/svg?
+  digraph G {
+    aize ="4,4";
+    main [label="Video Source / Pose Data",shape=box];
+    input [label="Input Filter",shape=box];
+    detector [label="SurfaceDetector",shape=box];
+    visualizer [label="Visualizer / Aggregator",shape=box];
+    plane [label="SurfaceFinder",shape=parallelogram];
+    inlier [label="Inlier Finder",shape=ellipse];
+    gmm [label="GMM Segmenation",shape=ellipse];
+    euclidean [label="Euclidean Segmentation",shape=ellipse];
+    object [label="Object Approximator",shape=ellipse];
+    lowpass [label="Euclidean Low-Pass-Filter",shape=ellipse];
+    kalman [label="Euclidean Kalman-Filter",shape=ellipse];
+    surfcluster [label="SurfaceClusterer",shape=hexagon];
+    surftracker [label="SurfaceTracker",shape=hexagon];
+    convexhull [label="ConvexHullDetector",shape=hexagon];    
+    main -> input [weight=8];
+    input -> detector [weight=8];
+    detector -> plane [weight=8,color=".7 .3 1.0",label="Plane Detection"];
+    plane -> detector [weight=8,color=".7 .3 1.0"];
+    detector -> surfcluster [weight=8,color=".3 .7 1.0",label="Surface Approximation"];
+    surfcluster -> surftracker [weight=8,color=".3 .7 1.0"];
+    surftracker -> convexhull [weight=8,color=".3 .7 1.0"];
+    convexhull -> detector [weight=8,color=".3 .7 1.0"];
+    detector -> inlier [weight=8,label="Obstacle Approximation"];
+    inlier -> gmm [weight=8];
+    inlier -> euclidean [weight=8];
+    gmm -> object [weight=8];
+    euclidean -> object [weight=8];
+    object -> lowpass [weight=8,style=dotted];
+    object -> kalman [weight=8,style=dotted];
+    object -> visualizer [weight=8];
+    lowpass -> visualizer [weight=8,style=dotted];
+    kalman -> visualizer [weight=8,style=dotted];
+  }
+  )
+
 # Benchmarks
 
 The program contains a few tracepoints for tracelogging. It uses the [LTTng](http://lttng.org/)
