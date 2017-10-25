@@ -167,6 +167,21 @@ lttnh stop
 lttng destroy
 ```
 
+A small script is available under `src/script/trace-eval.py` to extract some useful metrics from the resulting trace data (although you can use any trace viewer capable of reading CTF trace data as well). The script requires Python 3, babeltrace (`apt-get install babeltrace libbabeltrace-ctf-dev python3-babeltrace`) and the Python Plot.ly lib (`pip3 install plotly`).
+
+Usage:
+
+```bash
+python3 src/script/trace-eval.py <trace_directory> <output_name>
+
+    <trace_directory> : Directory containing the actual trace data
+    <output_name>     : Name to give the .html page containing the graph plots
+
+ e.g.
+python3 src/sript/trace-eval.py ~/lttng-traces/auto-20171010-236640/ust/uid/1000/64-bit/ plot_output
+```
+
+The script will print some statistics about each event found in the trace, and create an .html page `<output_name>.html` containing a plot of each event across the duration of the trace (in frames).
 
 # License
 
