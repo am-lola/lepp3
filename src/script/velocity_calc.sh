@@ -8,6 +8,7 @@ WORK_DIR=${PWD}
 PCD_CREATION_DIR=$AM2B_ROOT/etc/model/pcd_creation
 echo "Storing results in: $WORK_DIR"
 
+LEPP_WAIT_TIME=90s
 
 object="object"
 echo -n -e "Enter the object you want to evaluate\n"
@@ -27,7 +28,7 @@ if [ "$object" = "box" ]; then
      	translation = [0.0, 0.0, 0.0];
      	rotation = [0.0, 0.0, 0.0];
       scale = [0.5, 0.5, 0.5];
-      velocity = [0.170000, 0.110000, 0.130000];
+      velocity = [0.001000, 0.000000, 0.000000];
      });' > box_veloc.wrl
   fi;
   cd $WORK_DIR
@@ -45,25 +46,25 @@ if [ "$object" = "box" ]; then
   do
       R_x=$(($(($RANDOM%DIFF))+$range1))
       echo $R_x
-      x_velocity=$(echo $R_x\/100 | bc -l | awk '{printf "%f", $0}')
+      x_velocity=$(echo $R_x\/1000 | bc -l | awk '{printf "%f", $0}')
       echo $x_velocity
       R_y=$(($(($RANDOM%$DIFF))+$range1))
       echo $R_y
-      y_velocity=$(echo $R_y\/100 | bc -l | awk '{printf "%f", $0}')
+      y_velocity=$(echo $R_y\/1000 | bc -l | awk '{printf "%f", $0}')
       echo $y_velocity
       R_z=$(($(($RANDOM%DIFF))+$range1))
       echo $R_z
-      z_velocity=$(echo $R_z\/100 | bc -l | awk '{printf "%f", $0}')
+      z_velocity=$(echo $R_z\/1000 | bc -l | awk '{printf "%f", $0}')
       echo $z_velocity
       #cd ../../../am2b/etc/model/pcd_creation/lab_scene
       cd $AM2B_ROOT/etc/model/pcd_creation/lab_scene/
       sed -i "7s/.*/  velocity = [$x_velocity, $y_velocity, $z_velocity]; /" "$file"
       sed -i "6s/.*/  scale = [$scale, $scale, $scale]; /" "$file"
       cd $AM2B_ROOT/etc/model/pcd_creation/build/
-      ./pcd_creator -f "$file" --stream 10
+      ./pcd_creator -f "$file" --with-floor --stream 10
       #cd ../../../../../lepp3/build
       cd $LEPP_BIN_DIR
-      timeout 5s ./lola --cfg ../config/artificial_stream.toml
+      timeout $LEPP_WAIT_TIME ./lola ../config/artificial_stream.toml
       cd $LEPP_BIN_DIR/evaluation/
       fn=$(ls -t | head -n1)
       cd $fn
@@ -138,10 +139,10 @@ if [ "$object" = "box" ]; then
       sed -i "7s/.*/  velocity = [$x_velocity, $y_velocity, $z_velocity]; /" "$file"
       sed -i "6s/.*/  scale = [$scale, $scale, $scale]; /" "$file"
       cd $AM2B_ROOT/etc/model/pcd_creation/build/
-      ./pcd_creator -f "$file" --stream 10
+      ./pcd_creator -f "$file" --with-floor --stream 10
       #cd ../../../../../lepp3/build
       cd $LEPP_BIN_DIR
-      timeout 5s ./lola --cfg ../config/artificial_stream.toml
+      timeout $LEPP_WAIT_TIME ./lola ../config/artificial_stream.toml
       cd $LEPP_BIN_DIR/evaluation/
       fn=$(ls -t | head -n1)
       cd $fn
