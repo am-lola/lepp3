@@ -2,11 +2,14 @@
 
 # check that AM2B_ROOT & LEPP_BIN_DIR env variables are set
 "${AM2B_ROOT?The AM2B_ROOT environment variable must be set to the root directory of the am2b project!}"
+"${LEPP_ROOT?The LEPP_ROOT environment variable must be set to the root directory of the lepp3 project!}"
 "${LEPP_BIN_DIR?The LEPP_BIN_DIR environment variable must be set to the directory containing the lepp3 binaries!}"
 echo "Using am2b from: $AM2B_ROOT"
 WORK_DIR=${PWD}
 PCD_CREATION_DIR=$AM2B_ROOT/etc/model/pcd_creation
 echo "Storing results in: $WORK_DIR"
+
+export LEPP3_TIMEOUT=30s
 
 object="object"
 echo -n -e "Enter the object you want to evaluate\n"
@@ -57,10 +60,10 @@ if [ "$object" = "box" ]; then
       cd $PCD_CREATION_DIR/lab_scene/
       sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
       cd $PCD_CREATION_DIR/build/
-      ./pcd_creator -f "$file" -p
+      ./pcd_creator -f "$file" -p --with-floor
       #cd ../../../../../lepp3/build
       cd $LEPP_BIN_DIR
-      timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+      timeout $LEPP3_TIMEOUT ./lola ../config/artificial_pcd.toml
       original_volume=0.016
       echo "Original volume of $object: $original_volume"
       final_volume=$(echo $original_volume\*$scale_x\*$scale_y\*$scale_z | bc -l | awk '{printf "%f", $0}')
@@ -93,9 +96,9 @@ if [ "$object" = "box" ]; then
       cd $LEPP_ROOT/config/
       sed -i "95s/.*/split_axis = \"middle\"/" artificial_pcd.toml
       cd $PCD_CREATION_DIR/build/
-      ./pcd_creator -f "$file" -p
+      ./pcd_creator -f "$file" -p --with-floor
       cd $LEPP_BIN_DIR
-      timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+      timeout $LEPP3_TIMEOUT ./lola ../config/artificial_pcd.toml
       cd $LEPP_ROOT/evaluation/
       fn=$(ls -t | head -n1)
       cd $fn
@@ -119,9 +122,9 @@ if [ "$object" = "box" ]; then
       cd $LEPP_ROOT/config/
       sed -i "95s/.*/split_axis = \"largest\"/" artificial_pcd.toml
       cd $PCD_CREATION_DIR/build/
-      ./pcd_creator -f "$file" -p
+      ./pcd_creator -f "$file" -p --with-floor
       cd $LEPP_BIN_DIR
-      timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+      timeout $LEPP3_TIMEOUT ./lola ../config/artificial_pcd.toml
       cd $LEPP_ROOT/evaluation/
       fn=$(ls -t | head -n1)
       cd $fn
@@ -184,10 +187,10 @@ if [ "$object" = "box" ]; then
         cd $PCD_CREATION_DIR/lab_scene/
         sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
         cd $PCD_CREATION_DIR/build/
-        ./pcd_creator -f "$file" -p
+        ./pcd_creator -f "$file" -p --with-floor
         #cd ../../../../../lepp3/build
         cd $LEPP_ROOT/build/
-        timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+        timeout $LEPP3_TIMEOUT ./lola ../config/artificial_pcd.toml
         original_volume=0.0035
         echo "Original volume of $object: $original_volume"
         final_volume=$(echo $original_volume\*$scale_x\*$scale_y\*$scale_z | bc -l | awk '{printf "%f", $0}')
@@ -220,9 +223,9 @@ if [ "$object" = "box" ]; then
         cd $LEPP_ROOT/config/
         sed -i "95s/.*/split_axis = \"middle\"/" artificial_pcd.toml
         cd $PCD_CREATION_DIR/build/
-        ./pcd_creator -f "$file" -p
+        ./pcd_creator -f "$file" -p --with-floor
         cd $LEPP_ROOT/build/
-        timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+        timeout $LEPP3_TIMEOUT ./lola ../config/artificial_pcd.toml
         cd $LEPP_ROOT/evaluation/
         fn=$(ls -t | head -n1)
         cd $fn
@@ -246,9 +249,9 @@ if [ "$object" = "box" ]; then
         cd $LEPP_ROOT/config/
         sed -i "95s/.*/split_axis = \"largest\"/" artificial_pcd.toml
         cd $PCD_CREATION_DIR/build/
-        ./pcd_creator -f "$file" -p
+        ./pcd_creator -f "$file" -p --with-floor
         cd $LEPP_ROOT/build/
-        timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+        timeout $LEPP3_TIMEOUT ./lola ../config/artificial_pcd.toml
         cd $LEPP_ROOT/evaluation/
         fn=$(ls -t | head -n1)
         cd $fn
@@ -308,13 +311,13 @@ if [ "$object" = "box" ]; then
         cd $PCD_CREATION_DIR/lab_scene/
         sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
         cd $PCD_CREATION_DIR/build/
-        ./pcd_creator -f "$file" -p
+        ./pcd_creator -f "$file" -p --with-floor
         #cd ../../../../../lepp3/build
         cd $LEPP_ROOT/config/
         sed -i "124,127s/.*/#/" artificial_pcd.toml
         sed -i "95s/.*/split_axis = \"smallest\"/" artificial_pcd.toml
         cd $LEPP_ROOT/build/
-        timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+        timeout $LEPP3_TIMEOUT ./lola ../config/artificial_pcd.toml
         original_volume=0.000883
         echo "Original volume of $object: $original_volume"
         final_volume=$(echo $original_volume\*$scale_x\*$scale_y\*$scale_z | bc -l | awk '{printf "%f", $0}')
@@ -347,9 +350,9 @@ if [ "$object" = "box" ]; then
         cd $LEPP_ROOT/config/
         sed -i "95s/.*/split_axis = \"middle\"/" artificial_pcd.toml
         cd $PCD_CREATION_DIR/build/
-        ./pcd_creator -f "$file" -p
+        ./pcd_creator -f "$file" -p --with-floor
         cd $LEPP_ROOT/build/
-        timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+        timeout $LEPP3_TIMEOUT ./lola ../config/artificial_pcd.toml
         cd $LEPP_ROOT/evaluation/
         fn=$(ls -t | head -n1)
         cd $fn
@@ -373,9 +376,9 @@ if [ "$object" = "box" ]; then
         cd $LEPP_ROOT/config/
         sed -i "95s/.*/split_axis = \"largest\"/" artificial_pcd.toml
         cd $PCD_CREATION_DIR/build/
-        ./pcd_creator -f "$file" -p
+        ./pcd_creator -f "$file" -p --with-floor
         cd $LEPP_ROOT/build/
-        timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+        timeout $LEPP3_TIMEOUT ./lola ../config/artificial_pcd.toml
         cd $LEPP_ROOT/evaluation/
         fn=$(ls -t | head -n1)
         cd $fn
@@ -435,13 +438,13 @@ if [ "$object" = "box" ]; then
         cd $PCD_CREATION_DIR/lab_scene/
         sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
         cd $PCD_CREATION_DIR/build/
-        ./pcd_creator -f "$file" -p
+        ./pcd_creator -f "$file" -p --with-floor
         #cd ../../../../../lepp3/build
         cd $LEPP_ROOT/config/
         sed -i "124,127s/.*/#/" artificial_pcd.toml
         sed -i "95s/.*/split_axis = \"smallest\"/" artificial_pcd.toml
         cd $LEPP_ROOT/build/
-        timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+        timeout $LEPP3_TIMEOUT ./lola ../config/artificial_pcd.toml
         original_volume=0.000826
         echo "Original volume of $object: $original_volume"
         final_volume=$(echo $original_volume\*$scale_x\*$scale_y\*$scale_z | bc -l | awk '{printf "%f", $0}')
@@ -474,9 +477,9 @@ if [ "$object" = "box" ]; then
         cd $LEPP_ROOT/config/
         sed -i "95s/.*/split_axis = \"middle\"/" artificial_pcd.toml
         cd $PCD_CREATION_DIR/build/
-        ./pcd_creator -f "$file" -p
+        ./pcd_creator -f "$file" -p --with-floor
         cd $LEPP_ROOT/build/
-        timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+        timeout $LEPP3_TIMEOUT ./lola ../config/artificial_pcd.toml
         cd $LEPP_ROOT/evaluation/
         fn=$(ls -t | head -n1)
         cd $fn
@@ -500,9 +503,9 @@ if [ "$object" = "box" ]; then
         cd $LEPP_ROOT/config/
         sed -i "95s/.*/split_axis = \"largest\"/" artificial_pcd.toml
         cd $PCD_CREATION_DIR/build/
-        ./pcd_creator -f "$file" -p
+        ./pcd_creator -f "$file" -p --with-floor
         cd $LEPP_ROOT/build/
-        timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+        timeout $LEPP3_TIMEOUT ./lola ../config/artificial_pcd.toml
         cd $LEPP_ROOT/evaluation/
         fn=$(ls -t | head -n1)
         cd $fn
@@ -570,13 +573,13 @@ if [ "$object" = "box" ]; then
         sed -i "6s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
         sed -i "13s/.*/  scale = [$scale_x, $scale_y, $scale_z]; /" "$file"
         cd $PCD_CREATION_DIR/build/
-        ./pcd_creator -f "$file" -p
+        ./pcd_creator -f "$file" -p --with-floor
         #cd ../../../../../lepp3/build
         cd $LEPP_ROOT/config/
         sed -i "124,127s/.*/#/" artificial_pcd.toml
         sed -i "95s/.*/split_axis = \"smallest\"/" artificial_pcd.toml
         cd $LEPP_ROOT/build/
-        timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+        timeout $LEPP3_TIMEOUT ./lola ../config/artificial_pcd.toml
         original_volume_box=0.016
         original_volume_beam=0.0035
         echo "Original volume of box: $original_volume_box"
@@ -623,9 +626,9 @@ if [ "$object" = "box" ]; then
         cd $LEPP_ROOT/config/
         sed -i "95s/.*/split_axis = \"middle\"/" artificial_pcd.toml
         cd $PCD_CREATION_DIR/build/
-        ./pcd_creator -f "$file" -p
+        ./pcd_creator -f "$file" -p --with-floor
         cd $LEPP_ROOT/build/
-        timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+        timeout $LEPP3_TIMEOUT ./lola  ../config/artificial_pcd.toml
         cd $LEPP_ROOT/evaluation/
         fn=$(ls -t | head -n1)
         cd $fn
@@ -661,9 +664,9 @@ if [ "$object" = "box" ]; then
         cd $LEPP_ROOT/config/
         sed -i "95s/.*/split_axis = \"largest\"/" artificial_pcd.toml
         cd $PCD_CREATION_DIR/build/
-        ./pcd_creator -f "$file" -p
+        ./pcd_creator -f "$file" -p --with-floor
         cd $LEPP_ROOT/build/
-        timeout 6s ./lola --cfg ../config/artificial_pcd.toml
+        timeout $LEPP3_TIMEOUT ./lola  ../config/artificial_pcd.toml
         cd $LEPP_ROOT/evaluation/
         fn=$(ls -t | head -n1)
         cd $fn
