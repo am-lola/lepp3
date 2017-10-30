@@ -72,27 +72,27 @@ type = "ARVisualizer"
 
 
   # This visualizer shows a debug GUI for the GMM obstacle detction
-  [[observers.visualizer]]
-  type = "GMMTrackingVisualizer"
-  name = "GMM Obstacle Tracker Data"
-  debug_gui = true
-  width = 1024
-  height = 768
+#  [[observers.visualizer]]
+#  type = "GMMTrackingVisualizer"
+ # name = "GMM Obstacle Tracker Data"
+#  debug_gui = true
+#  width = 1024
+#  height = 768
 
-    [observers.visualizer.debug_gui_params]
+#    [observers.visualizer.debug_gui_params]
     # Just an example: set "some" of the values here. The rest will be set to
     # default by `DebugGUIParams`s ctor.
-    draw_gaussians = true
-    draw_velocities = true
-    draw_ssv = true
-    draw_trajectories = false
-    draw_debug_values = true
-    draw_voxels = false
-    downsample_res = 0.03 # downsampling leaf size in meters
-    enable_tracker = true
-    enable_tight_fit = true # use pc-based fitting instead of gaussian-based fitting
-    trajectory_length = 128
-    voxel_grid_resolution = 0.1 # voxel grid used for clustering, leaf size in meters
+#    draw_gaussians = true
+#    draw_velocities = true
+#    draw_ssv = true
+#    draw_trajectories = false
+#    draw_debug_values = true
+#    draw_voxels = false
+#    downsample_res = 0.03 # downsampling leaf size in meters
+#    enable_tracker = true
+#    enable_tight_fit = true # use pc-based fitting instead of gaussian-based fitting
+#    trajectory_length = 128
+#    voxel_grid_resolution = 0.1 # voxel grid used for clustering, leaf size in meters
     #color_mode = "NONE"
 
 # This enables the surface detector
@@ -110,13 +110,13 @@ type = "ObstacleDetector"
   minDistToPlane = 0.04
 
   # Segmentation Method
-  [ObstacleDetection.Segmenter]
+#  [ObstacleDetection.Segmenter]
   # Available methods:
   #   - "Euclidean
   #   - "GMM" (see below)
-  method = "Euclidean"
+#  method = "Euclidean"
   # The percentage of the original cloud that should be kept for the clusterization
-  min_filter_percentage = 0.9
+#  min_filter_percentage = 0.9
 
   [ObstacleDetection.Segmenter]
   method = "GMM"
@@ -144,7 +144,7 @@ type = "ObstacleDetector"
   # how much of the observation covariance is taken from the previous frame
   obs_covar_regularization = 0.95
   # minimum number of consecutive frames an obstacle must be observed in to be treated as real
-  min_persistent_frames = 10
+  min_persistent_frames = 1
   # approx. density of obstacles to consider them good enough to use (in points / meter,
   #  with length defined as diagonal of bounding box enclosing the obstacle's points)
   # Values between 500 and 1000 seem to make sense for clouds downsampled to 0.01
