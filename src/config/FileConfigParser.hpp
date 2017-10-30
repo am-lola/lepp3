@@ -149,9 +149,11 @@ protected:
 
     } else if (type == "pcd") {
       const std::string file_path = getTomlValue<std::string>(toml_tree_, "VideoSource.file_path");
+      FileManager fm(FileManager::expandEnvironmentVars(file_path));
+      const std::vector<std::string> file_names = fm.getFileNames(".pcd");
       boost::shared_ptr<pcl::Grabber> interface(new pcl::PCDGrabber<PointT>(
-          FileManager::expandEnvironmentVars(file_path),
-          20.f,
+          file_names,
+          30.0f,
           true));
       this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(
           new GeneralGrabberVideoSource<PointT>(interface, this->pose_service()));
