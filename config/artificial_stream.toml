@@ -150,7 +150,7 @@ type = "ObstacleDetector"
   # Values between 500 and 1000 seem to make sense for clouds downsampled to 0.01
   obstacle_density = 500.0
   # whether to enable a kalman filter for estimating object positions & velocities
-   enable_kalman_filter = false
+   enable_kalman_filter = true
   # # noise parameters for the kalman filter
    kalman_noise_position = 0.04
    kalman_noise_velocity = 0.5
@@ -169,7 +169,7 @@ type = "ObstacleDetector"
   # If no split conditions are provided, the objects will never be split.
     [[ObstacleDetection.SplitStrategy.conditions]]
     type = "DepthLimit" # How many 'splitting steps' are performed. Max number of SSV's per obstacle = 2 ^ DepthLimit
-    depth = 1
+    depth = 0
 
     [[ObstacleDetection.SplitStrategy.conditions]]
     type = "SizeLimit" # After this volume is reached, a sub point cloud is not splitted any more
@@ -202,11 +202,11 @@ type = "ObstacleDetector"
   #       take advantage of state information not available this far down
   #       the pipeline. When using GMM, it is recommended to use the
   #       enable_kalman_filter flag above instead of using this filter here.
-  [ObstacleDetection.Filter]
-  type = "KalmanFilter"
-  noise_position = 0.02
-  noise_velocity = 0.1
-  noise_measurement = 0.1
+#  [ObstacleDetection.Filter]
+#  type = "KalmanFilter"
+#  noise_position = 0.02
+#  noise_velocity = 0.1
+#  noise_measurement = 0.1
 
 ###########################################################################
 # Aggregators is an array

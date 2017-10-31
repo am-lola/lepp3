@@ -3,12 +3,13 @@
 # check that AM2B_ROOT & LEPP_BIN_DIR env variables are set
 "${AM2B_ROOT?The AM2B_ROOT environment variable must be set to the root directory of the am2b project!}"
 "${LEPP_BIN_DIR?The LEPP_BIN_DIR environment variable must be set to the directory containing the lepp3 binaries!}"
+"${LEPP_ROOT?The LEPP_ROOT environment variable must be set to the root directory of the lepp3 project!}"
 echo "Using am2b from: $AM2B_ROOT"
 WORK_DIR=${PWD}
 PCD_CREATION_DIR=$AM2B_ROOT/etc/model/pcd_creation
 echo "Storing results in: $WORK_DIR"
 
-LEPP_WAIT_TIME=90s
+LEPP_WAIT_TIME=620s
 
 object="object"
 echo -n -e "Enter the object you want to evaluate\n"
@@ -28,7 +29,7 @@ if [ "$object" = "box" ]; then
      	translation = [0.0, 0.0, 0.0];
      	rotation = [0.0, 0.0, 0.0];
       scale = [0.5, 0.5, 0.5];
-      velocity = [0.001000, 0.000000, 0.000000];
+      velocity = [4.00000, 4.000000, 4.000000];
      });' > box_veloc.wrl
   fi;
   cd $WORK_DIR
@@ -38,23 +39,23 @@ if [ "$object" = "box" ]; then
   fi;
 
   printf '%s\n' Veloc_x Simul_Veloc_x Diff_x Ratio_x Veloc_y Simul_Veloc_y Diff_y Ratio_y Veloc_z Simul_Veloc_z Diff_z Ratio_z | paste -sd ' ' >> $store_data
-  range1=10
-  range2=20
+  range1=1
+  range2=200
   DIFF=$(($range2-$range1+1))
   RANDOM=$$
   for i in `seq 20`
   do
       R_x=$(($(($RANDOM%DIFF))+$range1))
       echo $R_x
-      x_velocity=$(echo $R_x\/1000 | bc -l | awk '{printf "%f", $0}')
+      x_velocity=$(echo $R_x\/100 | bc -l | awk '{printf "%f", $0}')
       echo $x_velocity
       R_y=$(($(($RANDOM%$DIFF))+$range1))
       echo $R_y
-      y_velocity=$(echo $R_y\/1000 | bc -l | awk '{printf "%f", $0}')
+      y_velocity=$(echo $R_y\/100 | bc -l | awk '{printf "%f", $0}')
       echo $y_velocity
       R_z=$(($(($RANDOM%DIFF))+$range1))
       echo $R_z
-      z_velocity=$(echo $R_z\/1000 | bc -l | awk '{printf "%f", $0}')
+      z_velocity=$(echo $R_z\/100 | bc -l | awk '{printf "%f", $0}')
       echo $z_velocity
       #cd ../../../am2b/etc/model/pcd_creation/lab_scene
       cd $AM2B_ROOT/etc/model/pcd_creation/lab_scene/
@@ -65,7 +66,7 @@ if [ "$object" = "box" ]; then
       #cd ../../../../../lepp3/build
       cd $LEPP_BIN_DIR
       timeout $LEPP_WAIT_TIME ./lola ../config/artificial_stream.toml
-      cd $LEPP_BIN_DIR/evaluation/
+      cd $LEPP_ROOT/evaluation/
       fn=$(ls -t | head -n1)
       cd $fn
       IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)
@@ -143,7 +144,7 @@ if [ "$object" = "box" ]; then
       #cd ../../../../../lepp3/build
       cd $LEPP_BIN_DIR
       timeout $LEPP_WAIT_TIME ./lola ../config/artificial_stream.toml
-      cd $LEPP_BIN_DIR/evaluation/
+      cd $LEPP_ROOT/evaluation/
       fn=$(ls -t | head -n1)
       cd $fn
       IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)
