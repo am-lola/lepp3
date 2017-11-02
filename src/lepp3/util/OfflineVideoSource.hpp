@@ -10,6 +10,7 @@
 #include "lepp3/RGBData.hpp"
 #include "lepp3/VideoSource.hpp"
 
+
 namespace lepp {
 
 /**
@@ -82,6 +83,10 @@ void OfflineVideoSource<PointT>::open() {
 template<class PointT>
 void OfflineVideoSource<PointT>::cloud_cb_(
     const typename pcl::PointCloud<PointT>::ConstPtr& cloud) {
+#ifdef LEPP3_ENABLE_TRACING
+  tracepoint(lepp3_trace_provider, new_depth_frame);
+#endif
+
   // Cloud
   FrameDataPtr frameData(new FrameData(++frameCount));
   frameData->cloud = cloud;
@@ -89,6 +94,9 @@ void OfflineVideoSource<PointT>::cloud_cb_(
 
   // RGB image
   if (rgb_interface_) {
+#ifdef LEPP3_ENABLE_TRACING
+    tracepoint(lepp3_trace_provider, new_rgb_frame);
+#endif
     if (!rgb_interface_->grab()) {
       // We reached the end, wrap around
       rgb_interface_->set(CV_CAP_PROP_POS_FRAMES, 0);

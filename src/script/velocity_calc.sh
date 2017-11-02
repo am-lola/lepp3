@@ -3,11 +3,13 @@
 # check that AM2B_ROOT & LEPP_BIN_DIR env variables are set
 "${AM2B_ROOT?The AM2B_ROOT environment variable must be set to the root directory of the am2b project!}"
 "${LEPP_BIN_DIR?The LEPP_BIN_DIR environment variable must be set to the directory containing the lepp3 binaries!}"
+"${LEPP_ROOT?The LEPP_ROOT environment variable must be set to the root directory of the lepp3 project!}"
 echo "Using am2b from: $AM2B_ROOT"
 WORK_DIR=${PWD}
 PCD_CREATION_DIR=$AM2B_ROOT/etc/model/pcd_creation
 echo "Storing results in: $WORK_DIR"
 
+LEPP_WAIT_TIME=620s
 
 object="object"
 echo -n -e "Enter the object you want to evaluate\n"
@@ -27,7 +29,7 @@ if [ "$object" = "box" ]; then
      	translation = [0.0, 0.0, 0.0];
      	rotation = [0.0, 0.0, 0.0];
       scale = [0.5, 0.5, 0.5];
-      velocity = [0.170000, 0.110000, 0.130000];
+      velocity = [4.00000, 4.000000, 4.000000];
      });' > box_veloc.wrl
   fi;
   cd $WORK_DIR
@@ -37,8 +39,8 @@ if [ "$object" = "box" ]; then
   fi;
 
   printf '%s\n' Veloc_x Simul_Veloc_x Diff_x Ratio_x Veloc_y Simul_Veloc_y Diff_y Ratio_y Veloc_z Simul_Veloc_z Diff_z Ratio_z | paste -sd ' ' >> $store_data
-  range1=10
-  range2=20
+  range1=1
+  range2=200
   DIFF=$(($range2-$range1+1))
   RANDOM=$$
   for i in `seq 20`
@@ -60,11 +62,11 @@ if [ "$object" = "box" ]; then
       sed -i "7s/.*/  velocity = [$x_velocity, $y_velocity, $z_velocity]; /" "$file"
       sed -i "6s/.*/  scale = [$scale, $scale, $scale]; /" "$file"
       cd $AM2B_ROOT/etc/model/pcd_creation/build/
-      ./pcd_creator -f "$file" --stream 10
+      ./pcd_creator -f "$file" --with-floor --stream 10
       #cd ../../../../../lepp3/build
       cd $LEPP_BIN_DIR
-      timeout 5s ./lola --cfg ../config/artificial_stream.toml
-      cd $LEPP_BIN_DIR/evaluation/
+      timeout $LEPP_WAIT_TIME ./lola ../config/artificial_stream.toml
+      cd $LEPP_ROOT/evaluation/
       fn=$(ls -t | head -n1)
       cd $fn
       IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)
@@ -138,11 +140,11 @@ if [ "$object" = "box" ]; then
       sed -i "7s/.*/  velocity = [$x_velocity, $y_velocity, $z_velocity]; /" "$file"
       sed -i "6s/.*/  scale = [$scale, $scale, $scale]; /" "$file"
       cd $AM2B_ROOT/etc/model/pcd_creation/build/
-      ./pcd_creator -f "$file" --stream 10
+      ./pcd_creator -f "$file" --with-floor --stream 10
       #cd ../../../../../lepp3/build
       cd $LEPP_BIN_DIR
-      timeout 5s ./lola --cfg ../config/artificial_stream.toml
-      cd $LEPP_BIN_DIR/evaluation/
+      timeout $LEPP_WAIT_TIME ./lola ../config/artificial_stream.toml
+      cd $LEPP_ROOT/evaluation/
       fn=$(ls -t | head -n1)
       cd $fn
       IFS=, read -r model_id volume sim_veloc_x sim_veloc_y sim_veloc_z < <(tail -1 eval.csv)

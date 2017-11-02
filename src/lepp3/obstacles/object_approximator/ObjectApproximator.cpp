@@ -2,6 +2,10 @@
 
 #include "lepp3/ConvexHullDetector.hpp"
 
+#ifdef LEPP3_ENABLE_TRACING
+#include "lepp3/util/lepp3_tracepoint_provider.hpp"
+#endif
+
 lepp::ObjectApproximator::ObjectApproximator(double max_squared_distance)
     : max_squared_distance_(max_squared_distance) {
 }
@@ -11,7 +15,15 @@ void lepp::ObjectApproximator::updateFrame(FrameDataPtr frameData) {
 
   // iterate in reverse, we need to remove clouds for invalid obstacles
   for (size_t i = frameData->obstacleParams.size() - 1; i < frameData->obstacleParams.size(); --i) {
+#ifdef LEPP3_ENABLE_TRACING
+    tracepoint(lepp3_trace_provider, ssv_approx_start);
+#endif
+
     ObjectModelPtr obstacle = approximate(frameData->obstacleParams[i]);
+
+#ifdef LEPP3_ENABLE_TRACING
+    tracepoint(lepp3_trace_provider, ssv_approx_end);
+#endif
 
     // if the obstacle params contained a valid id, pass it on to this obstacle
     if (frameData->obstacleParams[i].id >= 0)

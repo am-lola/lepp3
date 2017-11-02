@@ -11,6 +11,10 @@
 #include <cmath>
 #include <limits>
 
+#ifdef LEPP3_ENABLE_TRACING
+#include "lepp3/util/lepp3_tracepoint_provider.hpp"
+#endif
+
 namespace lepp {
 
 template<class PointT>
@@ -169,6 +173,10 @@ void SurfaceFinder<PointT>::findPlanes(
     std::vector<PointCloudPtr>& planes,
     std::vector<pcl::ModelCoefficients>& planeCoefficients) {
 
+#ifdef LEPP3_ENABLE_TRACING
+  tracepoint(lepp3_trace_provider, ransac_start);
+#endif
+
   HiResTimer timer;
   timer.start();
   // Instance that will be used to perform the elimination of unwanted points
@@ -251,6 +259,10 @@ void SurfaceFinder<PointT>::findPlanes(
   }
   timer.stop();
   std::cout << "Finding planes took " << timer.duration() << " ms." << std::endl;
+
+#ifdef LEPP3_ENABLE_TRACING
+  tracepoint(lepp3_trace_provider, ransac_end);
+#endif
 }
 
 

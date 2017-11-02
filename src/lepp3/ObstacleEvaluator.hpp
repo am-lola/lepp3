@@ -235,19 +235,52 @@ bool ObstacleEvaluator::evaluate(ObjectModelPtr const& model, double x, double y
   float ratio = -1;
   if (ref_volume_ != 0)
     ratio = vol / static_cast<float>(ref_volume_);
-  // Save the current approximation information
-  std::stringstream ss;
-  ss << model->id() << ","
-     << vol << ","
-     << x << ","
-     << y << ","
-     << z
-     << std::endl;
-  std::ofstream tf_fout;
-  // open the file and add the current model evaluation to the end of it
-  tf_fout.open(file_path_.c_str(), std::ofstream::app);
-  tf_fout << ss.str();
-  tf_fout.close();
+
+  bool has_vel = false;
+  boost::shared_ptr<CompositeModel> cm = boost::static_pointer_cast<CompositeModel>(model);
+  for( auto& m : cm->models() )
+  {
+    boost::shared_ptr<CompositeModel> cmm = boost::static_pointer_cast<CompositeModel>(m);
+
+    for ( auto& mm : cmm->models() )
+    {
+      std::cout << model->id() << ": " << mm->velocity().x << ", " 
+                << mm->velocity().y << ", " << mm->velocity().z << std::endl;
+      if (!std::isnan(mm->velocity().x) &&
+          !std::isnan(mm->velocity().y) &&
+          !std::isnan(mm->velocity().z))
+      {
+
+        // Save the current approximation information
+        std::stringstream ss;
+        ss << model->id() << ","
+           << vol << ","
+           << mm->velocity().x << ","
+           << mm->velocity().y << ","
+           << mm->velocity().z
+           << std::endl;
+        std::ofstream tf_fout;
+        // open the file and add the current model evaluation to the end of it
+        tf_fout.open(file_path_.c_str(), std::ofstream::app);
+        tf_fout << ss.str();
+        tf_fout.close();
+        has_vel = true;
+        break;
+      }
+    }
+  }
+
+  // if obstacle did not have a velocity estimate, log zero
+  if (!has_vel)
+  {
+      std::ofstream tf_out;
+      tf_out.open(file_path_.c_str(), std::ofstream::app);
+      tf_out << model->id() << ","
+             << vol << ","
+             << "0,0,0"
+             << std::endl;
+  }
+
   return true;
 }
 void ObstacleEvaluator::updateFrame(FrameDataPtr frameData) {

@@ -100,6 +100,89 @@ real robot (e.g. artifical kinematic data can be sent to lepp3 and lepp3's resul
 can be broadcast to a mock receiver).
 
 
+# Structure
+
+The `lepp3` library is inherently modular and flexible. To get started in its 
+different components, it helps to look at the structure used for environment 
+modeling during [experiments](./config/lab-lola.toml) with the robot LOLA (the 
+different components can be activated/deactivated at will through the config file):
+
+![Alt text](https://g.gravizo.com/svg?
+  digraph G {
+    aize ="4,4";
+    main [label="Video Source / Pose Data",shape=box];
+    input [label="Input Filter",shape=box];
+    detector [label="SurfaceDetector",shape=box];
+    visualizer [label="Visualizer / Aggregator",shape=box];
+    plane [label="SurfaceFinder",shape=parallelogram];
+    inlier [label="Inlier Finder",shape=ellipse];
+    gmm [label="GMM Segmenation",shape=ellipse];
+    euclidean [label="Euclidean Segmentation",shape=ellipse];
+    object [label="Object Approximator",shape=ellipse];
+    lowpass [label="Euclidean Low-Pass-Filter",shape=ellipse];
+    kalman [label="Euclidean Kalman-Filter",shape=ellipse];
+    surfcluster [label="SurfaceClusterer",shape=hexagon];
+    surftracker [label="SurfaceTracker",shape=hexagon];
+    convexhull [label="ConvexHullDetector",shape=hexagon];    
+    main -> input [weight=8];
+    input -> detector [weight=8];
+    detector -> plane [weight=8,color=".7 .3 1.0",label="Plane Detection"];
+    plane -> detector [weight=8,color=".7 .3 1.0"];
+    detector -> surfcluster [weight=8,color=".3 .7 1.0",label="Surface Approximation"];
+    surfcluster -> surftracker [weight=8,color=".3 .7 1.0"];
+    surftracker -> convexhull [weight=8,color=".3 .7 1.0"];
+    convexhull -> detector [weight=8,color=".3 .7 1.0"];
+    detector -> inlier [weight=8,label="Obstacle Approximation"];
+    inlier -> gmm [weight=8];
+    inlier -> euclidean [weight=8];
+    gmm -> object [weight=8];
+    euclidean -> object [weight=8];
+    object -> lowpass [weight=8,style=dotted];
+    object -> kalman [weight=8,style=dotted];
+    object -> visualizer [weight=8];
+    lowpass -> visualizer [weight=8,style=dotted];
+    kalman -> visualizer [weight=8,style=dotted];
+  }
+  )
+
+# Benchmarks
+
+The program contains a few tracepoints for tracelogging. It uses the [LTTng](http://lttng.org/)
+tool ([version 2.9](http://lttng.org/docs/v2.9/#doc-ubuntu) or higher). In order 
+to activate tracelogging, you need to enable the corresponding flag when running 
+cmake:
+
+```bash
+cmake -DLEPP_ENABLE_TRACING=TRUE ..
+```
+
+Then, you need to run LTTng in another terminal before running lepp:
+
+```bash
+lttng create
+lttng enable-events -u -a
+lttng start
+<Run lepp>
+lttnh stop
+lttng destroy
+```
+
+A small script is available under `src/script/trace-eval.py` to extract some useful metrics from the resulting trace data (although you can use any trace viewer capable of reading CTF trace data as well). The script requires Python 3, babeltrace (`apt-get install babeltrace libbabeltrace-ctf-dev python3-babeltrace`) and the Python Plot.ly lib (`pip3 install plotly`).
+
+Usage:
+
+```bash
+python3 src/script/trace-eval.py <trace_directory> <output_name>
+
+    <trace_directory> : Directory containing the actual trace data
+    <output_name>     : Name to give the .html page containing the graph plots
+
+ e.g.
+python3 src/sript/trace-eval.py ~/lttng-traces/auto-20171010-236640/ust/uid/1000/64-bit/ plot_output
+```
+
+The script will print some statistics about each event found in the trace, and create an .html page `<output_name>.html` containing a plot of each event across the duration of the trace (in frames).
+
 # License
 
 The project is published under the terms of the

@@ -26,6 +26,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build")
 
 option(LEPP_BUILD_LOLA "Build an obstacle detector for LOLA" TRUE)
 option(LEPP_INCLUDE_HEADERS "Includes an header project to add files in IDEs" FALSE)
+option(LEPP_ENABLE_TRACING "Enable LTTng-UST Traces" FALSE)
+
+if(LEPP_ENABLE_TRACING)
+  add_definitions(-DLEPP3_ENABLE_TRACING)
+  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+  include(FindLTTngUST REQUIRED)
+endif()
 
 include_directories("src")
 
@@ -40,4 +47,7 @@ if(LEPP_BUILD_LOLA)
 
     add_executable(lola ${detector_src} ${lepp_src})
     target_link_libraries(lola ${PCL_LIBRARIES} ${OpenCV_LIBS} ${am2b-arvis_LIBRARY})
+    if(LEPP_ENABLE_TRACING)
+      target_link_libraries(lola LTTng::UST)
+    endif()
 endif()

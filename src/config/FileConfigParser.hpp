@@ -148,10 +148,23 @@ protected:
           new LiveStreamSource<PointT>(this->pose_service(), enable_rgb));
 
     } else if (type == "pcd") {
-      const std::string file_path = getTomlValue<std::string>(toml_tree_, "VideoSource.file_path");
+      const std::string file_path = FileManager::expandEnvironmentVars(getTomlValue<std::string>(toml_tree_, "VideoSource.file_path"));
+      std::vector<std::string> file_names;
+
+      // if input is a single PCD, just use it
+      if (boost::algorithm::ends_with(file_path, ".pcd"))
+      {
+          file_names.push_back(file_path);
+      }
+      // if input is a directory of PCDs, collect them all
+      else
+      {
+          FileManager fm(file_path);
+          file_names = fm.getFileNames(".pcd");
+      }
       boost::shared_ptr<pcl::Grabber> interface(new pcl::PCDGrabber<PointT>(
-          FileManager::expandEnvironmentVars(file_path),
-          20.f,
+          file_names,
+          30.0f,
           true));
       this->raw_source_ = boost::shared_ptr<VideoSource<PointT>>(
           new GeneralGrabberVideoSource<PointT>(interface, this->pose_service()));
