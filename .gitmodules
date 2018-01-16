@@ -1,3 +1,0 @@
-[submodule "src/lola/iface"]
-	path = src/lola/iface
-	url = git@gitlab.lrz.de:AMCode/am2b-iface.git

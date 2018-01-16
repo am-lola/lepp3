@@ -62,8 +62,6 @@ context of a larger system.
   * [Instructions to build PCL with C++11 and OpenNI Support]()
 * [kalman](https://github.com/mherb/kalman) (a compatible version is provided under [src/deps](./src/deps))
 * [ARVisualizer](https://github.com/am-lola/ARVisualizer)
-* [am2b-iface](https://gitlab.lrz.de/AMCode/am2b-iface) submodule
-  * Either clone this project with `--recursive` or run `git submodule update --init` after cloning to obtain a compatible version
 
 # Compiling
 
@@ -94,7 +92,7 @@ See [master-cfg.toml](./master-cfg.toml) for an example of every available compo
 and all the possible parameters which can be set. Note, however, that some components
 are incompatible, so the master-cfg file cannot be used as-is.
 
-To aid with testing and development, the [am2b-iface](https://gitlab.lrz.de/AMCode/am2b-iface) project includes several
+To aid with testing and development, the [`src/lola/iface`](https://github.com/am-lola/lepp3/tree/master/src/lola/iface) folder includes several
 tools to send and receive data for the various components involved when using a
 real robot (e.g. artifical kinematic data can be sent to lepp3 and lepp3's results
 can be broadcast to a mock receiver).
