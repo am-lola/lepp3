@@ -181,6 +181,23 @@ python3 src/sript/trace-eval.py ~/lttng-traces/auto-20171010-236640/ust/uid/1000
 
 The script will print some statistics about each event found in the trace, and create an .html page `<output_name>.html` containing a plot of each event across the duration of the trace (in frames).
 
+# Publications
+
+The ideas behind this code are published under:
+
+[Wahrmann, Daniel; Hildebrandt, Arne-Christoph; Bates, Tamas; Wittmann, Robert; Sygulla, Felix; Seiwald, Philipp; Rixen, Daniel: Vision-Based 3D Modeling of Unknown Dynamic Environments for Real-Time Humanoid Navigation. International Journal of Humanoid Robotics Vol. 16 No. 01, 2019](http://mediatum.ub.tum.de/node?id=1435457)
+[Wahrmann, Daniel; Hildebrandt, Arne-Christoph; Wittmann, Robert; Sygulla, Felix; Rixen, Daniel; Buschmann, Thomas: Fast Object Approximation for Real-Time 3D Obstacle Avoidance with Biped Robots. IEEE International Conference on Advanced Intelligent Mechatronics, 2016](http://mediatum.ub.tum.de/node?id=1320267)
+
+# Videos
+
+The results of these algorithms can be seen on:
+
+[Compilation of Autonomous Walking](https://youtu.be/EeDR1UNDpIY)
+[Vision System of Humanoid Robot LOLA](https://youtu.be/VceqNJucPiw)
+[Live Demo and Workshop](https://youtu.be/g6UACMHgt20)
+[Walking over a platform](https://youtu.be/rKsx8HKvBkg)
+[Fast Object Detection and Approximation](https://youtu.be/6PLN6B4vSHM)
+
 # License
 
 The project is published under the terms of the
